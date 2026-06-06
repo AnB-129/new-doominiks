@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kelola Produk &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .item-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
+    }
+    .item-row input { flex: 1; }
+    .color-preview { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; border: 1px solid var(--border); }
+    .fields-list { display: flex; flex-direction: column; gap: 8px; }
+    .field-row { display: flex; gap: 8px; align-items: center; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; }
+    .field-row input { flex: 1; }
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 100px; cursor: pointer; transition: var(--transition); }
+    .toggle-slider::before { content:""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--text-muted); left: 2px; top: 2px; transition: var(--transition); }
+    .toggle input:checked + .toggle-slider { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+    .toggle input:checked + .toggle-slider::before { background: var(--gold); transform: translateX(20px); }
+    .product-row-card {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 16px; transition: var(--transition); margin-bottom: 10px;
+    }
+    .product-row-card:hover { border-color: var(--border-bright); }
+    .product-icon-sm { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; }
+    .product-icon-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .img-upload-area {
+      border: 2px dashed var(--border-bright); border-radius: var(--radius-lg);
+      padding: 24px; text-align: center; cursor: pointer;
+      transition: var(--transition); background: var(--bg-panel);
+      position: relative; overflow: hidden;
+    }
+    .img-upload-area:hover { border-color: var(--gold); background: var(--gold-glow); }
+    .img-upload-area.dragover { border-color: var(--gold); background: var(--gold-glow); }
+    .img-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .img-preview-wrap { position: relative; display: inline-block; }
+    .img-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius); display: block; }
+    .img-preview-remove {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(232,72,85,0.9); color: white; border: none;
+      width: 28px; height: 28px; border-radius: 50%; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .upload-progress { height: 4px; background: var(--border); border-radius: 4px; margin-top: 10px; overflow: hidden; display: none; }
+    .upload-progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-dim)); border-radius: 4px; transition: width 0.3s; width: 0%; }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-product-title">Tambah Produk</span>
+      <button class="modal-close" onclick="closeModal('modal-product')">&times;</button>
+    </div>
+    <form id="product-form" onsubmit="saveProduct(event)">
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Nama Game <span style="color:var(--red)">*</span></label>
+          <input class="form-input" id="f-name" placeholder="Mobile Legends" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <input class="form-input" id="f-category" placeholder="Battle Royale, RPG, dll" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deskripsi</label>
+        <textarea class="form-textarea" id="f-description" placeholder="Deskripsi singkat game dan cara top up..."></textarea>
+      </div>
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Icon Fallback (Emoji / Symbol)</label>
+          <input class="form-input" id="f-icon" placeholder="◆ atau emoji (jika tidak ada gambar)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Badge (Opsional)</label>
+          <input class="form-input" id="f-badge" placeholder="HOT, NEW, PROMO" />
+        </div>
+      </div>
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Warna Gradien 1</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="f-color1" value="#1E2535" style="width:44px;height:38px;border:none;background:none;cursor:pointer;border-radius:8px;" />
+            <input class="form-input" id="f-color1-text" value="#1E2535" oninput="syncColor('1')" style="flex:1;" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Warna Gradien 2</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="f-color2" value="#0D1018" style="width:44px;height:38px;border:none;background:none;cursor:pointer;border-radius:8px;" />
+            <input class="form-input" id="f-color2-text" value="#0D1018" oninput="syncColor('2')" style="flex:1;" />
+          </div>
+        </div>
+      </div>
+      <!-- IMAGE UPLOAD -->
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Gambar Produk</label>
+        <div id="img-upload-area" class="img-upload-area" onclick="document.getElementById('f-img-file').click()">
+          <input type="file" id="f-img-file" accept="image/png,image/jpeg,image/webp,image/gif" onchange="handleImageSelect(event)" style="display:none;" />
+          <div id="img-placeholder">
+            <div style="font-size:32px;margin-bottom:8px;color:var(--text-muted);">▲</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Klik atau drag gambar ke sini</div>
+            <div style="font-size:12px;color:var(--text-muted);">PNG, JPG, WEBP &bull; Maks 2MB &bull; Disarankan 16:9</div>
+          </div>
+          <div id="img-preview-container" style="display:none;">
+            <div class="img-preview-wrap">
+              <img id="img-preview" class="img-preview" src="" alt="Preview" />
+              <button type="button" class="img-preview-remove" onclick="removeImage(event)">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="upload-progress" id="upload-progress">
+          <div class="upload-progress-bar" id="upload-progress-bar"></div>
+        </div>
+        <div id="img-url-display" style="margin-top:8px;font-size:12px;color:var(--text-muted);"></div>
+        <input type="hidden" id="f-img-url" value="" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Urutan Tampil</label>
+        <input class="form-input" id="f-sort" type="number" value="99" min="0" />
+      </div>
+
+      <!-- Items -->
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:700;">Daftar Nominal / Item</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow()">+ Tambah Item</button>
+      </div>
+      <div id="items-list"></div>
+
+      <!-- Form Fields -->
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:700;">Field Isian Pembeli</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addFieldRow()">+ Tambah Field</button>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Contoh: User ID, Server ID, Username, dll.</p>
+      <div class="fields-list" id="fields-list"></div>
+
+      <div class="divider"></div>
+      <div class="form-group">
+        <label class="form-label">Instruksi Khusus (Opsional)</label>
+        <textarea class="form-textarea" id="f-instructions" placeholder="Cara cari User ID, tips top up, dll..."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:8px;">
+        <div class="toggle-wrap">
+          <label class="toggle"><input type="checkbox" id="f-active" checked /><span class="toggle-slider"></span></label>
+          <span style="font-size:14px;font-weight:500;">Produk Aktif</span>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-product">Simpan Produk</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">Hapus Produk?</span>
+      <button class="modal-close" onclick="closeModal('modal-delete')">&times;</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">Tindakan ini tidak dapat dibatalkan. Produk akan dihapus permanen.</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-delete')">Batal</button>
+      <button class="btn btn-danger btn-full" id="btn-confirm-delete">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html" class="active"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="admin-page-title">Kelola Produk</div>
+      <button class="btn btn-primary" onclick="openAddProduct()">+ Tambah Produk</button>
+    </div>
+    <div class="admin-page-sub">Tambah, edit, dan nonaktifkan produk game</div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+      <div style="position:relative;flex:1;min-width:180px;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
+        <input class="form-input" id="prod-search" placeholder="Cari produk..." oninput="renderProductList()" style="padding-left:38px;" />
+      </div>
+      <select class="form-select" id="prod-filter" style="width:auto;" onchange="renderProductList()">
+        <option value="">Semua Status</option>
+        <option value="active">Aktif</option>
+        <option value="inactive">Nonaktif</option>
+      </select>
+    </div>
+
+    <div id="products-list">
+      <div style="text-align:center;padding:60px;"><div class="loader-ring" style="margin:0 auto;"></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+let allProds = [];
+let editingId = null;
+let deleteTargetId = null;
+
+// ---- Load products ----
+async function loadProducts() {
+  try {
+    const snap = await db.collection("products").get();
+    allProds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderProductList();
+  } catch (e) {
+    document.getElementById("products-list").innerHTML = `<div style="color:var(--red);padding:24px;">Gagal memuat produk: ${e.message}</div>`;
+  }
+}
+
+function renderProductList() {
+  const q = document.getElementById("prod-search").value.toLowerCase();
+  const filter = document.getElementById("prod-filter").value;
+  let list = allProds.filter(p => {
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.category||"").toLowerCase().includes(q);
+    const matchF = !filter || (filter === "active" ? p.active : !p.active);
+    return matchQ && matchF;
+  });
+  const el = document.getElementById("products-list");
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">◆</div><h4>Tidak ada produk</h4><p>Tambahkan produk baru untuk mulai berjualan.</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(p => {
+    const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
+    return `
+    <div class="product-row-card">
+      <div class="product-icon-sm" style="background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : (p.icon||"◆")}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">${p.name}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${p.category||""} &bull; ${p.items ? p.items.length : 0} item &bull; Mulai ${formatIDR(minPrice)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span class="badge ${p.active ? 'badge-success' : 'badge-failed'}">${p.active ? "Aktif" : "Nonaktif"}</span>
+        <button class="btn btn-secondary btn-sm" onclick="openEditProduct('${p.id}')">✎ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- Item rows ----
+let itemCount = 0;
+function addItemRow(item) {
+  itemCount++;
+  const i = itemCount;
+  const el = document.createElement("div");
+  el.className = "item-row";
+  el.id = `item-row-${i}`;
+  el.innerHTML = `
+    <input class="form-input" id="item-name-${i}" placeholder="Nama (mis. 86 Diamond)" value="${item ? item.name : ''}" style="flex:2;" />
+    <input class="form-input" id="item-price-${i}" type="number" placeholder="Harga (Rp)" value="${item ? item.price : ''}" min="0" style="flex:1.5;" />
+    <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1.5;" />
+    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('item-row-${i}').remove()">✕</button>
+  `;
+  document.getElementById("items-list").appendChild(el);
+}
+
+function getItems() {
+  const rows = document.getElementById("items-list").querySelectorAll(".item-row");
+  return Array.from(rows).map(row => {
+    const i = row.id.replace("item-row-", "");
+    const name = document.getElementById(`item-name-${i}`)?.value?.trim();
+    const price = parseInt(document.getElementById(`item-price-${i}`)?.value || 0);
+    const orig = parseInt(document.getElementById(`item-orig-${i}`)?.value || 0);
+    if (!name || !price) return null;
+    return { name, price, ...(orig ? { originalPrice: orig } : {}) };
+  }).filter(Boolean);
+}
+
+// ---- Field rows ----
+let fieldCount = 0;
+function addFieldRow(field) {
+  fieldCount++;
+  const i = fieldCount;
+  const el = document.createElement("div");
+  el.className = "field-row";
+  el.id = `field-row-${i}`;
+  el.innerHTML = `
+    <input class="form-input" id="field-id-${i}" placeholder="ID unik (mis. userId)" value="${field ? field.id : ''}" style="flex:1;" />
+    <input class="form-input" id="field-label-${i}" placeholder="Label (mis. User ID)" value="${field ? field.label : ''}" style="flex:1.5;" />
+    <input class="form-input" id="field-placeholder-${i}" placeholder="Placeholder" value="${field ? (field.placeholder||'') : ''}" style="flex:1.5;" />
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <label style="font-size:12px;color:var(--text-secondary);">Wajib</label>
+      <label class="toggle" style="width:36px;height:20px;">
+        <input type="checkbox" id="field-req-${i}" ${field && field.required ? 'checked' : ''} />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('field-row-${i}').remove()">✕</button>
+  `;
+  document.getElementById("fields-list").appendChild(el);
+}
+
+function getFields() {
+  const rows = document.getElementById("fields-list").querySelectorAll(".field-row");
+  return Array.from(rows).map(row => {
+    const i = row.id.replace("field-row-", "");
+    const id = document.getElementById(`field-id-${i}`)?.value?.trim();
+    const label = document.getElementById(`field-label-${i}`)?.value?.trim();
+    const placeholder = document.getElementById(`field-placeholder-${i}`)?.value?.trim();
+    const required = document.getElementById(`field-req-${i}`)?.checked;
+    if (!id || !label) return null;
+    return { id, label, placeholder: placeholder || "", required: !!required };
+  }).filter(Boolean);
+}
+
+// ---- Color sync ----
+function syncColor(n) {
+  const val = document.getElementById(`f-color${n}-text`).value;
+  document.getElementById(`f-color${n}`).value = val;
+}
+document.addEventListener("change", (e) => {
+  if (e.target.id === "f-color1") document.getElementById("f-color1-text").value = e.target.value;
+  if (e.target.id === "f-color2") document.getElementById("f-color2-text").value = e.target.value;
+});
+
+// ---- Open forms ----
+function openAddProduct() {
+  editingId = null;
+  document.getElementById("modal-product-title").textContent = "Tambah Produk";
+  document.getElementById("product-form").reset();
+  document.getElementById("items-list").innerHTML = "";
+  document.getElementById("fields-list").innerHTML = "";
+  itemCount = 0; fieldCount = 0;
+  document.getElementById("f-color1-text").value = "#1E2535";
+  document.getElementById("f-color2-text").value = "#0D1018";
+  document.getElementById("f-color1").value = "#1E2535";
+  document.getElementById("f-color2").value = "#0D1018";
+  document.getElementById("f-active").checked = true;
+  document.getElementById("f-img-url").value = "";
+  document.getElementById("img-preview-container").style.display = "none";
+  document.getElementById("img-placeholder").style.display = "block";
+  document.getElementById("img-url-display").textContent = "";
+  // Add default fields
+  addFieldRow({ id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true });
+  addFieldRow({ id: "serverId", label: "Server ID", placeholder: "Kosongkan jika tidak ada", required: false });
+  addItemRow();
+  openModal("modal-product");
+}
+
+function openEditProduct(id) {
+  const p = allProds.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById("modal-product-title").textContent = "Edit Produk";
+  document.getElementById("f-name").value = p.name || "";
+  document.getElementById("f-category").value = p.category || "";
+  document.getElementById("f-description").value = p.description || "";
+  document.getElementById("f-icon").value = p.icon || "";
+  document.getElementById("f-badge").value = p.badge || "";
+  // Load existing image
+  document.getElementById("f-img-url").value = p.imageUrl || "";
+  if (p.imageUrl) {
+    document.getElementById("img-preview").src = p.imageUrl;
+    document.getElementById("img-preview-container").style.display = "block";
+    document.getElementById("img-placeholder").style.display = "none";
+    document.getElementById("img-url-display").textContent = "Gambar tersimpan";
+  } else {
+    document.getElementById("img-preview-container").style.display = "none";
+    document.getElementById("img-placeholder").style.display = "block";
+    document.getElementById("img-url-display").textContent = "";
+  }
+  document.getElementById("f-color1-text").value = p.color1 || "#1E2535";
+  document.getElementById("f-color2-text").value = p.color2 || "#0D1018";
+  document.getElementById("f-color1").value = p.color1 || "#1E2535";
+  document.getElementById("f-color2").value = p.color2 || "#0D1018";
+  document.getElementById("f-sort").value = p.sortOrder ?? 99;
+  document.getElementById("f-instructions").value = p.instructions || "";
+  document.getElementById("f-active").checked = !!p.active;
+  document.getElementById("items-list").innerHTML = "";
+  document.getElementById("fields-list").innerHTML = "";
+  itemCount = 0; fieldCount = 0;
+  (p.items || []).forEach(item => addItemRow(item));
+  (p.fields || []).forEach(field => addFieldRow(field));
+  openModal("modal-product");
+}
+
+// ---- Save product ----
+async function saveProduct(e) {
+  e.preventDefault();
+  const btn = document.getElementById("btn-save-product");
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = {
+      name: document.getElementById("f-name").value.trim(),
+      category: document.getElementById("f-category").value.trim(),
+      description: document.getElementById("f-description").value.trim(),
+      icon: document.getElementById("f-icon").value.trim(),
+      badge: document.getElementById("f-badge").value.trim(),
+      imageUrl: document.getElementById("f-img-url").value.trim() || null,
+      color1: document.getElementById("f-color1-text").value.trim() || "#1E2535",
+      color2: document.getElementById("f-color2-text").value.trim() || "#0D1018",
+      sortOrder: parseInt(document.getElementById("f-sort").value) || 99,
+      instructions: document.getElementById("f-instructions").value.trim(),
+      active: document.getElementById("f-active").checked,
+      items: getItems(),
+      fields: getFields(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    if (!data.name) { toast("Nama produk wajib diisi!", "error"); return; }
+    if (editingId) {
+      await db.collection("products").doc(editingId).update(data);
+      toast("Produk berhasil diperbarui!", "success");
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection("products").add(data);
+      toast("Produk berhasil ditambahkan!", "success");
+      // Update stats
+      await db.collection("stats").doc("global").set({ products: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+    }
+    closeModal("modal-product");
+    loadProducts();
+  } catch (err) {
+    console.error(err);
+    toast("Gagal menyimpan: " + err.message, "error");
+  }
+  btn.disabled = false; btn.textContent = "Simpan Produk";
+}
+
+
+// ---- Image Upload ----
+let uploadedImageUrl = null;
+
+function handleImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  validateAndPreviewImage(file);
+}
+
+// Drag and drop support
+document.addEventListener("DOMContentLoaded", () => {
+  const area = document.getElementById("img-upload-area");
+  if (!area) return;
+  area.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    area.classList.add("dragover");
+  });
+  area.addEventListener("dragleave", () => area.classList.remove("dragover"));
+  area.addEventListener("drop", (e) => {
+    e.preventDefault();
+    area.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) validateAndPreviewImage(file);
+  });
+});
+
+function validateAndPreviewImage(file) {
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  const allowed = ["image/png","image/jpeg","image/webp","image/gif"];
+  if (!allowed.includes(file.type)) {
+    toast("Format tidak didukung. Gunakan PNG, JPG, atau WEBP.", "error");
+    return;
+  }
+  if (file.size > maxSize) {
+    toast("Ukuran file terlalu besar. Maks 2MB.", "error");
+    return;
+  }
+  // Show local preview immediately
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById("img-preview").src = e.target.result;
+    document.getElementById("img-preview-container").style.display = "block";
+    document.getElementById("img-placeholder").style.display = "none";
+    document.getElementById("img-url-display").textContent = "Siap diupload...";
+  };
+  reader.readAsDataURL(file);
+  // Upload to Firebase Storage
+  uploadImageToStorage(file);
+}
+
+// ============================================================
+// CLOUDINARY CONFIG
+// Ganti dengan cloud_name dan upload_preset kamu
+// ============================================================
+const CLOUDINARY_CLOUD_NAME = "dnpvgpqka";    // ganti ini
+const CLOUDINARY_UPLOAD_PRESET = "vaultstore"; // ganti ini
+
+async function uploadImageToStorage(file) {
+  const progress = document.getElementById("upload-progress");
+  const bar = document.getElementById("upload-progress-bar");
+  const display = document.getElementById("img-url-display");
+  progress.style.display = "block";
+  bar.style.width = "10%";
+  display.textContent = "Mengupload ke Cloudinary...";
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "doominiks-store/products");
+
+    // Use XHR for progress tracking
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 90);
+          bar.style.width = pct + "%";
+          display.textContent = `Mengupload... ${pct}%`;
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const res = JSON.parse(xhr.responseText);
+          const url = res.secure_url;
+          document.getElementById("f-img-url").value = url;
+          bar.style.width = "100%";
+          display.innerHTML = `<span style="color:var(--green);">✓ Upload berhasil!</span>`;
+          setTimeout(() => { progress.style.display = "none"; }, 1500);
+          toast("Gambar berhasil diupload!", "success");
+          resolve();
+        } else {
+          reject(new Error("Upload gagal: " + xhr.responseText));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(formData);
+    });
+
+  } catch (e) {
+    progress.style.display = "none";
+    display.textContent = "";
+    console.error(e);
+    toast("Upload gagal: " + e.message + ". Pastikan CLOUDINARY_CLOUD_NAME dan UPLOAD_PRESET sudah diisi.", "error");
+  }
+}
+
+function removeImage(event) {
+  event.stopPropagation();
+  document.getElementById("f-img-url").value = "";
+  document.getElementById("f-img-file").value = "";
+  document.getElementById("img-preview").src = "";
+  document.getElementById("img-preview-container").style.display = "none";
+  document.getElementById("img-placeholder").style.display = "block";
+  document.getElementById("img-url-display").textContent = "";
+  document.getElementById("upload-progress").style.display = "none";
+}
+
+// ---- Delete product ----
+function confirmDelete(id) {
+  deleteTargetId = id;
+  document.getElementById("btn-confirm-delete").onclick = () => doDelete(id);
+  openModal("modal-delete");
+}
+
+async function doDelete(id) {
+  try {
+    await db.collection("products").doc(id).delete();
+    toast("Produk dihapus.", "info");
+    closeModal("modal-delete");
+    loadProducts();
+  } catch (e) {
+    toast("Gagal menghapus: " + e.message, "error");
+  }
+}
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  loadProducts();
+}
+</script>
+</body>
+</html>
