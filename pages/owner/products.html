@@ -3,611 +3,635 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Detail Produk &mdash; DOOMINIKS STORE</title>
-  <link rel="stylesheet" href="../css/style.css" />
+  <title>Kelola Produk &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <style>
-    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-    .item-card {
-      background: var(--bg-panel); border: 2px solid var(--border); border-radius: var(--radius);
-      padding: 14px 8px; cursor: pointer; transition: var(--transition); text-align: center;
-      position: relative; overflow: hidden; min-width: 0;
+    .item-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
     }
-    .item-card:hover { border-color: var(--border-bright); }
-    .item-card.selected { border-color: var(--gold); background: var(--gold-glow); }
-    .item-card .item-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; word-break: break-word; }
-    .item-card .item-price { font-size: 14px; font-weight: 800; color: var(--gold); font-family: var(--font-display); word-break: break-word; overflow-wrap: break-word; }
-    .item-card .item-orig { font-size: 11px; color: var(--text-muted); text-decoration: line-through; word-break: break-word; }
-    .item-card .item-save { position: absolute; top: -8px; right: 8px; background: var(--red); color: white; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
-    .product-hero-icon { width: 100%; height: 220px; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 0; }
-
-    .proof-upload-area {
-      border: 2px dashed var(--border-bright); border-radius: var(--radius);
-      padding: 20px; text-align: center; cursor: pointer;
-      transition: var(--transition); background: var(--bg-panel); position: relative;
+    .item-row input { flex: 1; }
+    .color-preview { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; border: 1px solid var(--border); }
+    .fields-list { display: flex; flex-direction: column; gap: 8px; }
+    .field-row { display: flex; gap: 8px; align-items: center; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; }
+    .field-row input { flex: 1; }
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 100px; cursor: pointer; transition: var(--transition); }
+    .toggle-slider::before { content:""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--text-muted); left: 2px; top: 2px; transition: var(--transition); }
+    .toggle input:checked + .toggle-slider { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+    .toggle input:checked + .toggle-slider::before { background: var(--gold); transform: translateX(20px); }
+    .product-row-card {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 16px; transition: var(--transition); margin-bottom: 10px;
     }
-    .proof-upload-area:hover { border-color: var(--gold); background: var(--gold-glow); }
-    .proof-img-preview { max-width: 100%; max-height: 200px; border-radius: var(--radius); margin: 8px auto; display: block; }
-    .qris-display { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 16px; }
-    .qris-display img { max-width: 200px; max-height: 200px; margin: 0 auto; display: block; border-radius: 8px; }
-
-    .checkout-summary { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 20px; }
-    .checkout-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .checkout-row:last-child { border-bottom: none; font-weight: 700; font-size: 16px; }
-    .pm-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-    .pm-row {
-      display: flex; align-items: center; gap: 12px;
-      background: var(--bg-panel); border: 2px solid var(--border);
-      border-radius: var(--radius); padding: 14px; cursor: pointer; transition: var(--transition);
+    .product-row-card:hover { border-color: var(--border-bright); }
+    .product-icon-sm { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; }
+    .product-icon-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .img-upload-area {
+      border: 2px dashed var(--border-bright); border-radius: var(--radius-lg);
+      padding: 24px; text-align: center; cursor: pointer;
+      transition: var(--transition); background: var(--bg-panel);
+      position: relative; overflow: hidden;
     }
-    .pm-row:hover { border-color: var(--border-bright); }
-    .pm-row.selected { border-color: var(--gold); background: var(--gold-glow); }
-    .pm-row .pm-logo { width: 40px; height: 40px; border-radius: 8px; background: var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .pm-row .pm-info { flex: 1; }
-    .pm-row .pm-info .pm-title { font-size: 14px; font-weight: 600; }
-    .pm-row .pm-info .pm-desc { font-size: 12px; color: var(--text-secondary); }
-    .pm-row .pm-fee { font-size: 13px; color: var(--text-muted); }
-    .pm-group-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px; }
+    .img-upload-area:hover { border-color: var(--gold); background: var(--gold-glow); }
+    .img-upload-area.dragover { border-color: var(--gold); background: var(--gold-glow); }
+    .img-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .img-preview-wrap { position: relative; display: inline-block; }
+    .img-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius); display: block; }
+    .img-preview-remove {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(232,72,85,0.9); color: white; border: none;
+      width: 28px; height: 28px; border-radius: 50%; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .upload-progress { height: 4px; background: var(--border); border-radius: 4px; margin-top: 10px; overflow: hidden; display: none; }
+    .upload-progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-dim)); border-radius: 4px; transition: width 0.3s; width: 0%; }
   </style>
 </head>
 <body>
 <div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
 <div id="toast-container"></div>
 
-<!-- Checkout modal -->
-<div class="modal-overlay" id="modal-checkout">
-  <div class="modal" style="max-width:580px;">
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal" style="max-width:680px;">
     <div class="modal-header">
-      <span class="modal-title" id="co-modal-title">Checkout</span>
-      <button class="modal-close" onclick="closeModal('modal-checkout')">&times;</button>
+      <span class="modal-title" id="modal-product-title">Tambah Produk</span>
+      <button class="modal-close" onclick="closeModal('modal-product')">&times;</button>
     </div>
-    <div id="co-step-1">
-      <!-- Step 1: Fill game ID -->
-      <div class="order-steps">
-        <div class="step active"><div class="step-num">1</div><span>Detail Akun</span></div>
-        <div class="step-line"></div>
-        <div class="step"><div class="step-num">2</div><span>Pembayaran</span></div>
-        <div class="step-line"></div>
-        <div class="step"><div class="step-num">3</div><span>Konfirmasi</span></div>
-      </div>
-      <div id="co-fields"></div>
-      <div class="checkout-summary">
-        <div class="checkout-row"><span>Produk</span><span id="co-s-name">-</span></div>
-        <div class="checkout-row"><span>Harga</span><span id="co-s-price">-</span></div>
-        <div class="checkout-row"><span>Total</span><span id="co-s-total" style="color:var(--gold);">-</span></div>
-      </div>
-      <button class="btn btn-primary btn-full btn-lg" style="margin-top:16px;" onclick="goToPayment()">Lanjut ke Pembayaran &rarr;</button>
-    </div>
-    <div id="co-step-2" style="display:none;">
-      <div class="order-steps">
-        <div class="step done"><div class="step-num">✓</div><span>Detail Akun</span></div>
-        <div class="step-line"></div>
-        <div class="step active"><div class="step-num">2</div><span>Pembayaran</span></div>
-        <div class="step-line"></div>
-        <div class="step"><div class="step-num">3</div><span>Konfirmasi</span></div>
-      </div>
-      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Pilih metode pembayaran:</p>
-      <div id="pm-list-render"></div>
-      <!-- Payment Info (shown when payment method selected) -->
-      <div id="co-payment-info-display" style="display:none;">
-        <!-- QRIS QR Code -->
-        <div id="co-qris-display" class="qris-display" style="display:none;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Scan QR Code untuk Bayar</div>
-          <img id="co-qris-img" src="" alt="QRIS" />
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-qris-amount"></div>
+    <form id="product-form" onsubmit="saveProduct(event)">
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Nama Game <span style="color:var(--red)">*</span></label>
+          <input class="form-input" id="f-name" placeholder="Mobile Legends" required />
         </div>
-        <!-- E-Wallet Account Number -->
-        <div id="co-ewallet-display" class="qris-display" style="display:none;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px;" id="co-ewallet-label">Kirim ke nomor:</div>
-          <div id="co-ewallet-logo-wrap" style="margin-bottom:10px;display:none;">
-            <img id="co-ewallet-logo" src="" alt="" style="height:48px;object-fit:contain;border-radius:8px;" />
-          </div>
-          <div style="font-size:22px;font-weight:800;color:var(--gold);letter-spacing:2px;font-family:var(--font-display);" id="co-ewallet-number">-</div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;" id="co-ewallet-name"></div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-ewallet-amount"></div>
-        </div>
-        <!-- Bank Transfer Account Number -->
-        <div id="co-bank-display" class="qris-display" style="display:none;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px;" id="co-bank-label">Rekening Tujuan:</div>
-          <div id="co-bank-logo-wrap" style="margin-bottom:10px;display:none;">
-            <img id="co-bank-logo" src="" alt="" style="height:48px;object-fit:contain;border-radius:8px;" />
-          </div>
-          <div style="font-size:22px;font-weight:800;color:var(--gold);letter-spacing:2px;font-family:var(--font-display);" id="co-bank-number">-</div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;" id="co-bank-name"></div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-bank-amount"></div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <input class="form-input" id="f-category" placeholder="Battle Royale, RPG, dll" />
         </div>
       </div>
-      <div class="checkout-summary">
-        <div class="checkout-row"><span>Subtotal</span><span id="co-p-sub">-</span></div>
-        <div class="checkout-row"><span>Biaya Layanan</span><span id="co-p-fee">Rp 0</span></div>
-        <div class="checkout-row"><span>Total Bayar</span><span id="co-p-total" style="color:var(--gold);">-</span></div>
+      <div class="form-group">
+        <label class="form-label">Deskripsi</label>
+        <textarea class="form-textarea" id="f-description" placeholder="Deskripsi singkat game dan cara top up..."></textarea>
       </div>
-      <!-- Upload Bukti Pembayaran -->
-      <div style="margin-top:16px;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Upload Bukti Pembayaran <span style="color:var(--red);font-weight:400;">* Wajib</span></div>
-        <div class="proof-upload-area" onclick="document.getElementById('proof-file-input').click()">
-          <input type="file" id="proof-file-input" accept="image/*" style="display:none;" onchange="handleProofUpload(event)" />
-          <div id="proof-placeholder">
-            <div style="font-size:24px;color:var(--text-muted);margin-bottom:6px;">▲</div>
-            <div style="font-size:13px;font-weight:600;">Tap untuk upload screenshot bukti bayar</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">JPG, PNG &bull; Maks 5MB</div>
-          </div>
-          <div id="proof-preview-wrap" style="display:none;">
-            <img id="proof-img-preview" class="proof-img-preview" src="" alt="Bukti Bayar" />
-            <div style="font-size:12px;color:var(--green);margin-top:4px;" id="proof-status"></div>
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Icon Fallback (Emoji / Symbol)</label>
+          <input class="form-input" id="f-icon" placeholder="◆ atau emoji (jika tidak ada gambar)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Badge (Opsional)</label>
+          <input class="form-input" id="f-badge" placeholder="HOT, NEW, PROMO" />
+        </div>
+      </div>
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Warna Gradien 1</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="f-color1" value="#1E2535" style="width:44px;height:38px;border:none;background:none;cursor:pointer;border-radius:8px;" />
+            <input class="form-input" id="f-color1-text" value="#1E2535" oninput="syncColor('1')" style="flex:1;" />
           </div>
         </div>
-        <input type="hidden" id="proof-url" value="" />
+        <div class="form-group">
+          <label class="form-label">Warna Gradien 2</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="f-color2" value="#0D1018" style="width:44px;height:38px;border:none;background:none;cursor:pointer;border-radius:8px;" />
+            <input class="form-input" id="f-color2-text" value="#0D1018" oninput="syncColor('2')" style="flex:1;" />
+          </div>
+        </div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:16px;">
-        <button class="btn btn-secondary" onclick="backToStep1()">← Kembali</button>
-        <button class="btn btn-primary btn-full" onclick="placeOrder()" id="btn-place-order">Bayar Sekarang &rarr;</button>
+      <!-- IMAGE UPLOAD -->
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Gambar Produk</label>
+        <div id="img-upload-area" class="img-upload-area" onclick="document.getElementById('f-img-file').click()">
+          <input type="file" id="f-img-file" accept="image/png,image/jpeg,image/webp,image/gif" onchange="handleImageSelect(event)" style="display:none;" />
+          <div id="img-placeholder">
+            <div style="font-size:32px;margin-bottom:8px;color:var(--text-muted);">▲</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Klik atau drag gambar ke sini</div>
+            <div style="font-size:12px;color:var(--text-muted);">PNG, JPG, WEBP &bull; Maks 2MB &bull; Disarankan 16:9</div>
+          </div>
+          <div id="img-preview-container" style="display:none;">
+            <div class="img-preview-wrap">
+              <img id="img-preview" class="img-preview" src="" alt="Preview" />
+              <button type="button" class="img-preview-remove" onclick="removeImage(event)">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="upload-progress" id="upload-progress">
+          <div class="upload-progress-bar" id="upload-progress-bar"></div>
+        </div>
+        <div id="img-url-display" style="margin-top:8px;font-size:12px;color:var(--text-muted);"></div>
+        <input type="hidden" id="f-img-url" value="" />
       </div>
-    </div>
-    <div id="co-step-3" style="display:none;">
-      <div style="text-align:center;padding:24px 0;">
-        <div style="font-size:60px;margin-bottom:16px;color:var(--green);">✓</div>
-        <h3 style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:8px;">Pesanan Dibuat!</h3>
-        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:4px;">Order ID: <strong id="co-order-id" style="color:var(--gold);"></strong></p>
-        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;">Pesanan kamu sedang diproses. Selesaikan pembayaran sesuai instruksi.</p>
-        <div id="co-payment-instructions" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;font-size:14px;"></div>
-        <a href="orders.html" class="btn btn-primary btn-lg">Lihat Pesanan Saya &rarr;</a>
+
+      <div class="form-group">
+        <label class="form-label">Urutan Tampil</label>
+        <input class="form-input" id="f-sort" type="number" value="99" min="0" />
       </div>
-    </div>
+
+      <!-- Items -->
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:700;">Daftar Nominal / Item</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow()">+ Tambah Item</button>
+      </div>
+      <div id="items-list"></div>
+
+      <!-- Form Fields -->
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:700;">Field Isian Pembeli</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addFieldRow()">+ Tambah Field</button>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Contoh: User ID, Server ID, Username, dll.</p>
+      <div class="fields-list" id="fields-list"></div>
+
+      <div class="divider"></div>
+      <div class="form-group">
+        <label class="form-label">Instruksi Khusus (Opsional)</label>
+        <textarea class="form-textarea" id="f-instructions" placeholder="Cara cari User ID, tips top up, dll..."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:8px;">
+        <div class="toggle-wrap">
+          <label class="toggle"><input type="checkbox" id="f-active" checked /><span class="toggle-slider"></span></label>
+          <span style="font-size:14px;font-weight:500;">Produk Aktif</span>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-product">Simpan Produk</button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
 
-<!-- Login modal -->
-<div class="modal-overlay" id="modal-login">
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-delete">
   <div class="modal" style="max-width:400px;">
     <div class="modal-header">
-      <span class="modal-title">Login Diperlukan</span>
-      <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
+      <span class="modal-title">Hapus Produk?</span>
+      <button class="modal-close" onclick="closeModal('modal-delete')">&times;</button>
     </div>
-    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">Kamu harus login untuk melanjutkan pembelian.</p>
-    <button class="btn btn-secondary btn-full btn-lg" onclick="handleGoogleLogin()">
-      Lanjutkan dengan Google
-    </button>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">Tindakan ini tidak dapat dibatalkan. Produk akan dihapus permanen.</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-delete')">Batal</button>
+      <button class="btn btn-danger btn-full" id="btn-confirm-delete">Ya, Hapus</button>
+    </div>
   </div>
 </div>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-  <div class="nav-inner">
-    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
-    <div class="nav-links">
-      <a href="../index.html">Beranda</a>
-      <a href="catalog.html" class="active">Katalog</a>
-      <a href="orders.html">Pesanan</a>
-      <a href="leaderboard.html">Leaderboard</a>
+<div class="admin-layout">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
     </div>
-    <div class="nav-actions">
-      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">Masuk</button>
-      <div class="nav-actions" id="user-menu" style="display:none;">
-        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;">
-          <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
-          <span id="nav-username" style="font-size:14px;"></span>
-          <a href="orders.html" style="font-size:13px;color:var(--text-secondary);margin-left:4px;">☰</a>
-          <a href="owner/dashboard.html" id="nav-admin-link" style="display:none;color:var(--gold);font-size:13px;">★</a>
-          <button onclick="signOut()" style="background:none;color:var(--text-muted);font-size:13px;">→</button>
-        </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html" class="active"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="admin-page-title">Kelola Produk</div>
+      <button class="btn btn-primary" onclick="openAddProduct()">+ Tambah Produk</button>
+    </div>
+    <div class="admin-page-sub">Tambah, edit, dan nonaktifkan produk game</div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+      <div style="position:relative;flex:1;min-width:180px;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
+        <input class="form-input" id="prod-search" placeholder="Cari produk..." oninput="renderProductList()" style="padding-left:38px;" />
       </div>
+      <select class="form-select" id="prod-filter" style="width:auto;" onchange="renderProductList()">
+        <option value="">Semua Status</option>
+        <option value="active">Aktif</option>
+        <option value="inactive">Nonaktif</option>
+      </select>
     </div>
-  </div>
-</nav>
 
-<div class="container" style="padding-top:48px;padding-bottom:80px;">
-  <div id="product-content">
-    <div style="text-align:center;padding:80px 0;"><div class="loader-ring" style="margin:0 auto;"></div></div>
-  </div>
+    <div id="products-list">
+      <div style="text-align:center;padding:60px;"><div class="loader-ring" style="margin:0 auto;"></div></div>
+    </div>
+  </main>
 </div>
 
-<footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
-  <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">
-    &copy; 2025 DOOMINIKS STORE &mdash; SSL Secured &bull; Transaksi Terjamin
-  </div>
-</footer>
-
-<script src="../js/firebase-config.js"></script>
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
 <script>
-// Cloudinary config untuk upload bukti bayar
-const CLOUDINARY_CLOUD_NAME_P = "dnpvgpqka";
-const CLOUDINARY_UPLOAD_PRESET_P = "vaultstore";
-</script>
-<script src="../js/app.js"></script>
-<script>
-const PAYMENT_METHODS = [
-  { id: "bank_transfer_bca", group: "Transfer Bank", name: "BCA Virtual Account", icon: "▪", fee: 1230 },
-  { id: "bank_transfer_bni", group: "Transfer Bank", name: "BNI Virtual Account", icon: "▪", fee: 1400 },
-  { id: "bank_transfer_mandiri", group: "Transfer Bank", name: "Mandiri Virtual Account", icon: "▪", fee: 1100 },
-  { id: "bank_transfer_bri", group: "Transfer Bank", name: "BRI Virtual Account", icon: "▪", fee: 1090 },
-  { id: "bank_jago", group: "Transfer Bank", name: "Bank Jago", icon: "◆", fee: 890 },
-  { id: "qris", group: "QRIS / E-Wallet", name: "QRIS (Semua E-Wallet)", icon: "▪", fee: 990 },
-  { id: "gopay", group: "QRIS / E-Wallet", name: "GoPay", icon: "▲", fee: 999 },
-  { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 999 },
-  { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 1110 },
-  { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 890 },
-  { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 2300 },
-  { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 2400 },
-];
+let allProds = [];
+let editingId = null;
+let deleteTargetId = null;
 
-let productData = null;
-let selectedItem = null;
-let selectedPayment = null;
-let gameFields = {};
-
-const params = new URLSearchParams(window.location.search);
-const productId = params.get("id");
-
-async function loadProduct() {
-  if (!productId) { document.getElementById("product-content").innerHTML = `<div class="empty-state"><h4>Produk tidak ditemukan</h4><a href="catalog.html" class="btn btn-primary">Kembali ke Katalog</a></div>`; return; }
+// ---- Load products ----
+async function loadProducts() {
   try {
-    const snap = await db.collection("products").doc(productId).get();
-    if (!snap.exists) throw new Error("not found");
-    productData = { id: snap.id, ...snap.data() };
-    renderProduct(productData);
+    const snap = await db.collection("products").get();
+    allProds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderProductList();
   } catch (e) {
-    document.getElementById("product-content").innerHTML = `<div class="empty-state"><h4>Produk tidak ditemukan</h4><a href="catalog.html" class="btn btn-primary">Kembali</a></div>`;
+    document.getElementById("products-list").innerHTML = `<div style="color:var(--red);padding:24px;">Gagal memuat produk: ${e.message}</div>`;
   }
 }
 
-function renderProduct(p) {
-  const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
-  document.title = `${p.name} — DOOMINIKS STORE`;
-  document.getElementById("product-content").innerHTML = `
-    <div style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);">
-      <a href="../index.html" style="color:var(--text-secondary);">Beranda</a> &rsaquo; 
-      <a href="catalog.html" style="color:var(--text-secondary);">Katalog</a> &rsaquo; 
-      <span style="color:var(--text-primary);">${p.name}</span>
-    </div>
-    <div class="grid-2" style="gap:40px;align-items:start;">
-      <div>
-        <div class="product-hero-icon" style="background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});overflow:hidden;">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;">` : (p.icon||"◆")}</div>
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-top:16px;">
-          <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;margin-bottom:6px;">${p.name}</h1>
-          <div style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">${p.category||""}</div>
-          <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin-bottom:20px;">${p.description||""}</p>
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-            <div><div style="font-size:12px;color:var(--text-muted);">Mulai dari</div><div style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--gold);">${formatIDR(minPrice)}</div></div>
-            <div class="badge badge-success">✓ Proses Cepat</div>
-            <div class="badge badge-processing">▪ Auto Delivery</div>
-          </div>
-          <div class="divider"></div>
-          <div style="font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;gap:8px;">
-            ${p.instructions ? `<div style="white-space:pre-line;">${p.instructions}</div>` : '<div>✓ Top up langsung ke akun game kamu</div><div>✓ Masukan User ID Kamu!</div><div>✓ Proses 1-5 menit</div>'}
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:16px;">Pilih Nominal</div>
-        <div class="item-grid" id="items-grid"></div>
-        <div style="margin-top:24px;" id="buy-section"></div>
-      </div>
-    </div>
-  `;
-  renderItems(p.items || []);
-}
-
-function renderItems(items) {
-  const grid = document.getElementById("items-grid");
-  if (!items.length) { grid.innerHTML = `<div class="empty-state"><p>Belum ada item.</p></div>`; return; }
-  grid.innerHTML = items.map((item, i) => {
-    const save = item.originalPrice ? Math.round((1 - item.price/item.originalPrice) * 100) : 0;
-    return `
-      <div class="item-card" id="item-${i}" onclick="selectItem(${i})">
-        ${save > 0 ? `<div class="item-save">-${save}%</div>` : ""}
-        <div class="item-name">${item.name}</div>
-        ${item.originalPrice ? `<div class="item-orig">${formatIDR(item.originalPrice)}</div>` : ""}
-        <div class="item-price">${formatIDR(item.price)}</div>
-      </div>`;
-  }).join("");
-  renderBuySection();
-}
-
-function selectItem(i) {
-  document.querySelectorAll(".item-card").forEach(c => c.classList.remove("selected"));
-  document.getElementById(`item-${i}`).classList.add("selected");
-  selectedItem = productData.items[i];
-  renderBuySection();
-}
-
-function renderBuySection() {
-  const el = document.getElementById("buy-section");
-  if (!el) return;
-  if (!selectedItem) {
-    el.innerHTML = `<div style="text-align:center;color:var(--text-secondary);font-size:14px;padding:20px 0;">Pilih nominal di atas</div>`;
-  } else {
-    el.innerHTML = `
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
-        <div style="font-size:16px;font-weight:700;">${selectedItem.name}</div>
-        <div style="font-size:20px;font-weight:800;color:var(--gold);font-family:var(--font-display);">${formatIDR(selectedItem.price)}</div>
-      </div>
-      <button class="btn btn-primary btn-full btn-lg" onclick="startCheckout()">
-        Beli Sekarang &rarr;
-      </button>`;
-  }
-}
-
-function startCheckout() {
-  if (!currentUser) { openModal("modal-login"); return; }
-  if (!selectedItem) { toast("Pilih nominal terlebih dahulu", "error"); return; }
-  // Build fields
-  const fields = productData.fields || [
-    { id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true },
-    { id: "serverId", label: "Server ID (jika ada)", placeholder: "Kosongkan jika tidak ada", required: false }
-  ];
-  document.getElementById("co-s-name").textContent = `${productData.name} — ${selectedItem.name}`;
-  document.getElementById("co-s-price").textContent = formatIDR(selectedItem.price);
-  document.getElementById("co-s-total").textContent = formatIDR(selectedItem.price);
-  document.getElementById("co-fields").innerHTML = fields.map(f => `
-    <div class="form-group">
-      <label class="form-label">${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ""}</label>
-      <input class="form-input" id="field-${f.id}" placeholder="${f.placeholder}" ${f.required ? "required" : ""} />
-    </div>
-  `).join("");
-  document.getElementById("co-step-1").style.display = "block";
-  document.getElementById("co-step-2").style.display = "none";
-  document.getElementById("co-step-3").style.display = "none";
-  openModal("modal-checkout");
-}
-
-async function goToPayment() {
-  const fields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
-  gameFields = {};
-  for (const f of fields) {
-    const val = document.getElementById(`field-${f.id}`)?.value?.trim() || "";
-    if (f.required && !val) { toast(`${f.label} wajib diisi`, "error"); return; }
-    gameFields[f.id] = val;
-  }
-  // Load payment settings from Firestore to filter only configured methods
-  let pmSettings = {};
-  let qrisConfigured = false;
-  try {
-    const snap = await db.collection("settings").doc("store").get();
-    if (snap.exists) {
-      pmSettings = snap.data().paymentMethods || {};
-      qrisConfigured = !!(snap.data().qrisImageUrl);
-    }
-  } catch(e) { console.error("Gagal load payment settings:", e); }
-
-  // Filter: only show methods that have been configured by owner
-  const availableMethods = PAYMENT_METHODS.filter(pm => {
-    if (pm.id === "qris") return qrisConfigured;
-    // E-wallet & bank: must have accountNumber set
-    return !!(pmSettings[pm.id]?.accountNumber);
+function renderProductList() {
+  const q = document.getElementById("prod-search").value.toLowerCase();
+  const filter = document.getElementById("prod-filter").value;
+  let list = allProds.filter(p => {
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.category||"").toLowerCase().includes(q);
+    const matchF = !filter || (filter === "active" ? p.active : !p.active);
+    return matchQ && matchF;
   });
-
-  if (!availableMethods.length) {
-    toast("Belum ada metode pembayaran yang aktif. Hubungi admin.", "error");
+  const el = document.getElementById("products-list");
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">◆</div><h4>Tidak ada produk</h4><p>Tambahkan produk baru untuk mulai berjualan.</p></div>`;
     return;
   }
-
-  // Render only available methods
-  const groups = {};
-  availableMethods.forEach(pm => { if (!groups[pm.group]) groups[pm.group] = []; groups[pm.group].push(pm); });
-  document.getElementById("pm-list-render").innerHTML = Object.entries(groups).map(([g, pms]) => `
-    <div class="pm-group-title">${g}</div>
-    ${pms.map(pm => {
-      const logoUrl = pmSettings[pm.id]?.imageUrl || null;
-      const logoHtml = logoUrl
-        ? `<img src="${logoUrl}" alt="${pm.name}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`
-        : pm.icon;
-      return `
-      <div class="pm-row" id="pm-${pm.id}" onclick="selectPayment('${pm.id}')">
-        <div class="pm-logo">${logoHtml}</div>
-        <div class="pm-info">
-          <div class="pm-title">${pm.name}</div>
-          <div class="pm-desc">${pm.fee > 0 ? `Biaya layanan ${formatIDR(pm.fee)}` : "Tanpa biaya layanan"}</div>
-        </div>
-        <div class="pm-fee">${pm.fee > 0 ? `+${formatIDR(pm.fee)}` : "Gratis"}</div>
-      </div>`;
-    }).join("")}
-  `).join("");
-  document.getElementById("co-p-sub").textContent = formatIDR(selectedItem.price);
-  document.getElementById("co-p-total").textContent = formatIDR(selectedItem.price);
-  document.getElementById("co-step-1").style.display = "none";
-  document.getElementById("co-step-2").style.display = "block";
-}
-
-function backToStep1() {
-  document.getElementById("co-step-1").style.display = "block";
-  document.getElementById("co-step-2").style.display = "none";
-}
-
-async function selectPayment(id) {
-  document.querySelectorAll(".pm-row").forEach(r => r.classList.remove("selected"));
-  document.getElementById(`pm-${id}`).classList.add("selected");
-  selectedPayment = PAYMENT_METHODS.find(p => p.id === id);
-  const total = selectedItem.price + (selectedPayment?.fee || 0);
-  document.getElementById("co-p-fee").textContent = formatIDR(selectedPayment?.fee || 0);
-  document.getElementById("co-p-total").textContent = formatIDR(total);
-
-  // Hide all payment info displays first
-  const infoWrap = document.getElementById("co-payment-info-display");
-  document.getElementById("co-qris-display").style.display = "none";
-  document.getElementById("co-ewallet-display").style.display = "none";
-  document.getElementById("co-bank-display").style.display = "none";
-  infoWrap.style.display = "none";
-
-  try {
-    const snap = await db.collection("settings").doc("store").get();
-    const settings = snap.exists ? snap.data() : {};
-    // paymentMethods is an object keyed by payment id, each has: accountNumber, accountName, imageUrl
-    const pmSettings = settings.paymentMethods || {};
-    const pmLegacyImages = settings.paymentMethodImages || {};
-    const pmData = pmSettings[id] || {};
-    // imageUrl: prefer paymentMethods[id].imageUrl, fallback to paymentMethodImages[id]
-    if (!pmData.imageUrl && pmLegacyImages[id]) pmData.imageUrl = pmLegacyImages[id];
-
-    if (id === "qris") {
-      // QRIS: always use dedicated qrisImageUrl (the actual QR code), NOT pmData.imageUrl (that's just the logo)
-      const qrisUrl = settings.qrisImageUrl || null;
-      if (qrisUrl) {
-        document.getElementById("co-qris-img").src = qrisUrl;
-        document.getElementById("co-qris-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
-        document.getElementById("co-qris-display").style.display = "block";
-        infoWrap.style.display = "block";
-      }
-    } else if (["gopay","ovo","dana","shopeepay"].includes(id)) {
-      // E-Wallet: show account number + optional logo
-      const number = pmData.accountNumber || null;
-      const name = pmData.accountName || selectedPayment.name;
-      const logoUrl = pmData.imageUrl || null;
-
-      if (number) {
-        document.getElementById("co-ewallet-label").textContent = `Kirim ke nomor ${selectedPayment.name}:`;
-        document.getElementById("co-ewallet-number").textContent = number;
-        document.getElementById("co-ewallet-name").textContent = `a.n. ${name}`;
-        document.getElementById("co-ewallet-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
-        if (logoUrl) {
-          document.getElementById("co-ewallet-logo").src = logoUrl;
-          document.getElementById("co-ewallet-logo-wrap").style.display = "block";
-        } else {
-          document.getElementById("co-ewallet-logo-wrap").style.display = "none";
-        }
-        document.getElementById("co-ewallet-display").style.display = "block";
-        infoWrap.style.display = "block";
-      }
-    } else if (["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago"].includes(id)) {
-      // Bank Transfer: show account number + optional logo
-      const number = pmData.accountNumber || null;
-      const name = pmData.accountName || selectedPayment.name;
-      const logoUrl = pmData.imageUrl || null;
-
-      if (number) {
-        document.getElementById("co-bank-label").textContent = `Rekening ${selectedPayment.name}:`;
-        document.getElementById("co-bank-number").textContent = number;
-        document.getElementById("co-bank-name").textContent = `a.n. ${name}`;
-        document.getElementById("co-bank-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
-        if (logoUrl) {
-          document.getElementById("co-bank-logo").src = logoUrl;
-          document.getElementById("co-bank-logo-wrap").style.display = "block";
-        } else {
-          document.getElementById("co-bank-logo-wrap").style.display = "none";
-        }
-        document.getElementById("co-bank-display").style.display = "block";
-        infoWrap.style.display = "block";
-      }
-    }
-  } catch(e) {
-    console.error("Gagal load payment settings:", e);
-  }
-}
-
-async function placeOrder() {
-  if (!selectedPayment) { toast("Pilih metode pembayaran", "error"); return; }
-  // Wajib upload bukti pembayaran
-  const proofUrl = document.getElementById("proof-url").value;
-  if (!proofUrl) { toast("Upload bukti pembayaran terlebih dahulu", "error"); return; }
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = "Memproses...";
-  try {
-    const orderId = generateOrderId();
-    const total = selectedItem.price + (selectedPayment.fee || 0);
-    const orderData = {
-      orderId,
-      userId: currentUser.uid,
-      userEmail: currentUser.email,
-      userDisplayName: currentUser.displayName,
-      productId: productData.id,
-      productName: productData.name,
-      itemName: selectedItem.name,
-      itemPrice: selectedItem.price,
-      fee: selectedPayment.fee || 0,
-      total,
-      paymentMethod: selectedPayment.id,
-      paymentMethodName: selectedPayment.name,
-      gameFields,
-      status: "pending",
-      proofImageUrl: document.getElementById("proof-url").value || null,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    };
-    await db.collection("orders").doc(orderId).set(orderData);
-    // Update user leaderboard
-    const lbRef = db.collection("leaderboard").doc(currentUser.uid);
-    await lbRef.set({
-      displayName: currentUser.displayName,
-      photoURL: currentUser.photoURL || null,
-      totalSpent: firebase.firestore.FieldValue.increment(total),
-      orderCount: firebase.firestore.FieldValue.increment(1),
-      lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-    // Update global stats
-    await db.collection("stats").doc("global").set({
-      orders: firebase.firestore.FieldValue.increment(1),
-    }, { merge: true });
-    // Show confirmation
-    document.getElementById("co-order-id").textContent = orderId;
-    document.getElementById("co-payment-instructions").innerHTML = `
-      <div style="font-weight:600;margin-bottom:10px;">Instruksi Pembayaran &mdash; ${selectedPayment.name}</div>
-      <div style="color:var(--text-secondary);line-height:1.8;">
-        Total yang harus dibayar: <strong style="color:var(--gold);">${formatIDR(total)}</strong><br>
-        Metode: ${selectedPayment.name}<br><br>
-        Selesaikan pembayaran dalam <strong>2 jam</strong>. Setelah pembayaran dikonfirmasi, item akan otomatis dikirim ke akun kamu.
+  el.innerHTML = list.map(p => {
+    const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
+    return `
+    <div class="product-row-card">
+      <div class="product-icon-sm" style="background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : (p.icon||"◆")}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">${p.name}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${p.category||""} &bull; ${p.items ? p.items.length : 0} item &bull; Mulai ${formatIDR(minPrice)}</div>
       </div>
-    `;
-    document.getElementById("co-step-2").style.display = "none";
-    document.getElementById("co-step-3").style.display = "block";
-    toast("Pesanan berhasil dibuat!", "success");
-  } catch (e) {
-    console.error(e);
-    toast("Gagal membuat pesanan. Coba lagi.", "error");
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span class="badge ${p.active ? 'badge-success' : 'badge-failed'}">${p.active ? "Aktif" : "Nonaktif"}</span>
+        <button class="btn btn-secondary btn-sm" onclick="openEditProduct('${p.id}')">✎ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- Item rows ----
+let itemCount = 0;
+function addItemRow(item) {
+  itemCount++;
+  const i = itemCount;
+  const el = document.createElement("div");
+  el.className = "item-row";
+  el.id = `item-row-${i}`;
+  el.innerHTML = `
+    <input class="form-input" id="item-name-${i}" placeholder="Nama (mis. 86 Diamond)" value="${item ? item.name : ''}" style="flex:2;" />
+    <input class="form-input" id="item-price-${i}" type="number" placeholder="Harga (Rp)" value="${item ? item.price : ''}" min="0" style="flex:1.5;" />
+    <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1.5;" />
+    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('item-row-${i}').remove()">✕</button>
+  `;
+  document.getElementById("items-list").appendChild(el);
+}
+
+function getItems() {
+  const rows = document.getElementById("items-list").querySelectorAll(".item-row");
+  return Array.from(rows).map(row => {
+    const i = row.id.replace("item-row-", "");
+    const name = document.getElementById(`item-name-${i}`)?.value?.trim();
+    const price = parseInt(document.getElementById(`item-price-${i}`)?.value || 0);
+    const orig = parseInt(document.getElementById(`item-orig-${i}`)?.value || 0);
+    if (!name || !price) return null;
+    return { name, price, ...(orig ? { originalPrice: orig } : {}) };
+  }).filter(Boolean);
+}
+
+// ---- Field rows ----
+let fieldCount = 0;
+function addFieldRow(field) {
+  fieldCount++;
+  const i = fieldCount;
+  const el = document.createElement("div");
+  el.className = "field-row";
+  el.id = `field-row-${i}`;
+  el.innerHTML = `
+    <input class="form-input" id="field-id-${i}" placeholder="ID unik (mis. userId)" value="${field ? field.id : ''}" style="flex:1;" />
+    <input class="form-input" id="field-label-${i}" placeholder="Label (mis. User ID)" value="${field ? field.label : ''}" style="flex:1.5;" />
+    <input class="form-input" id="field-placeholder-${i}" placeholder="Placeholder" value="${field ? (field.placeholder||'') : ''}" style="flex:1.5;" />
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <label style="font-size:12px;color:var(--text-secondary);">Wajib</label>
+      <label class="toggle" style="width:36px;height:20px;">
+        <input type="checkbox" id="field-req-${i}" ${field && field.required ? 'checked' : ''} />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('field-row-${i}').remove()">✕</button>
+  `;
+  document.getElementById("fields-list").appendChild(el);
+}
+
+function getFields() {
+  const rows = document.getElementById("fields-list").querySelectorAll(".field-row");
+  return Array.from(rows).map(row => {
+    const i = row.id.replace("field-row-", "");
+    const id = document.getElementById(`field-id-${i}`)?.value?.trim();
+    const label = document.getElementById(`field-label-${i}`)?.value?.trim();
+    const placeholder = document.getElementById(`field-placeholder-${i}`)?.value?.trim();
+    const required = document.getElementById(`field-req-${i}`)?.checked;
+    if (!id || !label) return null;
+    return { id, label, placeholder: placeholder || "", required: !!required };
+  }).filter(Boolean);
+}
+
+// ---- Color sync ----
+function syncColor(n) {
+  const val = document.getElementById(`f-color${n}-text`).value;
+  document.getElementById(`f-color${n}`).value = val;
+}
+document.addEventListener("change", (e) => {
+  if (e.target.id === "f-color1") document.getElementById("f-color1-text").value = e.target.value;
+  if (e.target.id === "f-color2") document.getElementById("f-color2-text").value = e.target.value;
+});
+
+// ---- Open forms ----
+function openAddProduct() {
+  editingId = null;
+  document.getElementById("modal-product-title").textContent = "Tambah Produk";
+  document.getElementById("product-form").reset();
+  document.getElementById("items-list").innerHTML = "";
+  document.getElementById("fields-list").innerHTML = "";
+  itemCount = 0; fieldCount = 0;
+  document.getElementById("f-color1-text").value = "#1E2535";
+  document.getElementById("f-color2-text").value = "#0D1018";
+  document.getElementById("f-color1").value = "#1E2535";
+  document.getElementById("f-color2").value = "#0D1018";
+  document.getElementById("f-active").checked = true;
+  document.getElementById("f-img-url").value = "";
+  document.getElementById("img-preview-container").style.display = "none";
+  document.getElementById("img-placeholder").style.display = "block";
+  document.getElementById("img-url-display").textContent = "";
+  // Add default fields
+  addFieldRow({ id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true });
+  addFieldRow({ id: "serverId", label: "Server ID", placeholder: "Kosongkan jika tidak ada", required: false });
+  addItemRow();
+  openModal("modal-product");
+}
+
+function openEditProduct(id) {
+  const p = allProds.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById("modal-product-title").textContent = "Edit Produk";
+  document.getElementById("f-name").value = p.name || "";
+  document.getElementById("f-category").value = p.category || "";
+  document.getElementById("f-description").value = p.description || "";
+  document.getElementById("f-icon").value = p.icon || "";
+  document.getElementById("f-badge").value = p.badge || "";
+  // Load existing image
+  document.getElementById("f-img-url").value = p.imageUrl || "";
+  if (p.imageUrl) {
+    document.getElementById("img-preview").src = p.imageUrl;
+    document.getElementById("img-preview-container").style.display = "block";
+    document.getElementById("img-placeholder").style.display = "none";
+    document.getElementById("img-url-display").textContent = "Gambar tersimpan";
+  } else {
+    document.getElementById("img-preview-container").style.display = "none";
+    document.getElementById("img-placeholder").style.display = "block";
+    document.getElementById("img-url-display").textContent = "";
   }
-  btn.disabled = false; btn.textContent = "Bayar Sekarang →";
+  document.getElementById("f-color1-text").value = p.color1 || "#1E2535";
+  document.getElementById("f-color2-text").value = p.color2 || "#0D1018";
+  document.getElementById("f-color1").value = p.color1 || "#1E2535";
+  document.getElementById("f-color2").value = p.color2 || "#0D1018";
+  document.getElementById("f-sort").value = p.sortOrder ?? 99;
+  document.getElementById("f-instructions").value = p.instructions || "";
+  document.getElementById("f-active").checked = !!p.active;
+  document.getElementById("items-list").innerHTML = "";
+  document.getElementById("fields-list").innerHTML = "";
+  itemCount = 0; fieldCount = 0;
+  (p.items || []).forEach(item => addItemRow(item));
+  // If no fields saved, show defaults so owner can see and save them
+  const fields = (p.fields && p.fields.length) ? p.fields : [
+    { id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true },
+    { id: "serverId", label: "Server ID", placeholder: "Kosongkan jika tidak ada", required: false }
+  ];
+  fields.forEach(field => addFieldRow(field));
+  openModal("modal-product");
+  // Auto scroll ke fields section supaya owner tau fields sudah ada
+  setTimeout(() => {
+    const fieldsEl = document.getElementById("fields-list");
+    if (fieldsEl) fieldsEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 350);
 }
 
-async function handleGoogleLogin() {
+// ---- Save product ----
+async function saveProduct(e) {
+  e.preventDefault();
+  const btn = document.getElementById("btn-save-product");
+  btn.disabled = true; btn.textContent = "Menyimpan...";
   try {
-    await signInWithGoogle();
-    closeModal("modal-login");
-    toast("Login berhasil!", "success");
-  } catch(e){}
+    const data = {
+      name: document.getElementById("f-name").value.trim(),
+      category: document.getElementById("f-category").value.trim(),
+      description: document.getElementById("f-description").value.trim(),
+      icon: document.getElementById("f-icon").value.trim(),
+      badge: document.getElementById("f-badge").value.trim(),
+      imageUrl: document.getElementById("f-img-url").value.trim() || null,
+      color1: document.getElementById("f-color1-text").value.trim() || "#1E2535",
+      color2: document.getElementById("f-color2-text").value.trim() || "#0D1018",
+      sortOrder: parseInt(document.getElementById("f-sort").value) || 99,
+      instructions: document.getElementById("f-instructions").value.trim(),
+      active: document.getElementById("f-active").checked,
+      items: getItems(),
+      fields: getFields(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    if (!data.name) { toast("Nama produk wajib diisi!", "error"); return; }
+    if (editingId) {
+      await db.collection("products").doc(editingId).update(data);
+      toast("Produk berhasil diperbarui!", "success");
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection("products").add(data);
+      toast("Produk berhasil ditambahkan!", "success");
+      // Update stats
+      await db.collection("stats").doc("global").set({ products: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+    }
+    closeModal("modal-product");
+    loadProducts();
+  } catch (err) {
+    console.error(err);
+    toast("Gagal menyimpan: " + err.message, "error");
+  }
+  btn.disabled = false; btn.textContent = "Simpan Produk";
 }
 
 
-async function handleProofUpload(event) {
+// ---- Image Upload ----
+let uploadedImageUrl = null;
+
+function handleImageSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast("Ukuran file maks 5MB.", "error"); return; }
-  // Instant preview
+  validateAndPreviewImage(file);
+}
+
+// Drag and drop support
+document.addEventListener("DOMContentLoaded", () => {
+  const area = document.getElementById("img-upload-area");
+  if (!area) return;
+  area.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    area.classList.add("dragover");
+  });
+  area.addEventListener("dragleave", () => area.classList.remove("dragover"));
+  area.addEventListener("drop", (e) => {
+    e.preventDefault();
+    area.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) validateAndPreviewImage(file);
+  });
+});
+
+function validateAndPreviewImage(file) {
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  const allowed = ["image/png","image/jpeg","image/webp","image/gif"];
+  if (!allowed.includes(file.type)) {
+    toast("Format tidak didukung. Gunakan PNG, JPG, atau WEBP.", "error");
+    return;
+  }
+  if (file.size > maxSize) {
+    toast("Ukuran file terlalu besar. Maks 2MB.", "error");
+    return;
+  }
+  // Show local preview immediately
   const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById("proof-img-preview").src = e.target.result;
-    document.getElementById("proof-preview-wrap").style.display = "block";
-    document.getElementById("proof-placeholder").style.display = "none";
-    document.getElementById("proof-status").textContent = "Mengupload...";
+  reader.onload = (e) => {
+    document.getElementById("img-preview").src = e.target.result;
+    document.getElementById("img-preview-container").style.display = "block";
+    document.getElementById("img-placeholder").style.display = "none";
+    document.getElementById("img-url-display").textContent = "Siap diupload...";
   };
   reader.readAsDataURL(file);
-  // Upload to Cloudinary
+  // Upload to Firebase Storage
+  uploadImageToStorage(file);
+}
+
+// ============================================================
+// CLOUDINARY CONFIG
+// Ganti dengan cloud_name dan upload_preset kamu
+// ============================================================
+const CLOUDINARY_CLOUD_NAME = "dnpvgpqka";    // ganti ini
+const CLOUDINARY_UPLOAD_PRESET = "vaultstore"; // ganti ini
+
+async function uploadImageToStorage(file) {
+  const progress = document.getElementById("upload-progress");
+  const bar = document.getElementById("upload-progress-bar");
+  const display = document.getElementById("img-url-display");
+  progress.style.display = "block";
+  bar.style.width = "10%";
+  display.textContent = "Mengupload ke Cloudinary...";
+
   try {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_P);
-    formData.append("folder", "doominiks/proofs");
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_P}/image/upload`);
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const url = JSON.parse(xhr.responseText).secure_url;
-        document.getElementById("proof-url").value = url;
-        document.getElementById("proof-status").innerHTML = `<span style="color:var(--green);">✓ Bukti berhasil diupload</span>`;
-        toast("Bukti pembayaran diupload!", "success");
-      } else {
-        document.getElementById("proof-status").textContent = "Upload gagal, lanjut tanpa bukti.";
-      }
-    };
-    xhr.onerror = () => { document.getElementById("proof-status").textContent = "Upload gagal."; };
-    xhr.send(formData);
-  } catch(e) {
-    document.getElementById("proof-status").textContent = "Upload gagal.";
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "doominiks-store/products");
+
+    // Use XHR for progress tracking
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 90);
+          bar.style.width = pct + "%";
+          display.textContent = `Mengupload... ${pct}%`;
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const res = JSON.parse(xhr.responseText);
+          const url = res.secure_url;
+          document.getElementById("f-img-url").value = url;
+          bar.style.width = "100%";
+          display.innerHTML = `<span style="color:var(--green);">✓ Upload berhasil!</span>`;
+          setTimeout(() => { progress.style.display = "none"; }, 1500);
+          toast("Gambar berhasil diupload!", "success");
+          resolve();
+        } else {
+          reject(new Error("Upload gagal: " + xhr.responseText));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(formData);
+    });
+
+  } catch (e) {
+    progress.style.display = "none";
+    display.textContent = "";
+    console.error(e);
+    toast("Upload gagal: " + e.message + ". Pastikan CLOUDINARY_CLOUD_NAME dan UPLOAD_PRESET sudah diisi.", "error");
   }
 }
 
-function onAuthReady() { hideLoader(); }
-loadProduct();
+function removeImage(event) {
+  event.stopPropagation();
+  document.getElementById("f-img-url").value = "";
+  document.getElementById("f-img-file").value = "";
+  document.getElementById("img-preview").src = "";
+  document.getElementById("img-preview-container").style.display = "none";
+  document.getElementById("img-placeholder").style.display = "block";
+  document.getElementById("img-url-display").textContent = "";
+  document.getElementById("upload-progress").style.display = "none";
+}
+
+// ---- Delete product ----
+function confirmDelete(id) {
+  deleteTargetId = id;
+  document.getElementById("btn-confirm-delete").onclick = () => doDelete(id);
+  openModal("modal-delete");
+}
+
+async function doDelete(id) {
+  try {
+    await db.collection("products").doc(id).delete();
+    toast("Produk dihapus.", "info");
+    closeModal("modal-delete");
+    loadProducts();
+  } catch (e) {
+    toast("Gagal menghapus: " + e.message, "error");
+  }
+}
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  loadProducts();
+}
 </script>
 </body>
 </html>
