@@ -9,17 +9,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <style>
-    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
     .item-card {
       background: var(--bg-panel); border: 2px solid var(--border); border-radius: var(--radius);
-      padding: 16px 12px; cursor: pointer; transition: var(--transition); text-align: center;
-      position: relative;
+      padding: 14px 8px; cursor: pointer; transition: var(--transition); text-align: center;
+      position: relative; overflow: hidden; min-width: 0;
     }
     .item-card:hover { border-color: var(--border-bright); }
     .item-card.selected { border-color: var(--gold); background: var(--gold-glow); }
-    .item-card .item-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-    .item-card .item-price { font-size: 16px; font-weight: 800; color: var(--gold); font-family: var(--font-display); }
-    .item-card .item-orig { font-size: 12px; color: var(--text-muted); text-decoration: line-through; }
+    .item-card .item-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; word-break: break-word; }
+    .item-card .item-price { font-size: 14px; font-weight: 800; color: var(--gold); font-family: var(--font-display); word-break: break-word; overflow-wrap: break-word; }
+    .item-card .item-orig { font-size: 11px; color: var(--text-muted); text-decoration: line-through; word-break: break-word; }
     .item-card .item-save { position: absolute; top: -8px; right: 8px; background: var(--red); color: white; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
     .product-hero-icon { width: 100%; height: 220px; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 0; }
 
@@ -443,8 +443,8 @@ async function selectPayment(id) {
     if (!pmData.imageUrl && pmLegacyImages[id]) pmData.imageUrl = pmLegacyImages[id];
 
     if (id === "qris") {
-      // QRIS: show QR code image
-      const qrisUrl = pmData.imageUrl || settings.qrisImageUrl || null;
+      // QRIS: always use dedicated qrisImageUrl (the actual QR code), NOT pmData.imageUrl (that's just the logo)
+      const qrisUrl = settings.qrisImageUrl || null;
       if (qrisUrl) {
         document.getElementById("co-qris-img").src = qrisUrl;
         document.getElementById("co-qris-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
