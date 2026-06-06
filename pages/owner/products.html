@@ -297,11 +297,12 @@ function addItemRow(item) {
   const el = document.createElement("div");
   el.className = "item-row";
   el.id = `item-row-${i}`;
+  el.style.cssText = "flex-wrap:wrap;gap:8px;";
   el.innerHTML = `
-    <input class="form-input" id="item-name-${i}" placeholder="Nama (mis. 86 Diamond)" value="${item ? item.name : ''}" style="flex:2;" />
-    <input class="form-input" id="item-price-${i}" type="number" placeholder="Harga (Rp)" value="${item ? item.price : ''}" min="0" style="flex:1.5;" />
-    <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1.5;" />
-    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('item-row-${i}').remove()">✕</button>
+    <input class="form-input" id="item-name-${i}" placeholder="Nama (mis. 86 Diamond)" value="${item ? item.name : ''}" style="flex:1 1 100%;" />
+    <input class="form-input" id="item-price-${i}" type="number" placeholder="Harga (Rp)" value="${item ? item.price : ''}" min="0" style="flex:1 1 40%;" />
+    <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1 1 40%;" />
+    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('item-row-${i}').remove()" style="flex-shrink:0;">✕</button>
   `;
   document.getElementById("items-list").appendChild(el);
 }
@@ -326,18 +327,19 @@ function addFieldRow(field) {
   const el = document.createElement("div");
   el.className = "field-row";
   el.id = `field-row-${i}`;
+  el.setAttribute("data-idx", i);
   el.innerHTML = `
-    <input class="form-input" id="field-id-${i}" placeholder="ID unik (mis. userId)" value="${field ? field.id : ''}" style="flex:1;" />
-    <input class="form-input" id="field-label-${i}" placeholder="Label (mis. User ID)" value="${field ? field.label : ''}" style="flex:1.5;" />
-    <input class="form-input" id="field-placeholder-${i}" placeholder="Placeholder" value="${field ? (field.placeholder||'') : ''}" style="flex:1.5;" />
+    <input class="form-input fld-id" placeholder="ID unik (mis. userId)" value="${field ? field.id : ''}" style="flex:1;" />
+    <input class="form-input fld-label" placeholder="Label (mis. User ID)" value="${field ? field.label : ''}" style="flex:1.5;" />
+    <input class="form-input fld-ph" placeholder="Placeholder" value="${field ? (field.placeholder||'') : ''}" style="flex:1.5;" />
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <label style="font-size:12px;color:var(--text-secondary);">Wajib</label>
       <label class="toggle" style="width:36px;height:20px;">
-        <input type="checkbox" id="field-req-${i}" ${field && field.required ? 'checked' : ''} />
+        <input type="checkbox" class="fld-req" ${field && field.required ? 'checked' : ''} />
         <span class="toggle-slider"></span>
       </label>
     </div>
-    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('field-row-${i}').remove()">✕</button>
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.field-row').remove()">✕</button>
   `;
   document.getElementById("fields-list").appendChild(el);
 }
@@ -345,11 +347,10 @@ function addFieldRow(field) {
 function getFields() {
   const rows = document.getElementById("fields-list").querySelectorAll(".field-row");
   return Array.from(rows).map(row => {
-    const i = row.id.replace("field-row-", "");
-    const id = document.getElementById(`field-id-${i}`)?.value?.trim();
-    const label = document.getElementById(`field-label-${i}`)?.value?.trim();
-    const placeholder = document.getElementById(`field-placeholder-${i}`)?.value?.trim();
-    const required = document.getElementById(`field-req-${i}`)?.checked;
+    const id = row.querySelector(".fld-id")?.value?.trim();
+    const label = row.querySelector(".fld-label")?.value?.trim();
+    const placeholder = row.querySelector(".fld-ph")?.value?.trim();
+    const required = row.querySelector(".fld-req")?.checked;
     if (!id || !label) return null;
     return { id, label, placeholder: placeholder || "", required: !!required };
   }).filter(Boolean);
