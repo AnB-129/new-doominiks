@@ -90,11 +90,34 @@
       </div>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Pilih metode pembayaran:</p>
       <div id="pm-list-render"></div>
-      <!-- QRIS Image (shown when QRIS/ewallet selected) -->
-      <div id="co-qris-display" class="qris-display" style="display:none;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Scan QR Code untuk Bayar</div>
-        <img id="co-qris-img" src="" alt="QRIS" />
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-qris-amount"></div>
+      <!-- Payment Info (shown when payment method selected) -->
+      <div id="co-payment-info-display" style="display:none;">
+        <!-- QRIS QR Code -->
+        <div id="co-qris-display" class="qris-display" style="display:none;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Scan QR Code untuk Bayar</div>
+          <img id="co-qris-img" src="" alt="QRIS" />
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-qris-amount"></div>
+        </div>
+        <!-- E-Wallet Account Number -->
+        <div id="co-ewallet-display" class="qris-display" style="display:none;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;" id="co-ewallet-label">Kirim ke nomor:</div>
+          <div id="co-ewallet-logo-wrap" style="margin-bottom:10px;display:none;">
+            <img id="co-ewallet-logo" src="" alt="" style="height:48px;object-fit:contain;border-radius:8px;" />
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--gold);letter-spacing:2px;font-family:var(--font-display);" id="co-ewallet-number">-</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;" id="co-ewallet-name"></div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-ewallet-amount"></div>
+        </div>
+        <!-- Bank Transfer Account Number -->
+        <div id="co-bank-display" class="qris-display" style="display:none;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;" id="co-bank-label">Rekening Tujuan:</div>
+          <div id="co-bank-logo-wrap" style="margin-bottom:10px;display:none;">
+            <img id="co-bank-logo" src="" alt="" style="height:48px;object-fit:contain;border-radius:8px;" />
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--gold);letter-spacing:2px;font-family:var(--font-display);" id="co-bank-number">-</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;" id="co-bank-name"></div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-bank-amount"></div>
+        </div>
       </div>
       <div class="checkout-summary">
         <div class="checkout-row"><span>Subtotal</span><span id="co-p-sub">-</span></div>
@@ -103,7 +126,7 @@
       </div>
       <!-- Upload Bukti Pembayaran -->
       <div style="margin-top:16px;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Upload Bukti Pembayaran <span style="color:var(--text-muted);font-weight:400;">(opsional, mempercepat proses)</span></div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Upload Bukti Pembayaran <span style="color:var(--red);font-weight:400;">* Wajib</span></div>
         <div class="proof-upload-area" onclick="document.getElementById('proof-file-input').click()">
           <input type="file" id="proof-file-input" accept="image/*" style="display:none;" onchange="handleProofUpload(event)" />
           <div id="proof-placeholder">
@@ -373,28 +396,84 @@ async function selectPayment(id) {
   const total = selectedItem.price + (selectedPayment?.fee || 0);
   document.getElementById("co-p-fee").textContent = formatIDR(selectedPayment?.fee || 0);
   document.getElementById("co-p-total").textContent = formatIDR(total);
-  // Show QRIS image if ewallet/qris method selected
-  const isQris = ["qris","gopay","ovo","dana","shopeepay"].includes(id);
-  const qrisDisplay = document.getElementById("co-qris-display");
-  if (isQris) {
-    try {
-      const snap = await db.collection("settings").doc("store").get();
-      const qrisUrl = snap.exists ? snap.data().qrisImageUrl : null;
+
+  // Hide all payment info displays first
+  const infoWrap = document.getElementById("co-payment-info-display");
+  document.getElementById("co-qris-display").style.display = "none";
+  document.getElementById("co-ewallet-display").style.display = "none";
+  document.getElementById("co-bank-display").style.display = "none";
+  infoWrap.style.display = "none";
+
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    const settings = snap.exists ? snap.data() : {};
+    // paymentMethods is an object keyed by payment id, each has: accountNumber, accountName, imageUrl
+    const pmSettings = settings.paymentMethods || {};
+    const pmLegacyImages = settings.paymentMethodImages || {};
+    const pmData = pmSettings[id] || {};
+    // imageUrl: prefer paymentMethods[id].imageUrl, fallback to paymentMethodImages[id]
+    if (!pmData.imageUrl && pmLegacyImages[id]) pmData.imageUrl = pmLegacyImages[id];
+
+    if (id === "qris") {
+      // QRIS: show QR code image
+      const qrisUrl = pmData.imageUrl || settings.qrisImageUrl || null;
       if (qrisUrl) {
         document.getElementById("co-qris-img").src = qrisUrl;
         document.getElementById("co-qris-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
-        qrisDisplay.style.display = "block";
-      } else {
-        qrisDisplay.style.display = "none";
+        document.getElementById("co-qris-display").style.display = "block";
+        infoWrap.style.display = "block";
       }
-    } catch(e) { qrisDisplay.style.display = "none"; }
-  } else {
-    qrisDisplay.style.display = "none";
+    } else if (["gopay","ovo","dana","shopeepay"].includes(id)) {
+      // E-Wallet: show account number + optional logo
+      const number = pmData.accountNumber || null;
+      const name = pmData.accountName || selectedPayment.name;
+      const logoUrl = pmData.imageUrl || null;
+
+      if (number) {
+        document.getElementById("co-ewallet-label").textContent = `Kirim ke nomor ${selectedPayment.name}:`;
+        document.getElementById("co-ewallet-number").textContent = number;
+        document.getElementById("co-ewallet-name").textContent = `a.n. ${name}`;
+        document.getElementById("co-ewallet-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
+        if (logoUrl) {
+          document.getElementById("co-ewallet-logo").src = logoUrl;
+          document.getElementById("co-ewallet-logo-wrap").style.display = "block";
+        } else {
+          document.getElementById("co-ewallet-logo-wrap").style.display = "none";
+        }
+        document.getElementById("co-ewallet-display").style.display = "block";
+        infoWrap.style.display = "block";
+      }
+    } else if (["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago"].includes(id)) {
+      // Bank Transfer: show account number + optional logo
+      const number = pmData.accountNumber || null;
+      const name = pmData.accountName || selectedPayment.name;
+      const logoUrl = pmData.imageUrl || null;
+
+      if (number) {
+        document.getElementById("co-bank-label").textContent = `Rekening ${selectedPayment.name}:`;
+        document.getElementById("co-bank-number").textContent = number;
+        document.getElementById("co-bank-name").textContent = `a.n. ${name}`;
+        document.getElementById("co-bank-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
+        if (logoUrl) {
+          document.getElementById("co-bank-logo").src = logoUrl;
+          document.getElementById("co-bank-logo-wrap").style.display = "block";
+        } else {
+          document.getElementById("co-bank-logo-wrap").style.display = "none";
+        }
+        document.getElementById("co-bank-display").style.display = "block";
+        infoWrap.style.display = "block";
+      }
+    }
+  } catch(e) {
+    console.error("Gagal load payment settings:", e);
   }
 }
 
 async function placeOrder() {
   if (!selectedPayment) { toast("Pilih metode pembayaran", "error"); return; }
+  // Wajib upload bukti pembayaran
+  const proofUrl = document.getElementById("proof-url").value;
+  if (!proofUrl) { toast("Upload bukti pembayaran terlebih dahulu", "error"); return; }
   const btn = event.target;
   btn.disabled = true; btn.textContent = "Memproses...";
   try {
