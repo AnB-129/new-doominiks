@@ -106,8 +106,18 @@
           <div class="sr-title">Link Discord</div>
           <div class="sr-desc">Link server Discord untuk customer support.</div>
         </div>
-        <div class="settings-row-control">
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:8px;">
           <input class="form-input" id="s-discord" placeholder="https://discord.gg/..." />
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="discord-logo-preview" style="width:36px;height:36px;border-radius:8px;background:var(--bg-panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+              <span style="font-size:18px;color:var(--text-muted);">▪</span>
+            </div>
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
+              Upload Logo Discord (PNG)
+              <input type="file" id="discord-logo-file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="uploadSocialLogo('discord',this)" />
+            </label>
+            <input type="hidden" id="s-discord-logo-url" />
+          </div>
         </div>
       </div>
       <div class="settings-row">
@@ -115,8 +125,17 @@
           <div class="sr-title">Link WhatsApp</div>
           <div class="sr-desc">Nomor WhatsApp untuk support (format: 628xxx).</div>
         </div>
-        <div class="settings-row-control">
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:8px;">
           <input class="form-input" id="s-whatsapp" placeholder="https://wa.me/628..." />
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="whatsapp-logo-preview" style="width:36px;height:36px;border-radius:8px;background:var(--bg-panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:contain;overflow:hidden;flex-shrink:0;">
+              <span style="font-size:18px;color:var(--text-muted);">▪</span>
+            </div>
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
+              Upload Logo WhatsApp (PNG)
+              <input type="file" id="whatsapp-logo-file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="uploadSocialLogo('whatsapp',this)" />
+            </label>
+            <input type="hidden" id="s-whatsapp-logo-url" />
         </div>
       </div>
       <div style="margin-top:16px;">
@@ -379,6 +398,30 @@ function requireOwner(user) {
   return true;
 }
 
+async function uploadSocialLogo(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast("File terlalu besar (maks 2MB)", "error"); return; }
+  const btn = input.closest("label");
+  const origText = btn.childNodes[0].textContent;
+  btn.childNodes[0].textContent = "Mengupload...";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_S);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_S}/image/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error("Upload gagal");
+    const url = data.secure_url;
+    document.getElementById(`s-${type}-logo-url`).value = url;
+    document.getElementById(`${type}-logo-preview`).innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;">`;
+    toast(`Logo ${type} berhasil diupload!`, "success");
+  } catch(e) {
+    toast("Gagal upload logo: " + e.message, "error");
+  }
+  btn.childNodes[0].textContent = origText;
+}
+
 async function loadSettings() {
   try {
     const snap = await db.collection("settings").doc("store").get();
@@ -388,6 +431,14 @@ async function loadSettings() {
       document.getElementById("s-tagline").value = s.tagline || "";
       document.getElementById("s-discord").value = s.discord || "";
       document.getElementById("s-whatsapp").value = s.whatsapp || "";
+      if (s.discordLogoUrl) {
+        document.getElementById("s-discord-logo-url").value = s.discordLogoUrl;
+        document.getElementById("discord-logo-preview").innerHTML = `<img src="${s.discordLogoUrl}" style="width:100%;height:100%;object-fit:contain;">`;
+      }
+      if (s.whatsappLogoUrl) {
+        document.getElementById("s-whatsapp-logo-url").value = s.whatsappLogoUrl;
+        document.getElementById("whatsapp-logo-preview").innerHTML = `<img src="${s.whatsappLogoUrl}" style="width:100%;height:100%;object-fit:contain;">`;
+      }
       // Load per-payment-method account numbers & names
       const pm = s.paymentMethods || {};
       const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
@@ -439,6 +490,8 @@ async function saveStoreSettings() {
       tagline: document.getElementById("s-tagline").value.trim(),
       discord: document.getElementById("s-discord").value.trim(),
       whatsapp: document.getElementById("s-whatsapp").value.trim(),
+      discordLogoUrl: document.getElementById("s-discord-logo-url").value.trim() || null,
+      whatsappLogoUrl: document.getElementById("s-whatsapp-logo-url").value.trim() || null,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     toast("Informasi toko disimpan!", "success");
