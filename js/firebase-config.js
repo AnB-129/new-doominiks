@@ -12,7 +12,7 @@ const firebaseConfig = {
 };
 
 // Owner UIDs — tambahkan UID kamu setelah login pertama
-const OWNER_UIDS = ["6b4IXcTv2q5g1"];
+const OWNER_UIDS = ["LKtJsX3RnlQJhZTHxzLIk3Vfkr23"];
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
