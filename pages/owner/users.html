@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pengaturan &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .qris-upload-area {
+      border: 2px dashed var(--border-bright); border-radius: var(--radius-lg);
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: var(--transition); background: var(--bg-panel);
+      position: relative;
+    }
+    .qris-upload-area:hover { border-color: var(--gold); background: var(--gold-glow); }
+    .qris-img-preview { max-width: 220px; max-height: 220px; border-radius: var(--radius); margin: 0 auto; display: block; }
+    .upload-progress { height: 4px; background: var(--border); border-radius: 4px; margin-top: 8px; overflow: hidden; display: none; }
+    .upload-progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-dim)); border-radius: 4px; transition: width 0.3s; width: 0%; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <style>
+    .settings-section { margin-bottom: 32px; }
+    .settings-section-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .settings-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 16px 0; border-bottom: 1px solid rgba(30,37,53,0.5); flex-wrap: wrap; }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-info { flex: 1; min-width: 200px; }
+    .settings-row-info .sr-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .settings-row-info .sr-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .settings-row-control { flex-shrink: 0; min-width: 280px; }
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 100px; cursor: pointer; transition: var(--transition); }
+    .toggle-slider::before { content:""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--text-muted); left: 2px; top: 2px; transition: var(--transition); }
+    .toggle input:checked + .toggle-slider { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+    .toggle input:checked + .toggle-slider::before { background: var(--gold); transform: translateX(20px); }
+    .owner-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 10px 14px; margin-bottom: 8px;
+    }
+    .owner-chip .oc-uid { font-size: 12px; font-family: monospace; color: var(--text-secondary); word-break: break-all; flex: 1; margin-right: 12px; }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="settings.html" class="active"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div class="admin-page-title">Pengaturan</div>
+    <div class="admin-page-sub">Konfigurasi toko, notifikasi, dan sistem</div>
+
+    <!-- Toko -->
+    <div class="card settings-section">
+      <div class="settings-section-title">▪ Informasi Toko</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Nama Toko</div>
+          <div class="sr-desc">Nama yang ditampilkan di navbar dan footer toko.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-store-name" placeholder="DOOMINIKS STORE" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Tagline / Deskripsi Singkat</div>
+          <div class="sr-desc">Muncul di meta description dan hero section.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-tagline" placeholder="Top Up Game Terpercaya" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Link Discord</div>
+          <div class="sr-desc">Link server Discord untuk customer support.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-discord" placeholder="https://discord.gg/..." />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Link WhatsApp</div>
+          <div class="sr-desc">Nomor WhatsApp untuk support (format: 628xxx).</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-whatsapp" placeholder="https://wa.me/628..." />
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="saveStoreSettings()">Simpan Informasi Toko</button>
+      </div>
+    </div>
+
+    <!-- Pembayaran -->
+    <div class="card settings-section">
+      <div class="settings-section-title">◆ Pengaturan Pembayaran</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Nomor Rekening BCA</div>
+          <div class="sr-desc">Nomor VA / rekening untuk instruksi pembayaran.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-bca" placeholder="1234567890 a.n. DOOMINIKS STORE" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Nomor Rekening Bank Jago</div>
+          <div class="sr-desc">Nomor rekening Bank Jago untuk transfer.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-jago" placeholder="1234567890 a.n. DOOMINIKS STORE" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Nomor QRIS / GoPay / OVO / DANA</div>
+          <div class="sr-desc">Nomor dompet digital untuk pembayaran QRIS.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-ewallet" placeholder="0812xxxxxxxx" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Gambar QRIS / Barcode Pembayaran</div>
+          <div class="sr-desc">Upload gambar QR code untuk ditampilkan ke pembeli saat checkout. Format PNG/JPG, maks 2MB.</div>
+        </div>
+        <div class="settings-row-control">
+          <div class="qris-upload-area" onclick="document.getElementById('qris-file-input').click()">
+            <input type="file" id="qris-file-input" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="handleQrisUpload(event)" />
+            <div id="qris-placeholder">
+              <div style="font-size:28px;color:var(--text-muted);margin-bottom:8px;">⊞</div>
+              <div style="font-size:13px;font-weight:600;">Klik untuk upload gambar QRIS</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">PNG, JPG &bull; Maks 2MB</div>
+            </div>
+            <div id="qris-preview-wrap" style="display:none;">
+              <img id="qris-img-preview" class="qris-img-preview" src="" alt="QRIS Preview" />
+              <div style="margin-top:8px;display:flex;justify-content:center;gap:8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('qris-file-input').click();event.stopPropagation();">✎ Ganti</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeQris(event)">✕ Hapus</button>
+              </div>
+            </div>
+          </div>
+          <div class="upload-progress" id="qris-progress"><div class="upload-progress-bar" id="qris-progress-bar"></div></div>
+          <div id="qris-status" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
+          <input type="hidden" id="s-qris-url" value="" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Mode Approval Manual</div>
+          <div class="sr-desc">Jika aktif, semua pesanan memerlukan approval manual dari owner sebelum diproses.</div>
+        </div>
+        <div class="settings-row-control">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="s-manual-approval" /><span class="toggle-slider"></span></label>
+            <span style="font-size:14px;font-weight:500;">Approval Manual</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="savePaymentSettings()">Simpan Pengaturan Pembayaran</button>
+      </div>
+    </div>
+
+    <!-- Owner UIDs -->
+    <div class="card settings-section">
+      <div class="settings-section-title">★ Akses Owner</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+        UID berikut memiliki akses penuh ke panel owner. Edit file <code style="background:var(--bg-panel);padding:2px 6px;border-radius:4px;font-size:12px;">js/firebase-config.js</code> untuk menambah/hapus owner.
+      </p>
+      <div id="owner-uids-list"></div>
+      <div style="margin-top:16px;padding:14px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);">
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">UID kamu saat ini:</div>
+        <div style="font-size:13px;font-family:monospace;color:var(--gold);" id="my-uid">-</div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="copyMyUid()">Salin UID</button>
+      </div>
+    </div>
+
+    <!-- Stats update -->
+    <div class="card settings-section">
+      <div class="settings-section-title">⊟ Update Statistik Manual</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Update angka statistik yang ditampilkan di homepage (transaksi, pengguna, dll).</p>
+      <div class="grid-2" style="gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Total Transaksi</label>
+          <input class="form-input" type="number" id="s-stat-orders" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Pengguna</label>
+          <input class="form-input" type="number" id="s-stat-users" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Produk</label>
+          <input class="form-input" type="number" id="s-stat-products" placeholder="0" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveStats()">Update Statistik</button>
+    </div>
+
+    <!-- Category Images -->
+    <div class="card settings-section">
+      <div class="settings-section-title">🎮 Gambar Kategori / Slider</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+        Upload gambar untuk setiap kategori game. Ditampilkan di slider homepage.
+        Ideal: 80×80px atau persegi, PNG transparan.
+      </p>
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1;">
+            <label class="form-label">Nama Kategori Baru</label>
+            <input class="form-input" id="new-cat-name" placeholder="contoh: Free Fire, Genshin Impact..." />
+          </div>
+          <button class="btn btn-secondary" onclick="addNewCategory()">+ Tambah</button>
+        </div>
+      </div>
+      <div id="cat-images-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px;"></div>
+      <button class="btn btn-primary" onclick="saveCategoryImages()">💾 Simpan Kategori</button>
+    </div>
+
+    <!-- Payment Method Images -->
+    <div class="card settings-section">
+      <div class="settings-section-title">🖼 Gambar Metode Pembayaran</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">
+        Upload logo/gambar untuk setiap metode pembayaran. Gambar akan ditampilkan di homepage dan halaman checkout.
+        Ukuran ideal: 200×80px, format PNG transparan.
+      </p>
+      <div id="pm-images-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;"></div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="savePmImages()">💾 Simpan Semua Gambar</button>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card" style="border-color:rgba(232,72,85,0.3);">
+      <div class="settings-section-title" style="color:var(--red);">⚠ Zona Berbahaya</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Hapus Semua Pesanan Lama</div>
+          <div class="sr-desc">Hapus semua pesanan yang sudah lebih dari 90 hari. Data tidak dapat dikembalikan.</div>
+        </div>
+        <div class="settings-row-control">
+          <button class="btn btn-danger" onclick="toast('Fitur ini dinonaktifkan untuk keamanan.','error')">Hapus Pesanan Lama</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+async function loadSettings() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (snap.exists) {
+      const s = snap.data();
+      document.getElementById("s-store-name").value = s.storeName || "";
+      document.getElementById("s-tagline").value = s.tagline || "";
+      document.getElementById("s-discord").value = s.discord || "";
+      document.getElementById("s-whatsapp").value = s.whatsapp || "";
+      document.getElementById("s-bca").value = s.paymentBCA || "";
+      document.getElementById("s-jago").value = s.paymentJago || "";
+      document.getElementById("s-ewallet").value = s.paymentEwallet || "";
+      if (s.qrisImageUrl) {
+        document.getElementById("s-qris-url").value = s.qrisImageUrl;
+        document.getElementById("qris-img-preview").src = s.qrisImageUrl;
+        document.getElementById("qris-preview-wrap").style.display = "block";
+        document.getElementById("qris-placeholder").style.display = "none";
+      }
+      document.getElementById("s-manual-approval").checked = !!s.manualApproval;
+    }
+    const statsSnap = await db.collection("stats").doc("global").get();
+    if (statsSnap.exists) {
+      const st = statsSnap.data();
+      document.getElementById("s-stat-orders").value = st.orders || 0;
+      document.getElementById("s-stat-users").value = st.users || 0;
+      document.getElementById("s-stat-products").value = st.products || 0;
+    }
+  } catch(e) { console.error(e); }
+}
+
+function renderOwnerUids() {
+  const el = document.getElementById("owner-uids-list");
+  el.innerHTML = OWNER_UIDS.map(uid => `
+    <div class="owner-chip">
+      <div class="oc-uid">${uid}</div>
+      <span class="badge badge-success">✓ Owner</span>
+    </div>
+  `).join("");
+  document.getElementById("my-uid").textContent = currentUser?.uid || "-";
+}
+
+function copyMyUid() {
+  const uid = currentUser?.uid;
+  if (!uid) return;
+  navigator.clipboard.writeText(uid).then(() => toast("UID disalin!", "success")).catch(() => toast("Gagal menyalin.", "error"));
+}
+
+async function saveStoreSettings() {
+  try {
+    await db.collection("settings").doc("store").set({
+      storeName: document.getElementById("s-store-name").value.trim(),
+      tagline: document.getElementById("s-tagline").value.trim(),
+      discord: document.getElementById("s-discord").value.trim(),
+      whatsapp: document.getElementById("s-whatsapp").value.trim(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    toast("Informasi toko disimpan!", "success");
+  } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+async function savePaymentSettings() {
+  try {
+    await db.collection("settings").doc("store").set({
+      paymentBCA: document.getElementById("s-bca").value.trim(),
+      paymentJago: document.getElementById("s-jago").value.trim(),
+      paymentEwallet: document.getElementById("s-ewallet").value.trim(),
+      qrisImageUrl: document.getElementById("s-qris-url").value.trim() || null,
+      manualApproval: document.getElementById("s-manual-approval").checked,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    toast("Pengaturan pembayaran disimpan!", "success");
+  } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+async function saveStats() {
+  try {
+    await db.collection("stats").doc("global").set({
+      orders: parseInt(document.getElementById("s-stat-orders").value) || 0,
+      users: parseInt(document.getElementById("s-stat-users").value) || 0,
+      products: parseInt(document.getElementById("s-stat-products").value) || 0,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    toast("Statistik diperbarui!", "success");
+  } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+
+// ============================================================
+// CLOUDINARY CONFIG (sama dengan products.html)
+// ============================================================
+const CLOUDINARY_CLOUD_NAME_S = "dnpvgpqka";
+const CLOUDINARY_UPLOAD_PRESET_S = "vaultstore";
+
+async function handleQrisUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast("Ukuran file maks 2MB.", "error"); return; }
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById("qris-img-preview").src = e.target.result;
+    document.getElementById("qris-preview-wrap").style.display = "block";
+    document.getElementById("qris-placeholder").style.display = "none";
+  };
+  reader.readAsDataURL(file);
+  // Upload to Cloudinary
+  const progress = document.getElementById("qris-progress");
+  const bar = document.getElementById("qris-progress-bar");
+  const status = document.getElementById("qris-status");
+  progress.style.display = "block"; bar.style.width = "0%";
+  status.textContent = "Mengupload...";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_S);
+    formData.append("folder", "doominiks/qris");
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_S}/image/upload`);
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) { const p = Math.round(e.loaded/e.total*90); bar.style.width=p+"%"; }
+      };
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const url = JSON.parse(xhr.responseText).secure_url;
+          document.getElementById("s-qris-url").value = url;
+          document.getElementById("qris-img-preview").src = url;
+          bar.style.width = "100%";
+          status.innerHTML = `<span style="color:var(--green);">✓ Upload berhasil!</span>`;
+          setTimeout(() => { progress.style.display = "none"; }, 1500);
+          toast("Gambar QRIS berhasil diupload!", "success");
+          resolve();
+        } else reject(new Error(xhr.responseText));
+      };
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(formData);
+    });
+  } catch(e) {
+    progress.style.display = "none";
+    status.textContent = "Upload gagal. Pastikan Cloudinary config sudah diisi.";
+    toast("Upload gagal: " + e.message, "error");
+  }
+}
+
+function removeQris(event) {
+  event.stopPropagation();
+  document.getElementById("s-qris-url").value = "";
+  document.getElementById("qris-img-preview").src = "";
+  document.getElementById("qris-preview-wrap").style.display = "none";
+  document.getElementById("qris-placeholder").style.display = "block";
+  document.getElementById("qris-file-input").value = "";
+}
+
+
+
+// ---- CATEGORIES ----
+let categoryData = [
+  { name: "Mobile Legends", imageUrl: null },
+  { name: "Free Fire",      imageUrl: null },
+  { name: "PUBG Mobile",    imageUrl: null },
+  { name: "Genshin Impact", imageUrl: null },
+  { name: "Valorant",       imageUrl: null },
+  { name: "Honor of Kings", imageUrl: null },
+  { name: "Stumble Guys",   imageUrl: null },
+  { name: "Roblox",         imageUrl: null },
+  { name: "Call of Duty",   imageUrl: null },
+  { name: "Clash of Clans", imageUrl: null },
+];
+
+function renderCatGrid() {
+  const grid = document.getElementById("cat-images-grid");
+  if (!grid) return;
+  grid.innerHTML = categoryData.map((cat, i) => `
+    <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;position:relative;">
+      <button onclick="removeCategory(${i})" style="position:absolute;top:6px;right:6px;background:rgba(232,72,85,0.15);border:none;color:var(--red);width:22px;height:22px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;padding-right:24px;">${cat.name}</div>
+      <div style="width:64px;height:64px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);margin:0 auto 8px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+        ${cat.imageUrl
+          ? `<img src="${cat.imageUrl}" alt="${cat.name}" style="width:100%;height:100%;object-fit:cover;">`
+          : `<span style="font-size:24px;">🎮</span>`}
+      </div>
+      <input type="file" id="cat-file-${i}" accept="image/*" style="display:none;" onchange="handleCatImageUpload(${i}, event)" />
+      <button class="btn btn-secondary btn-sm btn-full" onclick="document.getElementById('cat-file-${i}').click()">↑ Upload Gambar</button>
+      <div id="cat-status-${i}" style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;"></div>
+    </div>
+  `).join("");
+}
+
+function addNewCategory() {
+  const name = document.getElementById("new-cat-name").value.trim();
+  if (!name) { toast("Isi nama kategori dulu", "error"); return; }
+  if (categoryData.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+    toast("Kategori sudah ada", "error"); return;
+  }
+  categoryData.push({ name, imageUrl: null });
+  document.getElementById("new-cat-name").value = "";
+  renderCatGrid();
+  toast(`Kategori "${name}" ditambahkan`, "success");
+}
+
+function removeCategory(i) {
+  if (!confirm(`Hapus kategori "${categoryData[i].name}"?`)) return;
+  categoryData.splice(i, 1);
+  renderCatGrid();
+}
+
+async function handleCatImageUpload(idx, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB", "error"); return; }
+  const status = document.getElementById(`cat-status-${idx}`);
+  status.textContent = "Mengupload...";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_S);
+    formData.append("folder", "doominiks/categories");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_S}/image/upload`);
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        categoryData[idx].imageUrl = JSON.parse(xhr.responseText).secure_url;
+        renderCatGrid();
+        toast(`Gambar "${categoryData[idx].name}" diupload!`, "success");
+      } else {
+        status.textContent = "Gagal";
+        toast("Upload gagal", "error");
+      }
+    };
+    xhr.onerror = () => { status.textContent = "Error"; };
+    xhr.send(formData);
+  } catch(e) { status.textContent = "Error"; }
+}
+
+async function saveCategoryImages() {
+  try {
+    await db.collection("settings").doc("store").set({
+      categories: categoryData,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    toast("Kategori disimpan!", "success");
+  } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+async function loadCategoryImages() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (snap.exists && snap.data().categories && snap.data().categories.length) {
+      categoryData = snap.data().categories;
+    }
+    renderCatGrid();
+  } catch(e) { renderCatGrid(); }
+}
+
+const PM_LIST = [
+  { id: "bank_transfer", name: "Bank Transfer" },
+  { id: "bank_jago",     name: "Bank Jago" },
+  { id: "qris",          name: "QRIS" },
+  { id: "gopay",         name: "GoPay" },
+  { id: "ovo",           name: "OVO" },
+  { id: "dana",          name: "DANA" },
+  { id: "shopeepay",     name: "ShopeePay" },
+  { id: "indomaret",     name: "Indomaret" },
+  { id: "alfamart",      name: "Alfamart" },
+];
+
+let pmImages = {};
+
+function renderPmImagesGrid() {
+  const grid = document.getElementById("pm-images-grid");
+  if (!grid) return;
+  grid.innerHTML = PM_LIST.map(pm => `
+    <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">${pm.name}</div>
+      <div id="pm-preview-wrap-${pm.id}" style="margin-bottom:10px;min-height:48px;display:flex;align-items:center;justify-content:center;">
+        ${pmImages[pm.id]
+          ? `<img src="${pmImages[pm.id]}" alt="${pm.name}" style="max-width:100%;max-height:60px;object-fit:contain;border-radius:6px;" />`
+          : `<div style="font-size:12px;color:var(--text-muted);">Belum ada gambar</div>`}
+      </div>
+      <input type="file" id="pm-file-${pm.id}" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;" onchange="handlePmImageUpload('${pm.id}', event)" />
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="document.getElementById('pm-file-${pm.id}').click()">
+          ↑ Upload
+        </button>
+        ${pmImages[pm.id] ? `<button class="btn btn-danger btn-sm" onclick="removePmImage('${pm.id}')">✕</button>` : ""}
+      </div>
+      <div id="pm-status-${pm.id}" style="font-size:11px;color:var(--text-muted);margin-top:6px;"></div>
+    </div>
+  `).join("");
+}
+
+async function handlePmImageUpload(pmId, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB", "error"); return; }
+  const status = document.getElementById(`pm-status-${pmId}`);
+  status.textContent = "Mengupload...";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_S);
+    formData.append("folder", "doominiks/payment");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_S}/image/upload`);
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const url = JSON.parse(xhr.responseText).secure_url;
+        pmImages[pmId] = url;
+        renderPmImagesGrid();
+        status.innerHTML = `<span style="color:var(--green);">✓ Berhasil</span>`;
+        toast(`Logo ${pmId} diupload!`, "success");
+      } else {
+        status.textContent = "Gagal upload";
+        toast("Upload gagal", "error");
+      }
+    };
+    xhr.onerror = () => { status.textContent = "Network error"; };
+    xhr.send(formData);
+  } catch(e) { status.textContent = "Error: " + e.message; }
+}
+
+function removePmImage(pmId) {
+  delete pmImages[pmId];
+  renderPmImagesGrid();
+}
+
+async function savePmImages() {
+  try {
+    await db.collection("settings").doc("store").set({
+      paymentMethodImages: pmImages,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    toast("Gambar metode pembayaran disimpan!", "success");
+  } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+async function loadPmImages() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (snap.exists && snap.data().paymentMethodImages) {
+      pmImages = snap.data().paymentMethodImages;
+    }
+    renderPmImagesGrid();
+  } catch(e) { renderPmImagesGrid(); }
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  renderOwnerUids();
+  loadSettings();
+  loadPmImages();
+  loadCategoryImages();
+}
+</script>
+</body>
+</html>
