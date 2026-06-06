@@ -219,18 +219,18 @@ const CLOUDINARY_UPLOAD_PRESET_P = "vaultstore";
 <script src="../js/app.js"></script>
 <script>
 const PAYMENT_METHODS = [
-  { id: "bank_transfer_bca", group: "Transfer Bank", name: "BCA Virtual Account", icon: "▪", fee: 1400 },
-  { id: "bank_transfer_bni", group: "Transfer Bank", name: "BNI Virtual Account", icon: "▪", fee: 1450 },
-  { id: "bank_transfer_mandiri", group: "Transfer Bank", name: "Mandiri Virtual Account", icon: "▪", fee: 2000 },
-  { id: "bank_transfer_bri", group: "Transfer Bank", name: "BRI Virtual Account", icon: "▪", fee: 1500 },
-  { id: "bank_jago", group: "Transfer Bank", name: "Bank Jago", icon: "◆", fee: 800 },
-  { id: "qris", group: "QRIS / E-Wallet", name: "QRIS (Semua E-Wallet)", icon: "▪", fee: 980 },
-  { id: "gopay", group: "QRIS / E-Wallet", name: "GoPay", icon: "▲", fee: 800 },
-  { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 1200 },
-  { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 990 },
-  { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 900 },
-  { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 2500 },
-  { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 2500 },
+  { id: "bank_transfer_bca", group: "Transfer Bank", name: "BCA Virtual Account", icon: "▪", fee: 1230 },
+  { id: "bank_transfer_bni", group: "Transfer Bank", name: "BNI Virtual Account", icon: "▪", fee: 1400 },
+  { id: "bank_transfer_mandiri", group: "Transfer Bank", name: "Mandiri Virtual Account", icon: "▪", fee: 1100 },
+  { id: "bank_transfer_bri", group: "Transfer Bank", name: "BRI Virtual Account", icon: "▪", fee: 1090 },
+  { id: "bank_jago", group: "Transfer Bank", name: "Bank Jago", icon: "◆", fee: 890 },
+  { id: "qris", group: "QRIS / E-Wallet", name: "QRIS (Semua E-Wallet)", icon: "▪", fee: 990 },
+  { id: "gopay", group: "QRIS / E-Wallet", name: "GoPay", icon: "▲", fee: 999 },
+  { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 999 },
+  { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 1110 },
+  { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 890 },
+  { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 2300 },
+  { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 2400 },
 ];
 
 let productData = null;
@@ -276,7 +276,7 @@ function renderProduct(p) {
           </div>
           <div class="divider"></div>
           <div style="font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;gap:8px;">
-            ${p.instructions ? `<div style="white-space:pre-line;">${p.instructions}</div>` : '<div>✓ Top up langsung ke akun game kamu</div><div>✓ Tidak perlu password akun</div><div>✓ Proses 1-5 menit</div>'}
+            ${p.instructions ? `<div style="white-space:pre-line;">${p.instructions}</div>` : '<div>✓ Top up langsung ke akun game kamu</div><div>✓ Masukan User ID Kamu!</div><div>✓ Proses 1-5 menit</div>'}
           </div>
         </div>
       </div>
@@ -354,7 +354,7 @@ function startCheckout() {
   openModal("modal-checkout");
 }
 
-function goToPayment() {
+async function goToPayment() {
   const fields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
   gameFields = {};
   for (const f of fields) {
@@ -362,9 +362,32 @@ function goToPayment() {
     if (f.required && !val) { toast(`${f.label} wajib diisi`, "error"); return; }
     gameFields[f.id] = val;
   }
-  // Render payment methods
+  // Load payment settings from Firestore to filter only configured methods
+  let pmSettings = {};
+  let qrisConfigured = false;
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (snap.exists) {
+      pmSettings = snap.data().paymentMethods || {};
+      qrisConfigured = !!(snap.data().qrisImageUrl);
+    }
+  } catch(e) { console.error("Gagal load payment settings:", e); }
+
+  // Filter: only show methods that have been configured by owner
+  const availableMethods = PAYMENT_METHODS.filter(pm => {
+    if (pm.id === "qris") return qrisConfigured;
+    // E-wallet & bank: must have accountNumber set
+    return !!(pmSettings[pm.id]?.accountNumber);
+  });
+
+  if (!availableMethods.length) {
+    toast("Belum ada metode pembayaran yang aktif. Hubungi admin.", "error");
+    return;
+  }
+
+  // Render only available methods
   const groups = {};
-  PAYMENT_METHODS.forEach(pm => { if (!groups[pm.group]) groups[pm.group] = []; groups[pm.group].push(pm); });
+  availableMethods.forEach(pm => { if (!groups[pm.group]) groups[pm.group] = []; groups[pm.group].push(pm); });
   document.getElementById("pm-list-render").innerHTML = Object.entries(groups).map(([g, pms]) => `
     <div class="pm-group-title">${g}</div>
     ${pms.map(pm => `
