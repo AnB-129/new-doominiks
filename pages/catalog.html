@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Katalog Game &mdash; DOOMINIKS STORE</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .filter-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:28px; }
+    .search-wrap { flex:1; min-width:200px; position:relative; }
+    .search-wrap input { padding-left:40px; }
+    .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><span class="modal-title">Masuk</span><button class="modal-close" onclick="closeModal('modal-login')">&times;</button></div>
+    <button class="btn btn-secondary btn-full btn-lg" onclick="handleGoogleLogin()">Lanjutkan dengan Google</button>
+  </div>
+</div>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
+    <div class="nav-links">
+      <a href="../index.html">Beranda</a>
+      <a href="catalog.html" class="active">Katalog</a>
+      <a href="orders.html">Pesanan</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">Masuk</button>
+      <div class="nav-actions" id="user-menu" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;">
+          <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
+          <span id="nav-username" style="font-size:14px;"></span>
+          <a href="owner/dashboard.html" id="nav-admin-link" style="display:none;color:var(--gold);font-size:13px;">★</a>
+          <button onclick="signOut()" style="background:none;color:var(--text-muted);font-size:13px;">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:48px;padding-bottom:80px;">
+  <div style="margin-bottom:32px;">
+    <h1 style="font-family:var(--font-display);font-size:32px;font-weight:800;margin-bottom:6px;">Semua <span style="color:var(--gold);">Game</span></h1>
+    <p style="color:var(--text-secondary);">Top up ratusan game dengan harga terbaik</p>
+  </div>
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="form-input" id="search-input" placeholder="Cari game..." oninput="filterProducts()" />
+    </div>
+    <select class="form-select" id="cat-filter" style="width:auto;" onchange="filterProducts()">
+      <option value="">Semua Kategori</option>
+    </select>
+    <select class="form-select" id="sort-filter" style="width:auto;" onchange="filterProducts()">
+      <option value="sortOrder">Terpopuler</option>
+      <option value="name">Nama A-Z</option>
+      <option value="price-asc">Harga Terendah</option>
+      <option value="price-desc">Harga Tertinggi</option>
+    </select>
+  </div>
+  <div id="catalog-count" style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;"></div>
+  <div class="grid-4" id="catalog-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px 0;"><div class="loader-ring" style="margin:0 auto;"></div></div>
+  </div>
+</div>
+
+<footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
+  <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">&copy; 2025 DOOMINIKS STORE</div>
+</footer>
+
+<script src="../js/firebase-config.js"></script>
+<script src="../js/app.js"></script>
+<script>
+let allProducts = [];
+
+async function loadCatalog() {
+  try {
+    const snap = await db.collection("products").where("active", "==", true).get();
+    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Build categories
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+    const sel = document.getElementById("cat-filter");
+    cats.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; sel.appendChild(o); });
+    // Check URL param
+    const urlCat = new URLSearchParams(window.location.search).get("cat");
+    if (urlCat) sel.value = urlCat;
+    filterProducts();
+  } catch (e) {
+    document.getElementById("catalog-grid").innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:60px 0;">Gagal memuat produk.</div>`;
+  }
+}
+
+function filterProducts() {
+  const q = document.getElementById("search-input").value.toLowerCase();
+  const cat = document.getElementById("cat-filter").value;
+  const sort = document.getElementById("sort-filter").value;
+  let filtered = allProducts.filter(p => {
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.category||"").toLowerCase().includes(q);
+    const matchCat = !cat || p.category === cat;
+    return matchQ && matchCat;
+  });
+  if (sort === "name") filtered.sort((a,b) => a.name.localeCompare(b.name));
+  else if (sort === "price-asc") filtered.sort((a,b) => Math.min(...(a.items||[]).map(i=>i.price)||[0]) - Math.min(...(b.items||[]).map(i=>i.price)||[0]));
+  else if (sort === "price-desc") filtered.sort((a,b) => Math.min(...(b.items||[]).map(i=>i.price)||[0]) - Math.min(...(a.items||[]).map(i=>i.price)||[0]));
+  document.getElementById("catalog-count").textContent = `${filtered.length} produk ditemukan`;
+  renderGrid(filtered);
+}
+
+function renderGrid(products) {
+  const grid = document.getElementById("catalog-grid");
+  if (!products.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">⌕</div><h4>Tidak ada hasil</h4><p>Coba kata kunci atau filter yang berbeda.</p></div>`;
+    return;
+  }
+  grid.innerHTML = products.map(p => {
+    const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i=>i.price)) : 0;
+    return `
+      <div class="card card-product visible" onclick="window.location.href='product.html?id=${p.id}'">
+        ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ""}
+        <div style="width:100%;aspect-ratio:16/9;border-radius:8px;margin-bottom:16px;background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;">` : (p.icon||"◆")}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-category">${p.category||""}</div>
+        <div class="product-price-from">Mulai dari</div>
+        <div class="product-price-value">${formatIDR(minPrice)}</div>
+      </div>`;
+  }).join("");
+}
+
+async function handleGoogleLogin() {
+  try { await signInWithGoogle(); closeModal("modal-login"); } catch(e) {}
+}
+
+function onAuthReady() { hideLoader(); }
+loadCatalog();
+</script>
+</body>
+</html>
