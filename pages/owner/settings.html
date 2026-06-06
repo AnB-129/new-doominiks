@@ -127,31 +127,117 @@
     <!-- Pembayaran -->
     <div class="card settings-section">
       <div class="settings-section-title">◆ Pengaturan Pembayaran</div>
+      <!-- Bank Transfer -->
       <div class="settings-row">
         <div class="settings-row-info">
-          <div class="sr-title">Nomor Rekening BCA</div>
-          <div class="sr-desc">Nomor VA / rekening untuk instruksi pembayaran.</div>
+          <div class="sr-title">BCA Virtual Account</div>
+          <div class="sr-desc">Nomor rekening/VA BCA.</div>
         </div>
-        <div class="settings-row-control">
-          <input class="form-input" id="s-bca" placeholder="1234567890 a.n. DOOMINIKS STORE" />
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-bank_transfer_bca" placeholder="Nomor rekening / VA" />
+          <input class="form-input" id="s-pm-name-bank_transfer_bca" placeholder="Nama pemilik rekening" />
         </div>
       </div>
       <div class="settings-row">
         <div class="settings-row-info">
-          <div class="sr-title">Nomor Rekening Bank Jago</div>
-          <div class="sr-desc">Nomor rekening Bank Jago untuk transfer.</div>
+          <div class="sr-title">BNI Virtual Account</div>
+          <div class="sr-desc">Nomor rekening/VA BNI.</div>
         </div>
-        <div class="settings-row-control">
-          <input class="form-input" id="s-jago" placeholder="1234567890 a.n. DOOMINIKS STORE" />
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-bank_transfer_bni" placeholder="Nomor rekening / VA" />
+          <input class="form-input" id="s-pm-name-bank_transfer_bni" placeholder="Nama pemilik rekening" />
         </div>
       </div>
       <div class="settings-row">
         <div class="settings-row-info">
-          <div class="sr-title">Nomor QRIS / GoPay / OVO / DANA</div>
-          <div class="sr-desc">Nomor dompet digital untuk pembayaran QRIS.</div>
+          <div class="sr-title">Mandiri Virtual Account</div>
+          <div class="sr-desc">Nomor rekening/VA Mandiri.</div>
         </div>
-        <div class="settings-row-control">
-          <input class="form-input" id="s-ewallet" placeholder="0812xxxxxxxx" />
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-bank_transfer_mandiri" placeholder="Nomor rekening / VA" />
+          <input class="form-input" id="s-pm-name-bank_transfer_mandiri" placeholder="Nama pemilik rekening" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">BRI Virtual Account</div>
+          <div class="sr-desc">Nomor rekening/VA BRI.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-bank_transfer_bri" placeholder="Nomor rekening / VA" />
+          <input class="form-input" id="s-pm-name-bank_transfer_bri" placeholder="Nama pemilik rekening" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Bank Jago</div>
+          <div class="sr-desc">Nomor rekening Bank Jago.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-bank_jago" placeholder="Nomor rekening" />
+          <input class="form-input" id="s-pm-name-bank_jago" placeholder="Nama pemilik rekening" />
+        </div>
+      </div>
+      <!-- E-Wallet -->
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">GoPay</div>
+          <div class="sr-desc">Nomor HP GoPay tujuan transfer.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-gopay" placeholder="0812xxxxxxxx" />
+          <input class="form-input" id="s-pm-name-gopay" placeholder="Nama pemilik" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">OVO</div>
+          <div class="sr-desc">Nomor HP OVO tujuan transfer.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-ovo" placeholder="0812xxxxxxxx" />
+          <input class="form-input" id="s-pm-name-ovo" placeholder="Nama pemilik" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">DANA</div>
+          <div class="sr-desc">Nomor HP DANA tujuan transfer.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-dana" placeholder="0812xxxxxxxx" />
+          <input class="form-input" id="s-pm-name-dana" placeholder="Nama pemilik" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">ShopeePay</div>
+          <div class="sr-desc">Nomor HP ShopeePay tujuan transfer.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-shopeepay" placeholder="0812xxxxxxxx" />
+          <input class="form-input" id="s-pm-name-shopeepay" placeholder="Nama pemilik" />
+        </div>
+      </div>
+      <!-- Indomaret / Alfamart -->
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Indomaret</div>
+          <div class="sr-desc">Kode pembayaran / info Indomaret (opsional).</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-indomaret" placeholder="Kode / nomor (opsional)" />
+          <input class="form-input" id="s-pm-name-indomaret" placeholder="Info tambahan (opsional)" />
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Alfamart</div>
+          <div class="sr-desc">Kode pembayaran / info Alfamart (opsional).</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-alfamart" placeholder="Kode / nomor (opsional)" />
+          <input class="form-input" id="s-pm-name-alfamart" placeholder="Info tambahan (opsional)" />
         </div>
       </div>
       <div class="settings-row">
@@ -302,9 +388,15 @@ async function loadSettings() {
       document.getElementById("s-tagline").value = s.tagline || "";
       document.getElementById("s-discord").value = s.discord || "";
       document.getElementById("s-whatsapp").value = s.whatsapp || "";
-      document.getElementById("s-bca").value = s.paymentBCA || "";
-      document.getElementById("s-jago").value = s.paymentJago || "";
-      document.getElementById("s-ewallet").value = s.paymentEwallet || "";
+      // Load per-payment-method account numbers & names
+      const pm = s.paymentMethods || {};
+      const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
+      PM_IDS.forEach(id => {
+        const numEl = document.getElementById(`s-pm-num-${id}`);
+        const nameEl = document.getElementById(`s-pm-name-${id}`);
+        if (numEl) numEl.value = pm[id]?.accountNumber || "";
+        if (nameEl) nameEl.value = pm[id]?.accountName || "";
+      });
       if (s.qrisImageUrl) {
         document.getElementById("s-qris-url").value = s.qrisImageUrl;
         document.getElementById("qris-img-preview").src = s.qrisImageUrl;
@@ -355,10 +447,20 @@ async function saveStoreSettings() {
 
 async function savePaymentSettings() {
   try {
+    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
+    const paymentMethods = {};
+    PM_IDS.forEach(id => {
+      const num = document.getElementById(`s-pm-num-${id}`)?.value.trim() || "";
+      const name = document.getElementById(`s-pm-name-${id}`)?.value.trim() || "";
+      // Preserve existing imageUrl if already in pmImages
+      paymentMethods[id] = {
+        accountNumber: num,
+        accountName: name,
+        imageUrl: pmImages[id] || null,
+      };
+    });
     await db.collection("settings").doc("store").set({
-      paymentBCA: document.getElementById("s-bca").value.trim(),
-      paymentJago: document.getElementById("s-jago").value.trim(),
-      paymentEwallet: document.getElementById("s-ewallet").value.trim(),
+      paymentMethods,
       qrisImageUrl: document.getElementById("s-qris-url").value.trim() || null,
       manualApproval: document.getElementById("s-manual-approval").checked,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -621,8 +723,20 @@ function removePmImage(pmId) {
 
 async function savePmImages() {
   try {
+    // Merge imageUrl into paymentMethods per id
+    const snap = await db.collection("settings").doc("store").get();
+    const existing = snap.exists ? (snap.data().paymentMethods || {}) : {};
+    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
+    const paymentMethods = {};
+    PM_IDS.forEach(id => {
+      paymentMethods[id] = {
+        ...(existing[id] || {}),
+        imageUrl: pmImages[id] || existing[id]?.imageUrl || null,
+      };
+    });
     await db.collection("settings").doc("store").set({
-      paymentMethodImages: pmImages,
+      paymentMethods,
+      paymentMethodImages: pmImages, // keep for backward compat
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     toast("Gambar metode pembayaran disimpan!", "success");
@@ -632,8 +746,14 @@ async function savePmImages() {
 async function loadPmImages() {
   try {
     const snap = await db.collection("settings").doc("store").get();
-    if (snap.exists && snap.data().paymentMethodImages) {
-      pmImages = snap.data().paymentMethodImages;
+    if (snap.exists) {
+      const data = snap.data();
+      // Load from paymentMethodImages (legacy) OR paymentMethods[id].imageUrl
+      const pm = data.paymentMethods || {};
+      const legacy = data.paymentMethodImages || {};
+      PM_LIST.forEach(p => {
+        pmImages[p.id] = pm[p.id]?.imageUrl || legacy[p.id] || null;
+      });
     }
     renderPmImagesGrid();
   } catch(e) { renderPmImagesGrid(); }
