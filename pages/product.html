@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Detail Produk &mdash; DOOMINIKS STORE</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .item-card {
+      background: var(--bg-panel); border: 2px solid var(--border); border-radius: var(--radius);
+      padding: 16px 12px; cursor: pointer; transition: var(--transition); text-align: center;
+      position: relative;
+    }
+    .item-card:hover { border-color: var(--border-bright); }
+    .item-card.selected { border-color: var(--gold); background: var(--gold-glow); }
+    .item-card .item-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .item-card .item-price { font-size: 16px; font-weight: 800; color: var(--gold); font-family: var(--font-display); }
+    .item-card .item-orig { font-size: 12px; color: var(--text-muted); text-decoration: line-through; }
+    .item-card .item-save { position: absolute; top: -8px; right: 8px; background: var(--red); color: white; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
+    .product-hero-icon { width: 100%; height: 220px; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 0; }
+
+    .proof-upload-area {
+      border: 2px dashed var(--border-bright); border-radius: var(--radius);
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: var(--transition); background: var(--bg-panel); position: relative;
+    }
+    .proof-upload-area:hover { border-color: var(--gold); background: var(--gold-glow); }
+    .proof-img-preview { max-width: 100%; max-height: 200px; border-radius: var(--radius); margin: 8px auto; display: block; }
+    .qris-display { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 16px; }
+    .qris-display img { max-width: 200px; max-height: 200px; margin: 0 auto; display: block; border-radius: 8px; }
+
+    .checkout-summary { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 20px; }
+    .checkout-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .checkout-row:last-child { border-bottom: none; font-weight: 700; font-size: 16px; }
+    .pm-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .pm-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--bg-panel); border: 2px solid var(--border);
+      border-radius: var(--radius); padding: 14px; cursor: pointer; transition: var(--transition);
+    }
+    .pm-row:hover { border-color: var(--border-bright); }
+    .pm-row.selected { border-color: var(--gold); background: var(--gold-glow); }
+    .pm-row .pm-logo { width: 40px; height: 40px; border-radius: 8px; background: var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .pm-row .pm-info { flex: 1; }
+    .pm-row .pm-info .pm-title { font-size: 14px; font-weight: 600; }
+    .pm-row .pm-info .pm-desc { font-size: 12px; color: var(--text-secondary); }
+    .pm-row .pm-fee { font-size: 13px; color: var(--text-muted); }
+    .pm-group-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px; }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<!-- Checkout modal -->
+<div class="modal-overlay" id="modal-checkout">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+      <span class="modal-title" id="co-modal-title">Checkout</span>
+      <button class="modal-close" onclick="closeModal('modal-checkout')">&times;</button>
+    </div>
+    <div id="co-step-1">
+      <!-- Step 1: Fill game ID -->
+      <div class="order-steps">
+        <div class="step active"><div class="step-num">1</div><span>Detail Akun</span></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num">2</div><span>Pembayaran</span></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num">3</div><span>Konfirmasi</span></div>
+      </div>
+      <div id="co-fields"></div>
+      <div class="checkout-summary">
+        <div class="checkout-row"><span>Produk</span><span id="co-s-name">-</span></div>
+        <div class="checkout-row"><span>Harga</span><span id="co-s-price">-</span></div>
+        <div class="checkout-row"><span>Total</span><span id="co-s-total" style="color:var(--gold);">-</span></div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" style="margin-top:16px;" onclick="goToPayment()">Lanjut ke Pembayaran &rarr;</button>
+    </div>
+    <div id="co-step-2" style="display:none;">
+      <div class="order-steps">
+        <div class="step done"><div class="step-num">✓</div><span>Detail Akun</span></div>
+        <div class="step-line"></div>
+        <div class="step active"><div class="step-num">2</div><span>Pembayaran</span></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num">3</div><span>Konfirmasi</span></div>
+      </div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Pilih metode pembayaran:</p>
+      <div id="pm-list-render"></div>
+      <!-- QRIS Image (shown when QRIS/ewallet selected) -->
+      <div id="co-qris-display" class="qris-display" style="display:none;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Scan QR Code untuk Bayar</div>
+        <img id="co-qris-img" src="" alt="QRIS" />
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-qris-amount"></div>
+      </div>
+      <div class="checkout-summary">
+        <div class="checkout-row"><span>Subtotal</span><span id="co-p-sub">-</span></div>
+        <div class="checkout-row"><span>Biaya Layanan</span><span id="co-p-fee">Rp 0</span></div>
+        <div class="checkout-row"><span>Total Bayar</span><span id="co-p-total" style="color:var(--gold);">-</span></div>
+      </div>
+      <!-- Upload Bukti Pembayaran -->
+      <div style="margin-top:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Upload Bukti Pembayaran <span style="color:var(--text-muted);font-weight:400;">(opsional, mempercepat proses)</span></div>
+        <div class="proof-upload-area" onclick="document.getElementById('proof-file-input').click()">
+          <input type="file" id="proof-file-input" accept="image/*" style="display:none;" onchange="handleProofUpload(event)" />
+          <div id="proof-placeholder">
+            <div style="font-size:24px;color:var(--text-muted);margin-bottom:6px;">▲</div>
+            <div style="font-size:13px;font-weight:600;">Tap untuk upload screenshot bukti bayar</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">JPG, PNG &bull; Maks 5MB</div>
+          </div>
+          <div id="proof-preview-wrap" style="display:none;">
+            <img id="proof-img-preview" class="proof-img-preview" src="" alt="Bukti Bayar" />
+            <div style="font-size:12px;color:var(--green);margin-top:4px;" id="proof-status"></div>
+          </div>
+        </div>
+        <input type="hidden" id="proof-url" value="" />
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-secondary" onclick="backToStep1()">← Kembali</button>
+        <button class="btn btn-primary btn-full" onclick="placeOrder()" id="btn-place-order">Bayar Sekarang &rarr;</button>
+      </div>
+    </div>
+    <div id="co-step-3" style="display:none;">
+      <div style="text-align:center;padding:24px 0;">
+        <div style="font-size:60px;margin-bottom:16px;color:var(--green);">✓</div>
+        <h3 style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:8px;">Pesanan Dibuat!</h3>
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:4px;">Order ID: <strong id="co-order-id" style="color:var(--gold);"></strong></p>
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;">Pesanan kamu sedang diproses. Selesaikan pembayaran sesuai instruksi.</p>
+        <div id="co-payment-instructions" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;font-size:14px;"></div>
+        <a href="orders.html" class="btn btn-primary btn-lg">Lihat Pesanan Saya &rarr;</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Login modal -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">Login Diperlukan</span>
+      <button class="modal-close" onclick="closeModal('modal-login')">&times;</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">Kamu harus login untuk melanjutkan pembelian.</p>
+    <button class="btn btn-secondary btn-full btn-lg" onclick="handleGoogleLogin()">
+      Lanjutkan dengan Google
+    </button>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
+    <div class="nav-links">
+      <a href="../index.html">Beranda</a>
+      <a href="catalog.html" class="active">Katalog</a>
+      <a href="orders.html">Pesanan</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">Masuk</button>
+      <div class="nav-actions" id="user-menu" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;">
+          <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
+          <span id="nav-username" style="font-size:14px;"></span>
+          <a href="orders.html" style="font-size:13px;color:var(--text-secondary);margin-left:4px;">☰</a>
+          <a href="owner/dashboard.html" id="nav-admin-link" style="display:none;color:var(--gold);font-size:13px;">★</a>
+          <button onclick="signOut()" style="background:none;color:var(--text-muted);font-size:13px;">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:48px;padding-bottom:80px;">
+  <div id="product-content">
+    <div style="text-align:center;padding:80px 0;"><div class="loader-ring" style="margin:0 auto;"></div></div>
+  </div>
+</div>
+
+<footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
+  <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">
+    &copy; 2025 DOOMINIKS STORE &mdash; SSL Secured &bull; Transaksi Terjamin
+  </div>
+</footer>
+
+<script src="../js/firebase-config.js"></script>
+<script>
+// Cloudinary config untuk upload bukti bayar
+const CLOUDINARY_CLOUD_NAME_P = "dnpvgpqka";
+const CLOUDINARY_UPLOAD_PRESET_P = "vaultstore";
+</script>
+<script src="../js/app.js"></script>
+<script>
+const PAYMENT_METHODS = [
+  { id: "bank_transfer_bca", group: "Transfer Bank", name: "BCA Virtual Account", icon: "▪", fee: 4000 },
+  { id: "bank_transfer_bni", group: "Transfer Bank", name: "BNI Virtual Account", icon: "▪", fee: 4000 },
+  { id: "bank_transfer_mandiri", group: "Transfer Bank", name: "Mandiri Virtual Account", icon: "▪", fee: 4000 },
+  { id: "bank_transfer_bri", group: "Transfer Bank", name: "BRI Virtual Account", icon: "▪", fee: 4000 },
+  { id: "bank_jago", group: "Transfer Bank", name: "Bank Jago", icon: "◆", fee: 0 },
+  { id: "qris", group: "QRIS / E-Wallet", name: "QRIS (Semua E-Wallet)", icon: "▪", fee: 0 },
+  { id: "gopay", group: "QRIS / E-Wallet", name: "GoPay", icon: "▲", fee: 0 },
+  { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 0 },
+  { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 0 },
+  { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 0 },
+  { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 5000 },
+  { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 5000 },
+];
+
+let productData = null;
+let selectedItem = null;
+let selectedPayment = null;
+let gameFields = {};
+
+const params = new URLSearchParams(window.location.search);
+const productId = params.get("id");
+
+async function loadProduct() {
+  if (!productId) { document.getElementById("product-content").innerHTML = `<div class="empty-state"><h4>Produk tidak ditemukan</h4><a href="catalog.html" class="btn btn-primary">Kembali ke Katalog</a></div>`; return; }
+  try {
+    const snap = await db.collection("products").doc(productId).get();
+    if (!snap.exists) throw new Error("not found");
+    productData = { id: snap.id, ...snap.data() };
+    renderProduct(productData);
+  } catch (e) {
+    document.getElementById("product-content").innerHTML = `<div class="empty-state"><h4>Produk tidak ditemukan</h4><a href="catalog.html" class="btn btn-primary">Kembali</a></div>`;
+  }
+}
+
+function renderProduct(p) {
+  const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
+  document.title = `${p.name} — DOOMINIKS STORE`;
+  document.getElementById("product-content").innerHTML = `
+    <div style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);">
+      <a href="../index.html" style="color:var(--text-secondary);">Beranda</a> &rsaquo; 
+      <a href="catalog.html" style="color:var(--text-secondary);">Katalog</a> &rsaquo; 
+      <span style="color:var(--text-primary);">${p.name}</span>
+    </div>
+    <div class="grid-2" style="gap:40px;align-items:start;">
+      <div>
+        <div class="product-hero-icon" style="background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});overflow:hidden;">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;">` : (p.icon||"◆")}</div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-top:16px;">
+          <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;margin-bottom:6px;">${p.name}</h1>
+          <div style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">${p.category||""}</div>
+          <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin-bottom:20px;">${p.description||""}</p>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div><div style="font-size:12px;color:var(--text-muted);">Mulai dari</div><div style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--gold);">${formatIDR(minPrice)}</div></div>
+            <div class="badge badge-success">✓ Proses Cepat</div>
+            <div class="badge badge-processing">▪ Auto Delivery</div>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:13px;color:var(--text-secondary);display:flex;flex-direction:column;gap:8px;">
+            ${p.instructions ? `<div style="white-space:pre-line;">${p.instructions}</div>` : '<div>✓ Top up langsung ke akun game kamu</div><div>✓ Tidak perlu password akun</div><div>✓ Proses 1-5 menit</div>'}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:16px;">Pilih Nominal</div>
+        <div class="item-grid" id="items-grid"></div>
+        <div style="margin-top:24px;" id="buy-section"></div>
+      </div>
+    </div>
+  `;
+  renderItems(p.items || []);
+}
+
+function renderItems(items) {
+  const grid = document.getElementById("items-grid");
+  if (!items.length) { grid.innerHTML = `<div class="empty-state"><p>Belum ada item.</p></div>`; return; }
+  grid.innerHTML = items.map((item, i) => {
+    const save = item.originalPrice ? Math.round((1 - item.price/item.originalPrice) * 100) : 0;
+    return `
+      <div class="item-card" id="item-${i}" onclick="selectItem(${i})">
+        ${save > 0 ? `<div class="item-save">-${save}%</div>` : ""}
+        <div class="item-name">${item.name}</div>
+        ${item.originalPrice ? `<div class="item-orig">${formatIDR(item.originalPrice)}</div>` : ""}
+        <div class="item-price">${formatIDR(item.price)}</div>
+      </div>`;
+  }).join("");
+  renderBuySection();
+}
+
+function selectItem(i) {
+  document.querySelectorAll(".item-card").forEach(c => c.classList.remove("selected"));
+  document.getElementById(`item-${i}`).classList.add("selected");
+  selectedItem = productData.items[i];
+  renderBuySection();
+}
+
+function renderBuySection() {
+  const el = document.getElementById("buy-section");
+  if (!el) return;
+  if (!selectedItem) {
+    el.innerHTML = `<div style="text-align:center;color:var(--text-secondary);font-size:14px;padding:20px 0;">Pilih nominal di atas</div>`;
+  } else {
+    el.innerHTML = `
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
+        <div style="font-size:16px;font-weight:700;">${selectedItem.name}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--gold);font-family:var(--font-display);">${formatIDR(selectedItem.price)}</div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="startCheckout()">
+        Beli Sekarang &rarr;
+      </button>`;
+  }
+}
+
+function startCheckout() {
+  if (!currentUser) { openModal("modal-login"); return; }
+  if (!selectedItem) { toast("Pilih nominal terlebih dahulu", "error"); return; }
+  // Build fields
+  const fields = productData.fields || [
+    { id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true },
+    { id: "serverId", label: "Server ID (jika ada)", placeholder: "Kosongkan jika tidak ada", required: false }
+  ];
+  document.getElementById("co-s-name").textContent = `${productData.name} — ${selectedItem.name}`;
+  document.getElementById("co-s-price").textContent = formatIDR(selectedItem.price);
+  document.getElementById("co-s-total").textContent = formatIDR(selectedItem.price);
+  document.getElementById("co-fields").innerHTML = fields.map(f => `
+    <div class="form-group">
+      <label class="form-label">${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ""}</label>
+      <input class="form-input" id="field-${f.id}" placeholder="${f.placeholder}" ${f.required ? "required" : ""} />
+    </div>
+  `).join("");
+  document.getElementById("co-step-1").style.display = "block";
+  document.getElementById("co-step-2").style.display = "none";
+  document.getElementById("co-step-3").style.display = "none";
+  openModal("modal-checkout");
+}
+
+function goToPayment() {
+  const fields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
+  gameFields = {};
+  for (const f of fields) {
+    const val = document.getElementById(`field-${f.id}`)?.value?.trim() || "";
+    if (f.required && !val) { toast(`${f.label} wajib diisi`, "error"); return; }
+    gameFields[f.id] = val;
+  }
+  // Render payment methods
+  const groups = {};
+  PAYMENT_METHODS.forEach(pm => { if (!groups[pm.group]) groups[pm.group] = []; groups[pm.group].push(pm); });
+  document.getElementById("pm-list-render").innerHTML = Object.entries(groups).map(([g, pms]) => `
+    <div class="pm-group-title">${g}</div>
+    ${pms.map(pm => `
+      <div class="pm-row" id="pm-${pm.id}" onclick="selectPayment('${pm.id}')">
+        <div class="pm-logo">${pm.icon}</div>
+        <div class="pm-info">
+          <div class="pm-title">${pm.name}</div>
+          <div class="pm-desc">${pm.fee > 0 ? `Biaya layanan ${formatIDR(pm.fee)}` : "Tanpa biaya layanan"}</div>
+        </div>
+        <div class="pm-fee">${pm.fee > 0 ? `+${formatIDR(pm.fee)}` : "Gratis"}</div>
+      </div>
+    `).join("")}
+  `).join("");
+  document.getElementById("co-p-sub").textContent = formatIDR(selectedItem.price);
+  document.getElementById("co-p-total").textContent = formatIDR(selectedItem.price);
+  document.getElementById("co-step-1").style.display = "none";
+  document.getElementById("co-step-2").style.display = "block";
+}
+
+function backToStep1() {
+  document.getElementById("co-step-1").style.display = "block";
+  document.getElementById("co-step-2").style.display = "none";
+}
+
+async function selectPayment(id) {
+  document.querySelectorAll(".pm-row").forEach(r => r.classList.remove("selected"));
+  document.getElementById(`pm-${id}`).classList.add("selected");
+  selectedPayment = PAYMENT_METHODS.find(p => p.id === id);
+  const total = selectedItem.price + (selectedPayment?.fee || 0);
+  document.getElementById("co-p-fee").textContent = formatIDR(selectedPayment?.fee || 0);
+  document.getElementById("co-p-total").textContent = formatIDR(total);
+  // Show QRIS image if ewallet/qris method selected
+  const isQris = ["qris","gopay","ovo","dana","shopeepay"].includes(id);
+  const qrisDisplay = document.getElementById("co-qris-display");
+  if (isQris) {
+    try {
+      const snap = await db.collection("settings").doc("store").get();
+      const qrisUrl = snap.exists ? snap.data().qrisImageUrl : null;
+      if (qrisUrl) {
+        document.getElementById("co-qris-img").src = qrisUrl;
+        document.getElementById("co-qris-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
+        qrisDisplay.style.display = "block";
+      } else {
+        qrisDisplay.style.display = "none";
+      }
+    } catch(e) { qrisDisplay.style.display = "none"; }
+  } else {
+    qrisDisplay.style.display = "none";
+  }
+}
+
+async function placeOrder() {
+  if (!selectedPayment) { toast("Pilih metode pembayaran", "error"); return; }
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = "Memproses...";
+  try {
+    const orderId = generateOrderId();
+    const total = selectedItem.price + (selectedPayment.fee || 0);
+    const orderData = {
+      orderId,
+      userId: currentUser.uid,
+      userEmail: currentUser.email,
+      userDisplayName: currentUser.displayName,
+      productId: productData.id,
+      productName: productData.name,
+      itemName: selectedItem.name,
+      itemPrice: selectedItem.price,
+      fee: selectedPayment.fee || 0,
+      total,
+      paymentMethod: selectedPayment.id,
+      paymentMethodName: selectedPayment.name,
+      gameFields,
+      status: "pending",
+      proofImageUrl: document.getElementById("proof-url").value || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    await db.collection("orders").doc(orderId).set(orderData);
+    // Update user leaderboard
+    const lbRef = db.collection("leaderboard").doc(currentUser.uid);
+    await lbRef.set({
+      displayName: currentUser.displayName,
+      photoURL: currentUser.photoURL || null,
+      totalSpent: firebase.firestore.FieldValue.increment(total),
+      orderCount: firebase.firestore.FieldValue.increment(1),
+      lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    // Update global stats
+    await db.collection("stats").doc("global").set({
+      orders: firebase.firestore.FieldValue.increment(1),
+    }, { merge: true });
+    // Show confirmation
+    document.getElementById("co-order-id").textContent = orderId;
+    document.getElementById("co-payment-instructions").innerHTML = `
+      <div style="font-weight:600;margin-bottom:10px;">Instruksi Pembayaran &mdash; ${selectedPayment.name}</div>
+      <div style="color:var(--text-secondary);line-height:1.8;">
+        Total yang harus dibayar: <strong style="color:var(--gold);">${formatIDR(total)}</strong><br>
+        Metode: ${selectedPayment.name}<br><br>
+        Selesaikan pembayaran dalam <strong>2 jam</strong>. Setelah pembayaran dikonfirmasi, item akan otomatis dikirim ke akun kamu.
+      </div>
+    `;
+    document.getElementById("co-step-2").style.display = "none";
+    document.getElementById("co-step-3").style.display = "block";
+    toast("Pesanan berhasil dibuat!", "success");
+  } catch (e) {
+    console.error(e);
+    toast("Gagal membuat pesanan. Coba lagi.", "error");
+  }
+  btn.disabled = false; btn.textContent = "Bayar Sekarang →";
+}
+
+async function handleGoogleLogin() {
+  try {
+    await signInWithGoogle();
+    closeModal("modal-login");
+    toast("Login berhasil!", "success");
+  } catch(e){}
+}
+
+
+async function handleProofUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast("Ukuran file maks 5MB.", "error"); return; }
+  // Instant preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById("proof-img-preview").src = e.target.result;
+    document.getElementById("proof-preview-wrap").style.display = "block";
+    document.getElementById("proof-placeholder").style.display = "none";
+    document.getElementById("proof-status").textContent = "Mengupload...";
+  };
+  reader.readAsDataURL(file);
+  // Upload to Cloudinary
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_P);
+    formData.append("folder", "doominiks/proofs");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_P}/image/upload`);
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const url = JSON.parse(xhr.responseText).secure_url;
+        document.getElementById("proof-url").value = url;
+        document.getElementById("proof-status").innerHTML = `<span style="color:var(--green);">✓ Bukti berhasil diupload</span>`;
+        toast("Bukti pembayaran diupload!", "success");
+      } else {
+        document.getElementById("proof-status").textContent = "Upload gagal, lanjut tanpa bukti.";
+      }
+    };
+    xhr.onerror = () => { document.getElementById("proof-status").textContent = "Upload gagal."; };
+    xhr.send(formData);
+  } catch(e) {
+    document.getElementById("proof-status").textContent = "Upload gagal.";
+  }
+}
+
+function onAuthReady() { hideLoader(); }
+loadProduct();
+</script>
+</body>
+</html>
