@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pesanan Saya &mdash; DOOMINIKS STORE</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><span class="modal-title">Login Diperlukan</span><button class="modal-close" onclick="closeModal('modal-login')">&times;</button></div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">Login untuk melihat riwayat pesanan kamu.</p>
+    <button class="btn btn-secondary btn-full btn-lg" onclick="handleGoogleLogin()">Lanjutkan dengan Google</button>
+  </div>
+</div>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
+    <div class="nav-links">
+      <a href="../index.html">Beranda</a>
+      <a href="catalog.html">Katalog</a>
+      <a href="orders.html" class="active">Pesanan</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">Masuk</button>
+      <div class="nav-actions" id="user-menu" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;">
+          <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
+          <span id="nav-username" style="font-size:14px;"></span>
+          <a href="owner/dashboard.html" id="nav-admin-link" style="display:none;color:var(--gold);font-size:13px;">★</a>
+          <button onclick="signOut()" style="background:none;color:var(--text-muted);font-size:13px;">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:48px;padding-bottom:80px;">
+  <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;margin-bottom:6px;">Pesanan <span style="color:var(--gold);">Saya</span></h1>
+  <p style="color:var(--text-secondary);margin-bottom:32px;">Riwayat semua transaksi kamu</p>
+
+  <div id="orders-require-login" style="display:none;">
+    <div class="empty-state">
+      <div class="empty-icon">▪</div>
+      <h4>Login Diperlukan</h4>
+      <p>Login untuk melihat riwayat pesanan kamu.</p>
+      <button class="btn btn-primary" onclick="openModal('modal-login')">Masuk Sekarang</button>
+    </div>
+  </div>
+
+  <div id="orders-content" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="filterOrders('all', this)">Semua</button>
+      <button class="tab-btn" onclick="filterOrders('pending', this)">Menunggu</button>
+      <button class="tab-btn" onclick="filterOrders('processing', this)">Diproses</button>
+      <button class="tab-btn" onclick="filterOrders('success', this)">Berhasil</button>
+      <button class="tab-btn" onclick="filterOrders('failed', this)">Gagal</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap">
+        <table id="orders-table">
+          <thead><tr>
+            <th>Order ID</th>
+            <th>Produk</th>
+            <th>Total</th>
+            <th>Metode</th>
+            <th>Status</th>
+            <th>Tanggal</th>
+          </tr></thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
+  <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">&copy; 2025 DOOMINIKS STORE</div>
+</footer>
+
+<script src="../js/firebase-config.js"></script>
+<script src="../js/app.js"></script>
+<script>
+let allOrders = [];
+let currentFilter = "all";
+
+async function loadOrders(user) {
+  try {
+    const snap = await db.collection("orders").where("userId", "==", user.uid).limit(50).get();
+    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Sort client-side by createdAt desc (avoids composite index requirement)
+    allOrders.sort((a, b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+    renderOrders();
+  } catch (e) {
+    document.getElementById("orders-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Gagal memuat pesanan.</td></tr>`;
+  }
+}
+
+function filterOrders(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderOrders();
+}
+
+function renderOrders() {
+  const filtered = currentFilter === "all" ? allOrders : allOrders.filter(o => o.status === currentFilter);
+  const tbody = document.getElementById("orders-tbody");
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">▪</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
+    return;
+  }
+  const statusBadge = s => {
+    const map = { pending: "badge-pending", processing: "badge-processing", success: "badge-success", failed: "badge-failed" };
+    const labels = { pending: "Menunggu", processing: "Diproses", success: "Berhasil", failed: "Gagal" };
+    return `<span class="badge ${map[s]||'badge-pending'}">${labels[s]||s}</span>`;
+  };
+  tbody.innerHTML = filtered.map(o => `
+    <tr>
+      <td style="font-family:var(--font-display);font-size:13px;color:var(--gold);">${o.orderId}</td>
+      <td>
+        <div style="font-weight:600;">${o.productName}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${o.itemName}</div>
+      </td>
+      <td style="font-weight:700;">${formatIDR(o.total)}</td>
+      <td style="font-size:13px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod}</td>
+      <td>${statusBadge(o.status)}</td>
+      <td style="font-size:13px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
+    </tr>
+  `).join("");
+}
+
+async function handleGoogleLogin() {
+  try { await signInWithGoogle(); closeModal("modal-login"); } catch(e) {}
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (user) {
+    document.getElementById("orders-require-login").style.display = "none";
+    document.getElementById("orders-content").style.display = "block";
+    loadOrders(user);
+  } else {
+    document.getElementById("orders-require-login").style.display = "block";
+    document.getElementById("orders-content").style.display = "none";
+  }
+}
+</script>
+</body>
+</html>
