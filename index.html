@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DOOMINIKS STORE &mdash; Top Up Game Terpercaya</title>
   <meta name="description" content="Top up game murah, cepat, dan terpercaya. Mobile Legends, Free Fire, PUBG, Genshin Impact & lebih banyak lagi." />
-  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="css/style.css" />
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -366,9 +366,8 @@
       <div class="footer-brand">
         <div class="brand-name">DOOMINIKS <span>STORE</span></div>
         <p>Platform top up game terpercaya dengan ribuan produk dari berbagai publisher. Proses cepat, harga terbaik, layanan 24/7.</p>
-        <div style="margin-top:20px;display:flex;gap:12px;">
-          <a href="#" class="btn btn-secondary btn-sm">▪ Discord</a>
-          <a href="#" class="btn btn-secondary btn-sm">▪ WhatsApp</a>
+        <div style="margin-top:20px;display:flex;gap:12px;" id="footer-social-links">
+          <!-- Diisi dari Firestore -->
         </div>
       </div>
       <div class="footer-section">
@@ -461,10 +460,34 @@ async function loadCategoriesFromDB() {
     const snap = await db.collection("settings").doc("store").get();
     if (snap.exists && snap.data().categories && snap.data().categories.length) {
       buildCategorySlider(snap.data().categories);
-      return;
+    } else {
+      buildCategorySlider(CATEGORIES);
     }
-  } catch(e) {}
-  buildCategorySlider(CATEGORIES);
+    // Load social links (Discord & WA)
+    if (snap.exists) {
+      const s = snap.data();
+      const container = document.getElementById("footer-social-links");
+      if (container) {
+        let html = "";
+        if (s.discord) {
+          const logoHtml = s.discordLogoUrl
+            ? `<img src="${s.discordLogoUrl}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;border-radius:3px;">`
+            : `<span style="margin-right:6px;">▪</span>`;
+          html += `<a href="${s.discord}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;">${logoHtml}Discord</a>`;
+        }
+        if (s.whatsapp) {
+          const waUrl = s.whatsapp.startsWith("http") ? s.whatsapp : `https://wa.me/${s.whatsapp.replace(/[^0-9]/g,"")}`;
+          const logoHtml = s.whatsappLogoUrl
+            ? `<img src="${s.whatsappLogoUrl}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;border-radius:3px;">`
+            : `<span style="margin-right:6px;">▪</span>`;
+          html += `<a href="${waUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;">${logoHtml}WhatsApp</a>`;
+        }
+        container.innerHTML = html || `<span style="color:var(--text-muted);font-size:13px;">-</span>`;
+      }
+    }
+  } catch(e) {
+    buildCategorySlider(CATEGORIES);
+  }
 }
 
 function filterByCategory(name) {
