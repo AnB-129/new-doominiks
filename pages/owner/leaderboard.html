@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Leaderboard &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html" class="active"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="admin-page-title">Leaderboard</div>
+      <button class="btn btn-danger btn-sm" onclick="confirmReset()">⊞ Reset Bulanan</button>
+    </div>
+    <div class="admin-page-sub">Pantau dan kelola peringkat pembeli terbaik</div>
+
+    <!-- Top 3 summary -->
+    <div class="grid-3" style="margin-bottom:28px;" id="lb-admin-top3"></div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:700;">Semua Peringkat</div>
+        <div style="font-size:13px;color:var(--text-secondary);" id="lb-admin-count"></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th>
+            <th>Pengguna</th>
+            <th>Total Belanja</th>
+            <th>Total Order</th>
+            <th>Order Terakhir</th>
+            <th>Aksi</th>
+          </tr></thead>
+          <tbody id="lb-admin-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Reset confirm modal -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">Reset Leaderboard?</span>
+      <button class="modal-close" onclick="closeModal('modal-reset')">&times;</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:8px;">Semua data leaderboard akan direset ke nol. Aksi ini tidak dapat dibatalkan.</p>
+    <p style="color:var(--red);font-size:13px;font-weight:600;margin-bottom:24px;">Pastikan sudah mencatat pemenang bulan ini sebelum reset!</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-reset')">Batal</button>
+      <button class="btn btn-danger btn-full" onclick="doReset()">Ya, Reset Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+let lbData = [];
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+async function loadLeaderboard() {
+  try {
+    const snap = await db.collection("leaderboard").orderBy("totalSpent", "desc").get();
+    lbData = snap.docs.map((d, i) => ({ rank: i + 1, uid: d.id, ...d.data() }));
+    document.getElementById("lb-admin-count").textContent = `${lbData.length} pengguna`;
+    renderTop3();
+    renderTable();
+  } catch (e) {
+    toast("Gagal memuat: " + e.message, "error");
+  }
+}
+
+function renderTop3() {
+  const el = document.getElementById("lb-admin-top3");
+  const configs = [
+    { color: "#C9A84C", label: "#1 Peringkat Pertama", prize: "Rp 500.000" },
+    { color: "#A8B2C8", label: "#2 Peringkat Kedua", prize: "Rp 250.000" },
+    { color: "#CD7F32", label: "#3 Peringkat Ketiga", prize: "Rp 100.000" },
+  ];
+  el.innerHTML = configs.map((c, i) => {
+    const u = lbData[i];
+    return `
+    <div class="stat-card" style="border-color:${c.color}30;">
+      <div class="stat-icon" style="background:${c.color}20;color:${c.color};font-size:20px;">▲</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">${c.label}</div>
+        ${u ? `
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.displayName||"Anonim"}</div>
+          <div style="font-size:13px;color:${c.color};font-weight:700;">${formatIDR(u.totalSpent||0)}</div>
+        ` : `<div style="color:var(--text-muted);font-size:13px;">Belum ada data</div>`}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Hadiah: ${c.prize}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderTable() {
+  const tbody = document.getElementById("lb-admin-tbody");
+  if (!lbData.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><h4>Belum ada data</h4></div></td></tr>`;
+    return;
+  }
+  const rankClass = r => r === 1 ? "gold-rank" : r === 2 ? "silver-rank" : r === 3 ? "bronze-rank" : "other-rank";
+  tbody.innerHTML = lbData.map(u => `
+    <tr>
+      <td><div class="lb-rank ${rankClass(u.rank)}">${u.rank}</div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="lb-avatar">${u.photoURL ? `<img src="${u.photoURL}" alt="">` : (u.displayName||"?")[0].toUpperCase()}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">${u.displayName||"Anonim"}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-weight:700;color:var(--gold);">${formatIDR(u.totalSpent||0)}</td>
+      <td>${u.orderCount||0} pesanan</td>
+      <td style="font-size:12px;color:var(--text-muted);">${formatDate(u.lastOrder)}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="removeFromLb('${u.uid}','${(u.displayName||"user").replace(/'/g,"\\'")}')">✕ Hapus</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function removeFromLb(uid, name) {
+  if (!confirm(`Hapus ${name} dari leaderboard?`)) return;
+  try {
+    await db.collection("leaderboard").doc(uid).delete();
+    toast(`${name} dihapus dari leaderboard.`, "info");
+    loadLeaderboard();
+  } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+function confirmReset() { openModal("modal-reset"); }
+
+async function doReset() {
+  closeModal("modal-reset");
+  try {
+    const snap = await db.collection("leaderboard").get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    toast("Leaderboard berhasil direset!", "success");
+    loadLeaderboard();
+  } catch(e) { toast("Gagal reset: " + e.message, "error"); }
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  loadLeaderboard();
+}
+</script>
+</body>
+</html>
