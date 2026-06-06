@@ -390,16 +390,21 @@ async function goToPayment() {
   availableMethods.forEach(pm => { if (!groups[pm.group]) groups[pm.group] = []; groups[pm.group].push(pm); });
   document.getElementById("pm-list-render").innerHTML = Object.entries(groups).map(([g, pms]) => `
     <div class="pm-group-title">${g}</div>
-    ${pms.map(pm => `
+    ${pms.map(pm => {
+      const logoUrl = pmSettings[pm.id]?.imageUrl || null;
+      const logoHtml = logoUrl
+        ? `<img src="${logoUrl}" alt="${pm.name}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`
+        : pm.icon;
+      return `
       <div class="pm-row" id="pm-${pm.id}" onclick="selectPayment('${pm.id}')">
-        <div class="pm-logo">${pm.icon}</div>
+        <div class="pm-logo">${logoHtml}</div>
         <div class="pm-info">
           <div class="pm-title">${pm.name}</div>
           <div class="pm-desc">${pm.fee > 0 ? `Biaya layanan ${formatIDR(pm.fee)}` : "Tanpa biaya layanan"}</div>
         </div>
         <div class="pm-fee">${pm.fee > 0 ? `+${formatIDR(pm.fee)}` : "Gratis"}</div>
-      </div>
-    `).join("")}
+      </div>`;
+    }).join("")}
   `).join("");
   document.getElementById("co-p-sub").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-p-total").textContent = formatIDR(selectedItem.price);
