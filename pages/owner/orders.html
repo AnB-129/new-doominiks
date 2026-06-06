@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kelola Pesanan &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <style>
+    .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .detail-item { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+    .detail-item .di-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); margin-bottom: 4px; }
+    .detail-item .di-value { font-size: 14px; font-weight: 500; word-break: break-all; }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="modal-order-detail">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <span class="modal-title">Detail Pesanan</span>
+      <button class="modal-close" onclick="closeModal('modal-order-detail')">&times;</button>
+    </div>
+    <div id="order-detail-body"></div>
+  </div>
+</div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html" class="active"><span class="nav-icon">◷</span>Pesanan</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div class="admin-page-title">Kelola Pesanan</div>
+    <div class="admin-page-sub">Approve, tolak, dan pantau semua transaksi</div>
+
+    <!-- Summary cards -->
+    <div class="grid-4" style="margin-bottom:28px;" id="order-summary">
+      <div class="stat-card"><div class="stat-icon gold">⊞</div><div><div class="stat-label">Total</div><div class="stat-value" id="os-total">-</div></div></div>
+      <div class="stat-card"><div class="stat-icon red">◆</div><div><div class="stat-label">Pending</div><div class="stat-value" id="os-pending">-</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">✓</div><div><div class="stat-label">Berhasil</div><div class="stat-value" id="os-success">-</div></div></div>
+      <div class="stat-card"><div class="stat-icon cyan">▲</div><div><div class="stat-label">Revenue</div><div class="stat-value" id="os-revenue" style="font-size:18px;">-</div></div></div>
+    </div>
+
+    <!-- Filters -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      <div class="tabs" style="margin-bottom:0;">
+        <button class="tab-btn active" onclick="setStatusFilter('all',this)">Semua</button>
+        <button class="tab-btn" onclick="setStatusFilter('pending',this)">Pending</button>
+        <button class="tab-btn" onclick="setStatusFilter('processing',this)">Diproses</button>
+        <button class="tab-btn" onclick="setStatusFilter('success',this)">Berhasil</button>
+        <button class="tab-btn" onclick="setStatusFilter('failed',this)">Gagal</button>
+      </div>
+      <div style="position:relative;flex:1;min-width:180px;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
+        <input class="form-input" id="order-search" placeholder="Cari order ID, nama, email..." oninput="renderOrdersTable()" style="padding-left:38px;" />
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Order ID</th>
+            <th>Pembeli</th>
+            <th>Produk</th>
+            <th>Total</th>
+            <th>Metode</th>
+            <th>Status</th>
+            <th>Waktu</th>
+            <th>Aksi</th>
+          </tr></thead>
+          <tbody id="orders-admin-tbody"></tbody>
+        </table>
+      </div>
+      <div id="orders-load-more" style="text-align:center;padding:20px;display:none;">
+        <button class="btn btn-secondary" onclick="loadMoreOrders()">Muat Lebih Banyak</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+let allOrders = [];
+let statusFilter = "all";
+let lastDoc = null;
+const PAGE_SIZE = 30;
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+async function loadOrders(reset = true) {
+  try {
+    let q = db.collection("orders").orderBy("createdAt", "desc").limit(PAGE_SIZE);
+    if (!reset && lastDoc) q = q.startAfter(lastDoc);
+    const snap = await q.get();
+    if (reset) allOrders = [];
+    const newOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allOrders = reset ? newOrders : [...allOrders, ...newOrders];
+    lastDoc = snap.docs[snap.docs.length - 1];
+    document.getElementById("orders-load-more").style.display = snap.docs.length === PAGE_SIZE ? "block" : "none";
+    updateSummary();
+    renderOrdersTable();
+  } catch (e) {
+    toast("Gagal memuat pesanan: " + e.message, "error");
+  }
+}
+
+async function loadMoreOrders() { await loadOrders(false); }
+
+function updateSummary() {
+  const orders = allOrders;
+  document.getElementById("os-total").textContent = orders.length;
+  document.getElementById("os-pending").textContent = orders.filter(o => o.status === "pending").length;
+  document.getElementById("os-success").textContent = orders.filter(o => o.status === "success").length;
+  document.getElementById("os-revenue").textContent = formatIDR(orders.filter(o => o.status === "success").reduce((s, o) => s + (o.total||0), 0));
+}
+
+function setStatusFilter(status, btn) {
+  statusFilter = status;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderOrdersTable();
+}
+
+function renderOrdersTable() {
+  const q = document.getElementById("order-search").value.toLowerCase();
+  let filtered = allOrders.filter(o => {
+    const matchStatus = statusFilter === "all" || o.status === statusFilter;
+    const matchQ = !q || o.orderId?.toLowerCase().includes(q) || o.userDisplayName?.toLowerCase().includes(q) || o.userEmail?.toLowerCase().includes(q) || o.productName?.toLowerCase().includes(q);
+    return matchStatus && matchQ;
+  });
+  const tbody = document.getElementById("orders-admin-tbody");
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">⊞</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
+    return;
+  }
+  const statusBadge = s => {
+    const map = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
+    const lbl = { pending:"Pending", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
+    return `<span class="badge ${map[s]||'badge-pending'}">${lbl[s]||s}</span>`;
+  };
+  tbody.innerHTML = filtered.map(o => `
+    <tr>
+      <td style="font-family:var(--font-display);font-size:12px;color:var(--gold);">${o.orderId}</td>
+      <td>
+        <div style="font-size:13px;font-weight:500;">${o.userDisplayName||"-"}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${o.userEmail||""}</div>
+      </td>
+      <td>
+        <div style="font-size:13px;font-weight:500;">${o.productName}</div>
+        <div style="font-size:11px;color:var(--text-secondary);">${o.itemName}</div>
+      </td>
+      <td style="font-weight:700;font-size:13px;">${formatIDR(o.total)}</td>
+      <td style="font-size:12px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod||"-"}</td>
+      <td>${statusBadge(o.status)}</td>
+      <td style="font-size:11px;color:var(--text-muted);">${formatDate(o.createdAt)}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="viewOrder('${o.orderId}')">☰</button>
+          ${o.status === "pending" ? `
+            <button class="btn btn-success btn-sm" onclick="changeStatus('${o.orderId}','success')">✓</button>
+            <button class="btn btn-secondary btn-sm" onclick="changeStatus('${o.orderId}','processing')" title="Set Proses">▶</button>
+            <button class="btn btn-danger btn-sm" onclick="changeStatus('${o.orderId}','failed')">✕</button>
+          ` : o.status === "processing" ? `
+            <button class="btn btn-success btn-sm" onclick="changeStatus('${o.orderId}','success')">✓</button>
+            <button class="btn btn-danger btn-sm" onclick="changeStatus('${o.orderId}','failed')">✕</button>
+          ` : ""}
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function changeStatus(orderId, newStatus) {
+  const labels = { success: "Setujui", processing: "Set ke Diproses", failed: "Tolak" };
+  if (!confirm(`${labels[newStatus]||"Ubah status"} pesanan ${orderId}?`)) return;
+  try {
+    const updateData = {
+      status: newStatus,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentUser.uid
+    };
+    await db.collection("orders").doc(orderId).update(updateData);
+    // Update local
+    const idx = allOrders.findIndex(o => o.orderId === orderId);
+    if (idx !== -1) allOrders[idx].status = newStatus;
+    updateSummary();
+    renderOrdersTable();
+    toast(`Pesanan ${orderId} — status diperbarui ke ${newStatus}.`, "success");
+  } catch (e) {
+    toast("Gagal update: " + e.message, "error");
+  }
+}
+
+function viewOrder(orderId) {
+  const o = allOrders.find(x => x.orderId === orderId);
+  if (!o) return;
+  const statusMap = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
+  const statusLbl = { pending:"Pending", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
+  const gameFields = o.gameFields || {};
+  document.getElementById("order-detail-body").innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--gold);">${o.orderId}</div>
+      <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
+    </div>
+    <div class="order-detail-grid">
+      <div class="detail-item"><div class="di-label">Pembeli</div><div class="di-value">${o.userDisplayName||"-"}</div></div>
+      <div class="detail-item"><div class="di-label">Email</div><div class="di-value">${o.userEmail||"-"}</div></div>
+      <div class="detail-item"><div class="di-label">Produk</div><div class="di-value">${o.productName}</div></div>
+      <div class="detail-item"><div class="di-label">Nominal</div><div class="di-value">${o.itemName}</div></div>
+      <div class="detail-item"><div class="di-label">Total Bayar</div><div class="di-value" style="color:var(--gold);font-weight:700;">${formatIDR(o.total)}</div></div>
+      <div class="detail-item"><div class="di-label">Metode Bayar</div><div class="di-value">${o.paymentMethodName||o.paymentMethod||"-"}</div></div>
+      ${Object.entries(gameFields).map(([k, v]) => v ? `<div class="detail-item"><div class="di-label">${k}</div><div class="di-value">${v}</div></div>` : "").join("")}
+      <div class="detail-item"><div class="di-label">Waktu Order</div><div class="di-value">${formatDate(o.createdAt)}</div></div>
+    </div>
+    ${o.proofImageUrl ? `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--gold);">▲ Bukti Pembayaran</div>
+      <a href="${o.proofImageUrl}" target="_blank">
+        <img src="${o.proofImageUrl}" alt="Bukti Bayar" style="max-width:100%;max-height:300px;border-radius:var(--radius);border:1px solid var(--border);display:block;" />
+      </a>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">Klik gambar untuk lihat full size</div>
+    </div>` : `<div style="margin-bottom:16px;font-size:13px;color:var(--text-muted);">Tidak ada bukti pembayaran diupload.</div>`}
+    <div class="order-detail-grid" style="display:none;">
+    </div>
+    ${o.status === "pending" || o.status === "processing" ? `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${o.status === "pending" ? `<button class="btn btn-secondary btn-sm" onclick="changeStatus('${o.orderId}','processing');closeModal('modal-order-detail')">▶ Set Diproses</button>` : ""}
+      <button class="btn btn-success" onclick="changeStatus('${o.orderId}','success');closeModal('modal-order-detail')">✓ Setujui Pesanan</button>
+      <button class="btn btn-danger" onclick="changeStatus('${o.orderId}','failed');closeModal('modal-order-detail')">✕ Tolak Pesanan</button>
+    </div>` : ""}
+  `;
+  openModal("modal-order-detail");
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  loadOrders();
+}
+</script>
+</body>
+</html>
