@@ -401,11 +401,12 @@ function renderBuySection() {
 function startCheckout() {
   if (!currentUser) { openModal("modal-login"); return; }
   if (!selectedItem) { toast("Pilih nominal terlebih dahulu", "error"); return; }
-  // Build fields
-  const fields = productData.fields || [
+  // Filter fields: show only fields that match selectedTopupType (or fields with no typeId = global)
+  const allFields = productData.fields || [
     { id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true },
     { id: "serverId", label: "Server ID (jika ada)", placeholder: "Kosongkan jika tidak ada", required: false }
   ];
+  const fields = allFields.filter(f => !f.typeId || f.typeId === selectedTopupType);
   document.getElementById("co-s-name").textContent = `${productData.name} — ${selectedItem.name}`;
   document.getElementById("co-s-price").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-s-total").textContent = formatIDR(selectedItem.price);
@@ -422,7 +423,8 @@ function startCheckout() {
 }
 
 async function goToPayment() {
-  const fields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
+  const allFields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
+  const fields = allFields.filter(f => !f.typeId || f.typeId === selectedTopupType);
   gameFields = {};
   for (const f of fields) {
     const val = document.getElementById(`field-${f.id}`)?.value?.trim() || "";
