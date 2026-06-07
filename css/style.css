@@ -506,7 +506,237 @@ footer {
 .step.done .step-num { background: var(--green); color: white; border-color: var(--green); }
 .step-line { flex: 1; height: 1px; background: var(--border); min-width: 20px; }
 
-/* ---- RESPONSIVE ---- */
+/* ============================================================
+   ANIMATION SYSTEM
+   ============================================================ */
+
+/* ---- Keyframes ---- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(201, 168, 76, 0.12); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Utility animation classes ---- */
+.anim-fade-up   { animation: fadeUp   0.5s cubic-bezier(0.4,0,0.2,1) both; }
+.anim-fade-in   { animation: fadeIn   0.4s ease both; }
+.anim-fade-down { animation: fadeDown 0.45s cubic-bezier(0.4,0,0.2,1) both; }
+.anim-scale-in  { animation: scaleIn  0.4s cubic-bezier(0.4,0,0.2,1) both; }
+.anim-slide-r   { animation: slideRight 0.45s cubic-bezier(0.4,0,0.2,1) both; }
+.anim-slide-l   { animation: slideLeft  0.45s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* Stagger delays */
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.30s; }
+.delay-7 { animation-delay: 0.35s; }
+.delay-8 { animation-delay: 0.40s; }
+
+/* ---- Scroll-reveal (JS adds .revealed) ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s cubic-bezier(0.4,0,0.2,1),
+              transform 0.55s cubic-bezier(0.4,0,0.2,1);
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.93);
+  transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1),
+              transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.reveal-scale.revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ---- Page entry animations ---- */
+/* Navbar slides down */
+.navbar { animation: fadeDown 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* Hero section */
+.hero-title   { animation: fadeUp 0.55s 0.1s cubic-bezier(0.4,0,0.2,1) both; }
+.hero-desc    { animation: fadeUp 0.55s 0.2s cubic-bezier(0.4,0,0.2,1) both; }
+.hero-actions { animation: fadeUp 0.55s 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+.hero-stats   { animation: fadeUp 0.55s 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+.hero-visual  { animation: scaleIn 0.65s 0.2s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* Stat cards stagger */
+.stat-card:nth-child(1) { animation: fadeUp 0.5s 0.05s both; }
+.stat-card:nth-child(2) { animation: fadeUp 0.5s 0.12s both; }
+.stat-card:nth-child(3) { animation: fadeUp 0.5s 0.19s both; }
+.stat-card:nth-child(4) { animation: fadeUp 0.5s 0.26s both; }
+
+/* Product cards stagger on load */
+.card-product:nth-child(1)  { animation: fadeUp 0.5s 0.05s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(2)  { animation: fadeUp 0.5s 0.10s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(3)  { animation: fadeUp 0.5s 0.15s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(4)  { animation: fadeUp 0.5s 0.20s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(5)  { animation: fadeUp 0.5s 0.25s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(6)  { animation: fadeUp 0.5s 0.30s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(7)  { animation: fadeUp 0.5s 0.35s cubic-bezier(0.4,0,0.2,1) both; }
+.card-product:nth-child(8)  { animation: fadeUp 0.5s 0.40s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* Admin panel */
+.admin-sidebar  { animation: slideRight 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+.admin-page-title { animation: fadeUp 0.4s 0.1s both; }
+.admin-page-sub   { animation: fadeUp 0.4s 0.18s both; }
+.admin-content > .card:nth-child(1) { animation: fadeUp 0.45s 0.15s both; }
+.admin-content > .card:nth-child(2) { animation: fadeUp 0.45s 0.22s both; }
+.admin-content > .card:nth-child(3) { animation: fadeUp 0.45s 0.29s both; }
+
+/* Modal animation */
+.modal-overlay.open .modal {
+  animation: scaleIn 0.3s cubic-bezier(0.4,0,0.2,1) both !important;
+}
+
+/* Toast already has animation */
+
+/* ---- Hover micro-interactions ---- */
+/* Product card hover lift */
+.card-product {
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1),
+              border-color 0.25s ease,
+              box-shadow 0.25s ease;
+}
+.card-product:hover {
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--gold-dim);
+}
+
+/* Stat card hover */
+.stat-card {
+  transition: transform 0.22s ease, border-color 0.22s ease;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-bright);
+}
+
+/* Button press effect */
+.btn:active { transform: scale(0.97); }
+.btn-primary:active { transform: scale(0.97) translateY(0); }
+
+/* Nav link underline slide */
+.nav-links a {
+  position: relative;
+}
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 2px; left: 14px; right: 14px;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  border-radius: 2px;
+}
+.nav-links a:hover::after,
+.nav-links a.active::after { transform: scaleX(1); }
+
+/* Sidebar nav hover */
+.sidebar-nav a {
+  transition: background 0.18s ease, color 0.18s ease, padding-left 0.18s ease;
+}
+.sidebar-nav a:hover { padding-left: 18px; }
+.sidebar-nav a.active { padding-left: 18px; }
+
+/* Category cards float on hover */
+.category-card {
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), border-color 0.25s ease;
+}
+.category-card:hover { transform: translateY(-4px); }
+
+/* Payment method row */
+.pm-row {
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.pm-row:hover { transform: translateX(4px); }
+
+/* Gold pulse on selected payment */
+.pm-row.selected { animation: goldPulse 2s ease infinite; }
+
+/* Item card hover (product page) */
+.item-card {
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1),
+              border-color 0.2s ease,
+              background 0.2s ease;
+}
+.item-card:hover { transform: translateY(-2px) scale(1.02); }
+.item-card.selected { animation: goldPulse 2s ease infinite; }
+
+/* Logo mark float */
+.nav-logo .logo-mark {
+  animation: floatY 3.5s ease-in-out infinite;
+}
+
+/* Footer links */
+.footer-section ul li a {
+  transition: color 0.18s ease, padding-left 0.18s ease;
+}
+.footer-section ul li a:hover { padding-left: 6px; }
+
+/* Table row hover */
+tbody tr {
+  transition: background 0.15s ease;
+}
+tbody tr:hover { background: var(--bg-card-hover); }
+
+/* Shimmer skeleton for loading states */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-card) 50%, var(--bg-panel) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: var(--radius);
+}
+
+/* ---- Scroll reveal JS hook ---- */
+/* Applied automatically via IntersectionObserver in app.js */
+
+
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(3, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
