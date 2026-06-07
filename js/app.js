@@ -107,3 +107,48 @@ function setActiveNav() {
   });
 }
 document.addEventListener("DOMContentLoaded", setActiveNav);
+
+// ============================================================
+// SCROLL REVEAL — IntersectionObserver
+// ============================================================
+function initScrollReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        // Stagger sibling elements
+        const siblings = entry.target.parentElement?.querySelectorAll('.reveal, .reveal-scale');
+        let delay = 0;
+        if (siblings) {
+          siblings.forEach((el, idx) => {
+            if (el === entry.target) delay = idx * 60;
+          });
+        }
+        setTimeout(() => {
+          entry.target.classList.add('revealed');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  // Observe all reveal elements
+  document.querySelectorAll('.reveal, .reveal-scale').forEach(el => observer.observe(el));
+}
+
+// Auto-init on DOM ready
+document.addEventListener('DOMContentLoaded', initScrollReveal);
+
+// Re-init when new content is dynamically added (call this after rendering cards)
+window.refreshScrollReveal = function() {
+  document.querySelectorAll('.reveal:not(.revealed), .reveal-scale:not(.revealed)').forEach(el => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    observer.observe(el);
+  });
+};
