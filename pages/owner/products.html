@@ -411,6 +411,7 @@ function addFieldRow(field) {
     <input class="form-input fld-id" placeholder="ID unik (mis. userId)" value="${field ? field.id : ''}" style="flex:1;" />
     <input class="form-input fld-label" placeholder="Label (mis. User ID)" value="${field ? field.label : ''}" style="flex:1.5;" />
     <input class="form-input fld-ph" placeholder="Placeholder" value="${field ? (field.placeholder||'') : ''}" style="flex:1.5;" />
+    <input class="form-input fld-typeid" placeholder="ID Tipe (kosong=semua)" value="${field ? (field.typeId||'') : ''}" style="flex:1;font-size:11px;" title="Isi ID Tipe jika field ini hanya muncul untuk tipe tertentu. Kosongkan untuk semua tipe." />
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <label style="font-size:12px;color:var(--text-secondary);">Wajib</label>
       <label class="toggle" style="width:36px;height:20px;">
@@ -430,8 +431,11 @@ function getFields() {
     const label = row.querySelector(".fld-label")?.value?.trim();
     const placeholder = row.querySelector(".fld-ph")?.value?.trim();
     const required = row.querySelector(".fld-req")?.checked;
+    const typeId = row.querySelector(".fld-typeid")?.value?.trim() || null;
     if (!id || !label) return null;
-    return { id, label, placeholder: placeholder || "", required: !!required };
+    const obj = { id, label, placeholder: placeholder || "", required: !!required };
+    if (typeId) obj.typeId = typeId;
+    return obj;
   }).filter(Boolean);
 }
 
