@@ -136,6 +136,17 @@
         <input class="form-input" id="f-sort" type="number" value="99" min="0" />
       </div>
 
+      <!-- Tipe Top Up -->
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-family:var(--font-display);font-size:15px;font-weight:700;">Tipe Top Up</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Opsional — contoh: Robux 5 Hari, Gift Card, Via Login</div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addTopupTypeRow()">+ Tambah Tipe</button>
+      </div>
+      <div id="topup-types-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+
       <!-- Items -->
       <div class="divider"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -289,6 +300,70 @@ function renderProductList() {
   }).join("");
 }
 
+// ---- Topup Type rows ----
+let topupTypeCount = 0;
+function addTopupTypeRow(type) {
+  topupTypeCount++;
+  const i = topupTypeCount;
+  const el = document.createElement("div");
+  el.className = "topup-type-row";
+  el.id = `tt-row-${i}`;
+  el.style.cssText = "display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;flex-wrap:wrap;";
+  el.innerHTML = `
+    <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+      <div id="tt-icon-preview-${i}" style="width:52px;height:52px;border-radius:10px;background:var(--bg-card);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;cursor:pointer;" onclick="document.getElementById('tt-icon-file-${i}').click()">
+        ${type && type.iconUrl ? `<img src="${type.iconUrl}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:var(--text-muted);">+</span>`}
+      </div>
+      <input type="file" id="tt-icon-file-${i}" accept="image/*" style="display:none;" onchange="uploadTopupTypeIcon(${i}, this)" />
+      <input type="hidden" class="tt-icon-url" id="tt-icon-url-${i}" value="${type ? (type.iconUrl||'') : ''}" />
+    </div>
+    <div style="flex:1;min-width:140px;">
+      <input class="form-input tt-name" id="tt-name-${i}" placeholder="Nama tipe (mis. Robux 5 Hari)" value="${type ? type.name : ''}" style="margin-bottom:6px;" />
+      <input class="form-input tt-desc" id="tt-desc-${i}" placeholder="Deskripsi singkat (opsional)" value="${type ? (type.desc||'') : ''}" />
+    </div>
+    <div style="flex:1;min-width:120px;">
+      <label style="font-size:11px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px;">ID Tipe (unik)</label>
+      <input class="form-input tt-id" id="tt-id-${i}" placeholder="mis. robux_5hari" value="${type ? type.id : ''}" />
+    </div>
+    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('tt-row-${i}').remove()" style="flex-shrink:0;">✕</button>
+  `;
+  document.getElementById("topup-types-list").appendChild(el);
+}
+
+async function uploadTopupTypeIcon(i, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 1 * 1024 * 1024) { toast("Maks 1MB", "error"); return; }
+  const preview = document.getElementById(`tt-icon-preview-${i}`);
+  preview.innerHTML = `<div class="loader-ring" style="width:24px;height:24px;border-width:2px;"></div>`;
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error("Gagal");
+    document.getElementById(`tt-icon-url-${i}`).value = data.secure_url;
+    preview.innerHTML = `<img src="${data.secure_url}" style="width:100%;height:100%;object-fit:cover;">`;
+    toast("Icon berhasil diupload", "success");
+  } catch(e) {
+    preview.innerHTML = `<span style="color:var(--text-muted);">+</span>`;
+    toast("Gagal upload icon", "error");
+  }
+}
+
+function getTopupTypes() {
+  const rows = document.getElementById("topup-types-list").querySelectorAll(".topup-type-row");
+  return Array.from(rows).map(row => {
+    const name = row.querySelector(".tt-name")?.value?.trim();
+    const id = row.querySelector(".tt-id")?.value?.trim();
+    const desc = row.querySelector(".tt-desc")?.value?.trim();
+    const iconUrl = row.querySelector(".tt-icon-url")?.value?.trim();
+    if (!name || !id) return null;
+    return { id, name, desc: desc||"", iconUrl: iconUrl||null };
+  }).filter(Boolean);
+}
+
 // ---- Item rows ----
 let itemCount = 0;
 function addItemRow(item) {
@@ -302,6 +377,7 @@ function addItemRow(item) {
     <input class="form-input" id="item-name-${i}" placeholder="Nama (mis. 86 Diamond)" value="${item ? item.name : ''}" style="flex:1 1 100%;" />
     <input class="form-input" id="item-price-${i}" type="number" placeholder="Harga (Rp)" value="${item ? item.price : ''}" min="0" style="flex:1 1 40%;" />
     <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1 1 40%;" />
+    <input class="form-input item-typeid" id="item-typeid-${i}" placeholder="ID Tipe (opsional, mis. robux_5hari)" value="${item ? (item.typeId||'') : ''}" style="flex:1 1 100%;font-size:12px;" />
     <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('item-row-${i}').remove()" style="flex-shrink:0;">✕</button>
   `;
   document.getElementById("items-list").appendChild(el);
@@ -314,8 +390,11 @@ function getItems() {
     const name = document.getElementById(`item-name-${i}`)?.value?.trim();
     const price = parseInt(document.getElementById(`item-price-${i}`)?.value || 0);
     const orig = parseInt(document.getElementById(`item-orig-${i}`)?.value || 0);
+    const typeId = document.getElementById(`item-typeid-${i}`)?.value?.trim() || null;
     if (!name || !price) return null;
-    return { name, price, ...(orig ? { originalPrice: orig } : {}) };
+    const obj = { name, price, ...(orig ? { originalPrice: orig } : {}) };
+    if (typeId) obj.typeId = typeId;
+    return obj;
   }).filter(Boolean);
 }
 
@@ -373,7 +452,8 @@ function openAddProduct() {
   document.getElementById("product-form").reset();
   document.getElementById("items-list").innerHTML = "";
   document.getElementById("fields-list").innerHTML = "";
-  itemCount = 0; fieldCount = 0;
+  document.getElementById("topup-types-list").innerHTML = "";
+  itemCount = 0; fieldCount = 0; topupTypeCount = 0;
   document.getElementById("f-color1-text").value = "#1E2535";
   document.getElementById("f-color2-text").value = "#0D1018";
   document.getElementById("f-color1").value = "#1E2535";
@@ -421,8 +501,11 @@ function openEditProduct(id) {
   document.getElementById("f-active").checked = !!p.active;
   document.getElementById("items-list").innerHTML = "";
   document.getElementById("fields-list").innerHTML = "";
-  itemCount = 0; fieldCount = 0;
+  document.getElementById("topup-types-list").innerHTML = "";
+  itemCount = 0; fieldCount = 0; topupTypeCount = 0;
   (p.items || []).forEach(item => addItemRow(item));
+  // topup types
+  (p.topupTypes || []).forEach(t => addTopupTypeRow(t));
   // If no fields saved, show defaults so owner can see and save them
   const fields = (p.fields && p.fields.length) ? p.fields : [
     { id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true },
@@ -457,6 +540,7 @@ async function saveProduct(e) {
       active: document.getElementById("f-active").checked,
       items: getItems(),
       fields: getFields(),
+      topupTypes: getTopupTypes(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     if (!data.name) { toast("Nama produk wajib diisi!", "error"); return; }
