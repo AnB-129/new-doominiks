@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780848799/eda1d410-9135-4ad5-8cdd-f1237bc7cbee_nh459t.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Pesanan Saya &mdash; DOOMINIKS STORE</title>
   <link rel="stylesheet" href="../css/style.css" />
@@ -75,6 +76,7 @@
             <th>Metode</th>
             <th>Status</th>
             <th>Tanggal</th>
+            <th>Ulasan</th>
           </tr></thead>
           <tbody id="orders-tbody"></tbody>
         </table>
@@ -86,6 +88,53 @@
 <footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
   <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">&copy; 2025 DOOMINIKS STORE</div>
 </footer>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="modal-review">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">⭐ Beri Ulasan</span>
+      <button class="modal-close" onclick="closeModal('modal-review')">&times;</button>
+    </div>
+    <div id="review-order-info" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:16px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Rating</div>
+      <div id="review-stars" style="display:flex;gap:8px;font-size:32px;cursor:pointer;">
+        <span class="rev-star" data-v="1">☆</span>
+        <span class="rev-star" data-v="2">☆</span>
+        <span class="rev-star" data-v="3">☆</span>
+        <span class="rev-star" data-v="4">☆</span>
+        <span class="rev-star" data-v="5">☆</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ulasan <span style="color:var(--text-muted);font-weight:400;">(opsional)</span></label>
+      <textarea class="form-input" id="review-text" placeholder="Ceritakan pengalaman kamu..." style="resize:none;height:80px;font-size:13px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Foto <span style="color:var(--text-muted);font-weight:400;">(opsional)</span></label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="review-photo-preview" style="width:56px;height:56px;border-radius:var(--radius);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('review-photo-input').click()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        </div>
+        <div>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
+            Upload Foto
+            <input type="file" id="review-photo-input" accept="image/*" style="display:none;" onchange="previewReviewPhoto(this)" />
+          </label>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">JPG, PNG • Maks 3MB</div>
+          <div id="review-photo-status" style="font-size:11px;color:var(--text-secondary);margin-top:2px;"></div>
+        </div>
+      </div>
+      <input type="hidden" id="review-photo-url" />
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="submitReview()" id="btn-submit-review">Kirim Ulasan</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-review')">Lewati</button>
+    </div>
+    <div id="review-sent" style="display:none;color:var(--green);font-size:13px;margin-top:10px;">✓ Terima kasih atas ulasanmu!</div>
+  </div>
+</div>
 
 <script src="../js/firebase-config.js"></script>
 <script src="../js/app.js"></script>
@@ -134,7 +183,7 @@ function renderOrders() {
   const filtered = currentFilter === "all" ? allOrders : allOrders.filter(o => o.status === currentFilter);
   const tbody = document.getElementById("orders-tbody");
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">▪</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">▪</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
     return;
   }
   const statusBadge = s => {
@@ -153,8 +202,117 @@ function renderOrders() {
       <td style="font-size:13px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod}</td>
       <td>${statusBadge(o.status)}</td>
       <td style="font-size:13px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
+      <td>
+        ${o.status === "success" && !o.reviewed
+          ? `<button class="btn btn-secondary btn-sm" onclick="openReviewModal('${o.orderId}','${o.productId}','${o.productName}','${o.itemName}')">⭐ Ulasan</button>`
+          : o.reviewed ? `<span style="font-size:12px;color:var(--text-muted);">✓ Diulas</span>` : ""}
+      </td>
     </tr>
   `).join("");
+}
+
+// ---- Review System ----
+const CLOUDINARY_CLOUD_NAME_R = "dnpvgpqka";
+const CLOUDINARY_UPLOAD_PRESET_R = "vaultstore";
+let reviewRating = 0;
+let reviewOrderData = {};
+
+function openReviewModal(orderId, productId, productName, itemName) {
+  reviewOrderData = { orderId, productId, productName, itemName };
+  reviewRating = 0;
+  document.getElementById("review-text").value = "";
+  document.getElementById("review-photo-url").value = "";
+  document.getElementById("review-photo-preview").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
+  document.getElementById("review-photo-status").textContent = "";
+  document.getElementById("review-sent").style.display = "none";
+  document.getElementById("btn-submit-review").style.display = "inline-flex";
+  document.getElementById("btn-submit-review").disabled = false;
+  document.getElementById("btn-submit-review").textContent = "Kirim Ulasan";
+  document.querySelectorAll(".rev-star").forEach(s => { s.textContent = "☆"; s.style.color = ""; });
+  document.getElementById("review-order-info").innerHTML = `
+    <div style="font-weight:600;margin-bottom:2px;">${productName}</div>
+    <div style="color:var(--text-secondary);">Nominal: <span style="color:var(--gold);">${itemName}</span> &bull; Order: <span style="font-family:var(--font-body);color:var(--gold);">${orderId}</span></div>
+  `;
+  // Star events
+  document.querySelectorAll(".rev-star").forEach(star => {
+    star.onclick = () => {
+      reviewRating = parseInt(star.dataset.v);
+      document.querySelectorAll(".rev-star").forEach((s,i) => { s.textContent = i < reviewRating ? "★" : "☆"; s.style.color = i < reviewRating ? "var(--gold)" : ""; });
+    };
+    star.onmouseover = () => {
+      const v = parseInt(star.dataset.v);
+      document.querySelectorAll(".rev-star").forEach((s,i) => { s.textContent = i < v ? "★" : "☆"; s.style.color = i < v ? "var(--gold)" : ""; });
+    };
+    star.onmouseout = () => {
+      document.querySelectorAll(".rev-star").forEach((s,i) => { s.textContent = i < reviewRating ? "★" : "☆"; s.style.color = i < reviewRating ? "var(--gold)" : ""; });
+    };
+  });
+  openModal("modal-review");
+}
+
+function previewReviewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { toast("Foto maks 3MB", "error"); input.value = ""; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById("review-photo-preview").innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+  uploadReviewPhoto(file);
+}
+
+async function uploadReviewPhoto(file) {
+  document.getElementById("review-photo-status").textContent = "Mengupload...";
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_R);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_R}/image/upload`, { method: "POST", body: fd });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error();
+    document.getElementById("review-photo-url").value = data.secure_url;
+    document.getElementById("review-photo-status").innerHTML = `<span style="color:var(--green);">✓ Foto siap</span>`;
+  } catch(e) {
+    document.getElementById("review-photo-status").textContent = "Gagal upload.";
+  }
+}
+
+async function submitReview() {
+  if (!reviewRating) { toast("Pilih rating bintang dulu", "error"); return; }
+  if (document.getElementById("review-photo-status").textContent === "Mengupload...") {
+    toast("Tunggu foto selesai diupload", "info"); return;
+  }
+  const btn = document.getElementById("btn-submit-review");
+  btn.disabled = true; btn.textContent = "Mengirim...";
+  try {
+    const user = auth.currentUser;
+    await db.collection("reviews").add({
+      productId: reviewOrderData.productId,
+      productName: reviewOrderData.productName,
+      itemName: reviewOrderData.itemName,
+      orderId: reviewOrderData.orderId,
+      userId: user?.uid || "anonymous",
+      userName: user?.displayName || "Anonim",
+      userPhoto: user?.photoURL || null,
+      rating: reviewRating,
+      text: document.getElementById("review-text").value.trim(),
+      photoUrl: document.getElementById("review-photo-url").value || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    // Mark order as reviewed
+    await db.collection("orders").doc(reviewOrderData.orderId).update({ reviewed: true });
+    // Update local
+    const idx = allOrders.findIndex(o => o.orderId === reviewOrderData.orderId);
+    if (idx !== -1) allOrders[idx].reviewed = true;
+    document.getElementById("review-sent").style.display = "block";
+    btn.style.display = "none";
+    renderOrders();
+    setTimeout(() => closeModal("modal-review"), 2000);
+  } catch(e) {
+    toast("Gagal kirim ulasan", "error");
+    btn.disabled = false; btn.textContent = "Kirim Ulasan";
+  }
 }
 
 async function handleGoogleLogin() {
