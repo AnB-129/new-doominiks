@@ -142,6 +142,7 @@
 let allOrders = [];
 let currentFilter = "all";
 let ordersUnsubscribe = null;
+const reviewedOrderIds = new Set(); // Persist reviewed state across onSnapshot refreshes
 
 async function loadOrders(user) {
   // Cleanup previous listener
@@ -203,9 +204,9 @@ function renderOrders() {
       <td>${statusBadge(o.status)}</td>
       <td style="font-size:13px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
       <td>
-        ${o.status === "success" && !o.reviewed
+        ${o.status === "success" && !o.reviewed && !reviewedOrderIds.has(o.id)
           ? `<button class="btn btn-secondary btn-sm" onclick="openReviewModal('${o.id}','${o.orderId}','${o.productId}','${o.productName}','${o.itemName}')">⭐ Ulasan</button>`
-          : o.reviewed ? `<span style="font-size:12px;color:var(--text-muted);">✓ Diulas</span>` : ""}
+          : (o.reviewed || reviewedOrderIds.has(o.id)) ? `<span style="font-size:12px;color:var(--text-muted);">✓ Diulas</span>` : ""}
       </td>
     </tr>
   `).join("");
@@ -304,9 +305,10 @@ async function submitReview() {
       photoUrl: document.getElementById("review-photo-url").value || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    // Always update local state first
+    // Always update local state first - persists across onSnapshot
     const idx = allOrders.findIndex(o => o.id === reviewOrderData.docId);
     if (idx !== -1) allOrders[idx].reviewed = true;
+    reviewedOrderIds.add(reviewOrderData.docId); // Persists even if onSnapshot refreshes
 
     // Mark order as reviewed in Firestore (separate try)
     try {
