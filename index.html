@@ -155,7 +155,7 @@
         </div>
         <h1 class="hero-title">
           Top Up Game<br>
-          <span class="gradient-line">Cepat No Drama!</span>
+          <span class="gradient-line">Cepat, No Drama</span>
         </h1>
         <p class="hero-desc">
           Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
@@ -416,17 +416,17 @@
           <div style="display:flex;justify-content:space-between;"><span>BNI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.400</span></div>
           <div style="display:flex;justify-content:space-between;"><span>Mandiri Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.100</span></div>
           <div style="display:flex;justify-content:space-between;"><span>BRI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.090</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">Gratis</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">890</span></div>
         </div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">📱 QRIS / E-Wallet</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
-          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>OVO</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">Gratis</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">998</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">900</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>OVO</span><span style="color:var(--green);">999</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">990</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">1100</span></div>
         </div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
@@ -720,7 +720,8 @@ function filterByCategory(name) {
 function buildReviews(reviews) {
   const track = document.getElementById("reviews-track");
   if (!track) return;
-  const all = [...reviews, ...reviews];
+  // Only duplicate for infinite scroll if there are enough reviews (min 3)
+  const all = reviews.length >= 3 ? [...reviews, ...reviews] : reviews;
   track.innerHTML = all.map(r => `
     <div class="review-card">
       <div class="review-stars">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
