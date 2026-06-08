@@ -416,17 +416,17 @@
           <div style="display:flex;justify-content:space-between;"><span>BNI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.400</span></div>
           <div style="display:flex;justify-content:space-between;"><span>Mandiri Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.100</span></div>
           <div style="display:flex;justify-content:space-between;"><span>BRI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.090</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">1100</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">780</span></div>
         </div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">📱 QRIS / E-Wallet</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
-          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">990</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">999</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>OVO</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">1000</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">890</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">998</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">1100</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>OVO</span><span style="color:var(--green);">200</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">980</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">880</span></div>
         </div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
@@ -739,7 +739,12 @@ function buildReviews(reviews) {
 // Load products from Firestore
 async function loadFeaturedProducts() {
   try {
-    const snap = await db.collection("products").where("active", "==", true).limit(8).get();
+    // Try featured first
+    let snap = await db.collection("products").where("active","==",true).where("featured","==",true).limit(8).get();
+    // Fallback: if no featured set, show all active
+    if (snap.empty) {
+      snap = await db.collection("products").where("active","==",true).limit(8).get();
+    }
     const grid = document.getElementById("products-grid");
     if (snap.empty) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">▪</div><h4>Belum ada produk</h4><p>Produk akan segera hadir.</p></div>`;
