@@ -151,7 +151,7 @@
     <div class="hero-grid">
       <div class="hero-content">
         <div class="hero-eyebrow">
-          ✦ Platform Top Up #1 Indonesia
+          ✦ Tutup Kalo Udah Kaya!
         </div>
         <h1 class="hero-title">
           Top Up Game<br>
@@ -416,17 +416,17 @@
           <div style="display:flex;justify-content:space-between;"><span>BNI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.400</span></div>
           <div style="display:flex;justify-content:space-between;"><span>Mandiri Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.100</span></div>
           <div style="display:flex;justify-content:space-between;"><span>BRI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.090</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">Gratis</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">1100</span></div>
         </div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">📱 QRIS / E-Wallet</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
-          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">Gratis</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">990</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">999</span></div>
           <div style="display:flex;justify-content:space-between;"><span>OVO</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">Gratis</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">Gratis</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">1000</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">890</span></div>
         </div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
@@ -887,8 +887,32 @@ function onAuthReady(user) {
   hideLoader();
 }
 
+async function loadReviews() {
+  try {
+    const snap = await db.collection("reviews").limit(20).get();
+    const reviews = snap.docs.map(d => d.data()).sort((a,b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+    if (reviews.length >= 3) {
+      buildReviews(reviews.map(r => ({
+        name: r.userName || "Anonim",
+        avatar: r.userPhoto ? `<img src="${r.userPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : null,
+        rating: r.rating || 5,
+        text: r.text || "Pelayanan sangat memuaskan!",
+        product: r.productName || "",
+      })));
+    } else {
+      buildReviews(STATIC_REVIEWS);
+    }
+  } catch(e) {
+    buildReviews(STATIC_REVIEWS);
+  }
+}
+
 loadCategoriesFromDB();
-buildReviews(STATIC_REVIEWS);
+loadReviews();
 loadFeaturedProducts();
 loadStats();
 loadLeaderboardPreview();
