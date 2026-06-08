@@ -92,18 +92,32 @@
 <script>
 let allOrders = [];
 let currentFilter = "all";
+let ordersUnsubscribe = null;
 
 async function loadOrders(user) {
+  // Cleanup previous listener
+  if (ordersUnsubscribe) { ordersUnsubscribe(); ordersUnsubscribe = null; }
   try {
-    const snap = await db.collection("orders").where("userId", "==", user.uid).limit(50).get();
-    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Sort client-side by createdAt desc (avoids composite index requirement)
-    allOrders.sort((a, b) => {
-      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-      return tb - ta;
+    const q = db.collection("orders").where("userId", "==", user.uid).limit(50);
+    ordersUnsubscribe = q.onSnapshot(snap => {
+      allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allOrders.sort((a, b) => {
+        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+      renderOrders();
+      // Notify user if status changed
+      snap.docChanges().forEach(change => {
+        if (change.type === "modified") {
+          const o = change.doc.data();
+          const lbl = { success:"✅ Berhasil", processing:"⏳ Sedang Diproses", failed:"❌ Ditolak" };
+          if (lbl[o.status]) toast(`Order ${o.orderId} — ${lbl[o.status]}`, o.status === "success" ? "success" : o.status === "failed" ? "error" : "info");
+        }
+      });
+    }, e => {
+      document.getElementById("orders-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Gagal memuat pesanan.</td></tr>`;
     });
-    renderOrders();
   } catch (e) {
     document.getElementById("orders-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Gagal memuat pesanan.</td></tr>`;
   }
@@ -130,7 +144,7 @@ function renderOrders() {
   };
   tbody.innerHTML = filtered.map(o => `
     <tr>
-      <td style="font-family:var(--font-display);font-size:13px;color:var(--gold);">${o.orderId}</td>
+      <td style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gold);">${o.orderId}</td>
       <td>
         <div style="font-weight:600;">${o.productName}</div>
         <div style="font-size:12px;color:var(--text-secondary);">${o.itemName}</div>
