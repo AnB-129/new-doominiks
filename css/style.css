@@ -204,15 +204,15 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
   padding: 6px 14px; border-radius: 100px; margin-bottom: 24px;
 }
 .hero-title {
-  font-size: clamp(36px, 4vw, 52px); font-weight: 800; line-height: 1.1;
+  font-size: clamp(26px, 6vw, 52px); font-weight: 800; line-height: 1.1;
   margin-bottom: 20px; letter-spacing: -1px;
 }
 .hero-title .accent { color: var(--gold); }
-.hero-desc { color: var(--text-secondary); font-size: 16px; line-height: 1.7; margin-bottom: 32px; max-width: 480px; }
+.hero-desc { color: var(--text-secondary); font-size: clamp(13px, 3.5vw, 16px); line-height: 1.7; margin-bottom: 32px; max-width: 480px; }
 .hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.hero-stats { display: flex; align-items: center; gap: 32px; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
-.hero-stat-val { font-family: var(--font-body); font-size: 24px; font-weight: 700; color: var(--gold); letter-spacing: -0.5px; }
-.hero-stat-lbl { font-size: 13px; color: var(--text-secondary); }
+.hero-stats { display: flex; align-items: center; gap: clamp(16px, 4vw, 32px); margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+.hero-stat-val { font-family: var(--font-body); font-size: clamp(18px, 4vw, 24px); font-weight: 700; color: var(--gold); letter-spacing: -0.5px; }
+.hero-stat-lbl { font-size: clamp(11px, 3vw, 13px); color: var(--text-secondary); }
 .hero-visual {
   position: relative; display: flex; align-items: center; justify-content: center;
 }
@@ -549,8 +549,8 @@ footer {
   .pm-grid { grid-template-columns: repeat(3, 1fr); }
   .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .tab-btn { white-space: nowrap; flex: none; padding: 9px 14px; }
-  .hero-title { font-size: 30px; }
-  .hero-desc { font-size: 14px; }
+  .hero-title { font-size: clamp(22px, 7vw, 32px); }
+  .hero-desc { font-size: clamp(12px, 3.5vw, 14px); }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; justify-content: center; }
   .stat-cards-grid { grid-template-columns: 1fr 1fr !important; }
