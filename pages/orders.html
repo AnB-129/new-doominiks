@@ -278,20 +278,24 @@ async function uploadReviewPhoto(file) {
   }
 }
 
+let isSubmittingReview = false;
+
 async function submitReview() {
+  if (isSubmittingReview) return;
   if (!reviewRating) { toast("Pilih rating bintang dulu", "error"); return; }
   if (document.getElementById("review-photo-status").textContent === "Mengupload...") {
     toast("Tunggu foto selesai diupload", "info"); return;
   }
+  isSubmittingReview = true;
   const btn = document.getElementById("btn-submit-review");
   btn.disabled = true; btn.textContent = "Mengirim...";
   try {
     const user = auth.currentUser;
     await db.collection("reviews").add({
-      productId: reviewOrderData.productId,
-      productName: reviewOrderData.productName,
-      itemName: reviewOrderData.itemName,
-      orderId: reviewOrderData.orderId,
+      productId: reviewOrderData.productId || "",
+      productName: reviewOrderData.productName || "",
+      itemName: reviewOrderData.itemName || "",
+      orderId: reviewOrderData.orderId || "",
       userId: user?.uid || "anonymous",
       userName: user?.displayName || "Anonim",
       userPhoto: user?.photoURL || null,
@@ -300,18 +304,25 @@ async function submitReview() {
       photoUrl: document.getElementById("review-photo-url").value || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    // Mark order as reviewed using document ID
-    await db.collection("orders").doc(reviewOrderData.docId).update({ reviewed: true });
-    // Update local
-    const idx = allOrders.findIndex(o => o.orderId === reviewOrderData.orderId);
+    // Always update local state first
+    const idx = allOrders.findIndex(o => o.id === reviewOrderData.docId);
     if (idx !== -1) allOrders[idx].reviewed = true;
+
+    // Mark order as reviewed in Firestore (separate try)
+    try {
+      await db.collection("orders").doc(reviewOrderData.docId).update({ reviewed: true });
+    } catch(e2) { console.warn("Could not mark order as reviewed:", e2); }
+
     document.getElementById("review-sent").style.display = "block";
     btn.style.display = "none";
+    toast("Ulasan berhasil dikirim!", "success");
     renderOrders();
-    setTimeout(() => closeModal("modal-review"), 2000);
+    setTimeout(() => { closeModal("modal-review"); isSubmittingReview = false; }, 2000);
   } catch(e) {
-    toast("Gagal kirim ulasan", "error");
+    console.error("Review error:", e);
+    toast("Gagal kirim ulasan: " + e.message, "error");
     btn.disabled = false; btn.textContent = "Kirim Ulasan";
+    isSubmittingReview = false;
   }
 }
 
