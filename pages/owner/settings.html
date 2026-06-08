@@ -240,6 +240,17 @@
           <input class="form-input" id="s-pm-name-shopeepay" placeholder="Nama pemilik" />
         </div>
       </div>
+      <!-- PayPal -->
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">PayPal</div>
+          <div class="sr-desc">Email atau nomor akun PayPal tujuan pembayaran.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-paypal" placeholder="Email PayPal (contoh: nama@email.com)" />
+          <input class="form-input" id="s-pm-name-paypal" placeholder="Nama pemilik akun PayPal" />
+        </div>
+      </div>
       <!-- Indomaret / Alfamart -->
       <div class="settings-row">
         <div class="settings-row-info">
@@ -443,7 +454,7 @@ async function loadSettings() {
       }
       // Load per-payment-method account numbers & names
       const pm = s.paymentMethods || {};
-      const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
+      const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
       PM_IDS.forEach(id => {
         const numEl = document.getElementById(`s-pm-num-${id}`);
         const nameEl = document.getElementById(`s-pm-name-${id}`);
@@ -502,7 +513,7 @@ async function saveStoreSettings() {
 
 async function savePaymentSettings() {
   try {
-    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
+    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
     const paymentMethods = {};
     PM_IDS.forEach(id => {
       const num = document.getElementById(`s-pm-num-${id}`)?.value.trim() || "";
@@ -712,6 +723,7 @@ const PM_LIST = [
   { id: "ovo",           name: "OVO" },
   { id: "dana",          name: "DANA" },
   { id: "shopeepay",     name: "ShopeePay" },
+  { id: "paypal",        name: "PayPal" },
   { id: "indomaret",     name: "Indomaret" },
   { id: "alfamart",      name: "Alfamart" },
 ];
@@ -781,7 +793,7 @@ async function savePmImages() {
     // Merge imageUrl into paymentMethods per id
     const snap = await db.collection("settings").doc("store").get();
     const existing = snap.exists ? (snap.data().paymentMethods || {}) : {};
-    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","indomaret","alfamart"];
+    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
     const paymentMethods = {};
     PM_IDS.forEach(id => {
       paymentMethods[id] = {
