@@ -262,7 +262,7 @@ const PAYMENT_METHODS = [
   { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 999 },
   { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 1110 },
   { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 890 },
-  { id: "paypal", group: "Internasional", name: "PayPal", icon: "▪", fee: 3800 },
+  { id: "paypal", group: "Internasional", name: "PayPal", icon: "▪", fee: 0 },
   { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 2300 },
   { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 2400 },
 ];
@@ -409,11 +409,15 @@ function renderBuySection() {
   if (!selectedItem) {
     el.innerHTML = `<div style="text-align:center;color:var(--text-secondary);font-size:14px;padding:20px 0;">Pilih nominal di atas</div>`;
   } else {
+    const imgUrl = selectedItem.imageUrl || null;
     el.innerHTML = `
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
-        <div style="font-size:16px;font-weight:700;">${selectedItem.name}</div>
-        <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price)}</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+        ${imgUrl ? `<img src="${imgUrl}" alt="${selectedItem.name}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;background:var(--bg-panel);padding:4px;">` : ""}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
+          <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedItem.name}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price)}</div>
+        </div>
       </div>
       <button class="btn btn-primary btn-full btn-lg" onclick="startCheckout()">
         Beli Sekarang &rarr;
