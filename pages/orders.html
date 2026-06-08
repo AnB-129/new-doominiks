@@ -204,7 +204,7 @@ function renderOrders() {
       <td style="font-size:13px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
       <td>
         ${o.status === "success" && !o.reviewed
-          ? `<button class="btn btn-secondary btn-sm" onclick="openReviewModal('${o.orderId}','${o.productId}','${o.productName}','${o.itemName}')">⭐ Ulasan</button>`
+          ? `<button class="btn btn-secondary btn-sm" onclick="openReviewModal('${o.id}','${o.orderId}','${o.productId}','${o.productName}','${o.itemName}')">⭐ Ulasan</button>`
           : o.reviewed ? `<span style="font-size:12px;color:var(--text-muted);">✓ Diulas</span>` : ""}
       </td>
     </tr>
@@ -217,8 +217,8 @@ const CLOUDINARY_UPLOAD_PRESET_R = "vaultstore";
 let reviewRating = 0;
 let reviewOrderData = {};
 
-function openReviewModal(orderId, productId, productName, itemName) {
-  reviewOrderData = { orderId, productId, productName, itemName };
+function openReviewModal(docId, orderId, productId, productName, itemName) {
+  reviewOrderData = { docId, orderId, productId, productName, itemName };
   reviewRating = 0;
   document.getElementById("review-text").value = "";
   document.getElementById("review-photo-url").value = "";
@@ -300,8 +300,8 @@ async function submitReview() {
       photoUrl: document.getElementById("review-photo-url").value || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    // Mark order as reviewed
-    await db.collection("orders").doc(reviewOrderData.orderId).update({ reviewed: true });
+    // Mark order as reviewed using document ID
+    await db.collection("orders").doc(reviewOrderData.docId).update({ reviewed: true });
     // Update local
     const idx = allOrders.findIndex(o => o.orderId === reviewOrderData.orderId);
     if (idx !== -1) allOrders[idx].reviewed = true;
