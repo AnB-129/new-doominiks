@@ -19,6 +19,7 @@ topup-store/
 │   ├── product.html            # Detail produk & checkout
 │   ├── orders.html             # Riwayat pesanan user
 │   ├── leaderboard.html        # Leaderboard publik
+│   ├── Profile.html            # Profile User
 │   └── owner/
 │       ├── dashboard.html      # Dashboard owner
 │       ├── products.html       # Kelola produk
