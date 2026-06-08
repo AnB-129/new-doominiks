@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780848799/eda1d410-9135-4ad5-8cdd-f1237bc7cbee_nh459t.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780848799/eda1d410-9135-4ad5-8cdd-f1237bc7cbee_nh459t.png">
   <title>Katalog Game &mdash; DOOMINIKS STORE</title>
   <link rel="stylesheet" href="../css/style.css" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -88,13 +90,34 @@ async function loadCatalog() {
   try {
     const snap = await db.collection("products").where("active", "==", true).get();
     allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Build categories
+
+    // Build category options
     const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
     const sel = document.getElementById("cat-filter");
-    cats.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; sel.appendChild(o); });
-    // Check URL param
+    cats.forEach(c => {
+      const o = document.createElement("option");
+      o.value = c; o.textContent = c; sel.appendChild(o);
+    });
+
+    // Read URL param
     const urlCat = new URLSearchParams(window.location.search).get("cat");
-    if (urlCat) sel.value = urlCat;
+    if (urlCat) {
+      // Try exact category match first
+      const exactMatch = cats.find(c => c.toLowerCase() === urlCat.toLowerCase());
+      if (exactMatch) {
+        sel.value = exactMatch;
+      } else {
+        // Try match by product name (e.g. "Roblox" → find product named Roblox)
+        const byName = allProducts.find(p => p.name.toLowerCase() === urlCat.toLowerCase());
+        if (byName && byName.category) {
+          sel.value = byName.category;
+        } else {
+          // Fallback: use search box
+          document.getElementById("search-input").value = urlCat;
+        }
+      }
+    }
+
     filterProducts();
   } catch (e) {
     document.getElementById("catalog-grid").innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:60px 0;">Gagal memuat produk.</div>`;
