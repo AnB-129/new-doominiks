@@ -862,6 +862,31 @@ const DEFAULT_PAYMENT_METHODS = [
   { id: "alfamart",      name: "Alfamart",      sub: "Gerai Ritel",            symbol: "🏪" },
 ];
 
+function closePopupAd() {
+  const el = document.getElementById("popup-ad-overlay");
+  el.classList.add("hide");
+  setTimeout(() => el.style.display = "none", 250);
+}
+
+async function loadPopupAd() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    if (!data.popupAdImage || !data.popupAdEnabled) return;
+    const overlay = document.getElementById("popup-ad-overlay");
+    document.getElementById("popup-ad-img").src = data.popupAdImage;
+    if (data.popupAdLink) {
+      document.getElementById("popup-ad-box").style.cursor = "pointer";
+      document.getElementById("popup-ad-box").onclick = (e) => {
+        if (e.target.id === "popup-ad-close") return;
+        window.open(data.popupAdLink, "_blank");
+      };
+    }
+    overlay.style.display = "flex";
+  } catch(e) {}
+}
+
 async function loadPaymentMethods() {
   const grid = document.getElementById("pm-grid-homepage");
   if (!grid) return;
@@ -933,6 +958,7 @@ loadReviews();
 loadFeaturedProducts();
 loadStats();
 loadLeaderboardPreview();
+loadPopupAd();
 loadPaymentMethods();
 buildFAQ();
 buildHubungi();
