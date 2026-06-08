@@ -116,7 +116,7 @@
 <script>
 let allOrders = [];
 let statusFilter = "all";
-let lastDoc = null;
+let ordersUnsubscribe = null;
 const PAGE_SIZE = 30;
 
 function requireOwner(user) {
@@ -128,24 +128,17 @@ function requireOwner(user) {
   return true;
 }
 
-async function loadOrders(reset = true) {
-  try {
-    let q = db.collection("orders").orderBy("createdAt", "desc").limit(PAGE_SIZE);
-    if (!reset && lastDoc) q = q.startAfter(lastDoc);
-    const snap = await q.get();
-    if (reset) allOrders = [];
-    const newOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    allOrders = reset ? newOrders : [...allOrders, ...newOrders];
-    lastDoc = snap.docs[snap.docs.length - 1];
-    document.getElementById("orders-load-more").style.display = snap.docs.length === PAGE_SIZE ? "block" : "none";
+function loadOrders() {
+  if (ordersUnsubscribe) { ordersUnsubscribe(); ordersUnsubscribe = null; }
+  const q = db.collection("orders").orderBy("createdAt", "desc").limit(PAGE_SIZE);
+  ordersUnsubscribe = q.onSnapshot(snap => {
+    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateSummary();
     renderOrdersTable();
-  } catch (e) {
+  }, e => {
     toast("Gagal memuat pesanan: " + e.message, "error");
-  }
+  });
 }
-
-async function loadMoreOrders() { await loadOrders(false); }
 
 function updateSummary() {
   const orders = allOrders;
