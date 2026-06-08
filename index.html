@@ -155,11 +155,11 @@
         </div>
         <h1 class="hero-title">
           Top Up Game<br>
-          <span class="gradient-line">Cepat, No Drama</span>
+          <span class="gradient-line">Satset, No Drama</span>
         </h1>
         <p class="hero-desc">
           Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
-          Harga terbaik, proses kilat, transaksi terjamin. Mengeluh lah Tapi Ingat Kamu Harus Terus Melangkah!
+          Harga terbaik, proses kilat, transaksi terjamin. Jangan Datang Jika Anda Ragu!
         </p>
         <div class="hero-actions">
           <a href="pages/catalog.html" class="btn btn-primary btn-lg">Lihat Semua Game</a>
@@ -857,6 +857,7 @@ const DEFAULT_PAYMENT_METHODS = [
   { id: "ovo",           name: "OVO",           sub: "Dompet Digital",         symbol: "💜" },
   { id: "dana",          name: "DANA",          sub: "Dompet Digital",         symbol: "🔵" },
   { id: "shopeepay",     name: "ShopeePay",     sub: "Dompet Digital",         symbol: "🧡" },
+  { id: "paypal",        name: "PayPal",        sub: "Internasional",          symbol: "💙" },
   { id: "indomaret",     name: "Indomaret",     sub: "Gerai Ritel",            symbol: "🏪" },
   { id: "alfamart",      name: "Alfamart",      sub: "Gerai Ritel",            symbol: "🏪" },
 ];
@@ -866,7 +867,14 @@ async function loadPaymentMethods() {
   if (!grid) return;
   try {
     const snap = await db.collection("settings").doc("store").get();
-    const pmImages = snap.exists ? (snap.data().paymentMethodImages || {}) : {};
+    const data = snap.exists ? snap.data() : {};
+    const pmMethodsData = data.paymentMethods || {};
+    const pmLegacy = data.paymentMethodImages || {};
+    // Gabung: prioritaskan paymentMethods[id].imageUrl, fallback ke legacy paymentMethodImages[id]
+    const pmImages = {};
+    DEFAULT_PAYMENT_METHODS.forEach(pm => {
+      pmImages[pm.id] = pmMethodsData[pm.id]?.imageUrl || pmLegacy[pm.id] || null;
+    });
     grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
       <div class="pm-card" style="cursor:default;min-width:110px;">
         ${pmImages[pm.id]
