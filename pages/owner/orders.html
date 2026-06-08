@@ -181,7 +181,7 @@ function renderOrdersTable() {
   };
   tbody.innerHTML = filtered.map(o => `
     <tr>
-      <td style="font-family:var(--font-display);font-size:12px;color:var(--gold);">${o.orderId}</td>
+      <td style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gold);">${o.orderId}</td>
       <td>
         <div style="font-size:13px;font-weight:500;">${o.userDisplayName||"-"}</div>
         <div style="font-size:11px;color:var(--text-muted);">${o.userEmail||""}</div>
@@ -245,7 +245,7 @@ function viewOrder(orderId) {
   const gameFields = o.gameFields || {};
   document.getElementById("order-detail-body").innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--gold);">${o.orderId}</div>
+      <div style="font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--gold);letter-spacing:-0.3px;">${o.orderId}</div>
       <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
     </div>
     <div class="order-detail-grid">
