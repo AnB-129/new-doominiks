@@ -173,39 +173,7 @@
         <p style="font-size:14px;color:var(--text-secondary);margin-bottom:4px;">Order ID: <strong id="co-order-id" style="color:var(--gold);font-family:var(--font-body);"></strong></p>
         <p style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;">Pesanan kamu sedang diproses. Selesaikan pembayaran sesuai instruksi.</p>
         <div id="co-payment-instructions" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;font-size:14px;"></div>
-        <!-- Review Form -->
-        <div id="review-form-wrap" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">⭐ Bagikan Pengalaman Kamu</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Ulasan kamu membantu pembeli lain. Tidak wajib diisi.</div>
-          <div id="review-stars" style="display:flex;gap:6px;margin-bottom:12px;font-size:28px;cursor:pointer;">
-            <span class="star" data-v="1">☆</span>
-            <span class="star" data-v="2">☆</span>
-            <span class="star" data-v="3">☆</span>
-            <span class="star" data-v="4">☆</span>
-            <span class="star" data-v="5">☆</span>
-          </div>
-          <textarea class="form-input" id="review-text" placeholder="Tulis ulasan singkat (opsional)..." style="resize:none;height:72px;font-size:13px;margin-bottom:10px;"></textarea>
-          <!-- Photo upload -->
-          <div style="margin-bottom:12px;">
-            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">Foto (opsional, maks 1 foto)</div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div id="review-photo-preview" style="width:60px;height:60px;border-radius:var(--radius);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('review-photo-input').click()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-              </div>
-              <div>
-                <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
-                  Upload Foto
-                  <input type="file" id="review-photo-input" accept="image/*" style="display:none;" onchange="previewReviewPhoto(this)" />
-                </label>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG • Maks 3MB</div>
-              </div>
-            </div>
-            <input type="hidden" id="review-photo-url" />
-            <div id="review-photo-status" style="font-size:12px;color:var(--text-secondary);margin-top:4px;"></div>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="submitReview()" id="btn-submit-review">Kirim Ulasan</button>
-          <div id="review-sent" style="display:none;color:var(--green);font-size:13px;margin-top:8px;">✓ Terima kasih atas ulasan kamu!</div>
-        </div>
+        <!-- Review akan muncul di halaman Pesanan setelah order disetujui -->
         <a href="orders.html" class="btn btn-primary btn-lg">Lihat Pesanan Saya &rarr;</a>
       </div>
     </div>
@@ -730,94 +698,6 @@ async function handleProofUpload(event) {
 
 function onAuthReady() { hideLoader(); }
 
-// ---- Star Rating ----
-let selectedRating = 0;
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".star").forEach(star => {
-    star.addEventListener("click", () => {
-      selectedRating = parseInt(star.dataset.v);
-      document.querySelectorAll(".star").forEach((s, i) => {
-        s.textContent = i < selectedRating ? "★" : "☆";
-        s.style.color = i < selectedRating ? "var(--gold)" : "var(--text-muted)";
-      });
-    });
-    star.addEventListener("mouseover", () => {
-      const v = parseInt(star.dataset.v);
-      document.querySelectorAll(".star").forEach((s, i) => {
-        s.textContent = i < v ? "★" : "☆";
-        s.style.color = i < v ? "var(--gold)" : "var(--text-muted)";
-      });
-    });
-    star.addEventListener("mouseout", () => {
-      document.querySelectorAll(".star").forEach((s, i) => {
-        s.textContent = i < selectedRating ? "★" : "☆";
-        s.style.color = i < selectedRating ? "var(--gold)" : "var(--text-muted)";
-      });
-    });
-  });
-});
-
-function previewReviewPhoto(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 3 * 1024 * 1024) { toast("Foto maks 3MB", "error"); input.value = ""; return; }
-  const preview = document.getElementById("review-photo-preview");
-  const reader = new FileReader();
-  reader.onload = e => {
-    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
-  };
-  reader.readAsDataURL(file);
-  // Upload to Cloudinary
-  uploadReviewPhoto(file);
-}
-
-async function uploadReviewPhoto(file) {
-  document.getElementById("review-photo-status").textContent = "Mengupload foto...";
-  try {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
-    const data = await res.json();
-    if (!data.secure_url) throw new Error();
-    document.getElementById("review-photo-url").value = data.secure_url;
-    document.getElementById("review-photo-status").innerHTML = `<span style="color:var(--green);">✓ Foto siap</span>`;
-  } catch(e) {
-    document.getElementById("review-photo-status").textContent = "Gagal upload foto.";
-  }
-}
-
-async function submitReview() {
-  if (!selectedRating) { toast("Pilih bintang dulu", "error"); return; }
-  const photoStatus = document.getElementById("review-photo-status").textContent;
-  if (photoStatus === "Mengupload foto...") { toast("Tunggu foto selesai diupload", "info"); return; }
-  const text = document.getElementById("review-text").value.trim();
-  const photoUrl = document.getElementById("review-photo-url").value || null;
-  const btn = document.getElementById("btn-submit-review");
-  btn.disabled = true; btn.textContent = "Mengirim...";
-  try {
-    const user = auth.currentUser;
-    await db.collection("reviews").add({
-      productId: new URLSearchParams(window.location.search).get("id"),
-      productName: productData?.name || "",
-      itemName: selectedItem?.name || "",
-      userId: user?.uid || "anonymous",
-      userName: user?.displayName || "Anonim",
-      userPhoto: user?.photoURL || null,
-      rating: selectedRating,
-      text: text || "",
-      photoUrl: photoUrl,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    document.getElementById("review-sent").style.display = "block";
-    document.getElementById("review-form-wrap").style.opacity = "0.6";
-    btn.style.display = "none";
-    loadProductReviews();
-  } catch(e) {
-    toast("Gagal kirim ulasan", "error");
-    btn.disabled = false; btn.textContent = "Kirim Ulasan";
-  }
-}
 
 async function loadProductReviews() {
   const productId = new URLSearchParams(window.location.search).get("id");
