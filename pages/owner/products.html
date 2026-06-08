@@ -175,6 +175,8 @@
         <div class="toggle-wrap">
           <label class="toggle"><input type="checkbox" id="f-active" checked /><span class="toggle-slider"></span></label>
           <span style="font-size:14px;font-weight:500;">Produk Aktif</span>
+          <label class="toggle" style="margin-left:16px;"><input type="checkbox" id="f-featured" /><span class="toggle-slider"></span></label>
+          <span style="font-size:14px;font-weight:500;">Tampil di Homepage</span>
         </div>
         <div style="display:flex;gap:10px;">
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Batal</button>
@@ -295,6 +297,7 @@ function renderProductList() {
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span class="badge ${p.active ? 'badge-success' : 'badge-failed'}">${p.active ? "Aktif" : "Nonaktif"}</span>
+        ${p.featured ? `<span class="badge badge-processing">🏠 Homepage</span>` : ""}
         <button class="btn btn-secondary btn-sm" onclick="openEditProduct('${p.id}')">✎ Edit</button>
         <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}')">✕</button>
       </div>
@@ -465,6 +468,7 @@ function openAddProduct() {
   document.getElementById("f-color1").value = "#1E2535";
   document.getElementById("f-color2").value = "#0D1018";
   document.getElementById("f-active").checked = true;
+  document.getElementById("f-featured").checked = false;
   document.getElementById("f-img-url").value = "";
   document.getElementById("img-preview-container").style.display = "none";
   document.getElementById("img-placeholder").style.display = "block";
@@ -505,6 +509,7 @@ function openEditProduct(id) {
   document.getElementById("f-sort").value = p.sortOrder ?? 99;
   document.getElementById("f-instructions").value = p.instructions || "";
   document.getElementById("f-active").checked = !!p.active;
+  document.getElementById("f-featured").checked = !!p.featured;
   document.getElementById("items-list").innerHTML = "";
   document.getElementById("fields-list").innerHTML = "";
   document.getElementById("topup-types-list").innerHTML = "";
@@ -544,6 +549,7 @@ async function saveProduct(e) {
       sortOrder: parseInt(document.getElementById("f-sort").value) || 99,
       instructions: document.getElementById("f-instructions").value.trim(),
       active: document.getElementById("f-active").checked,
+      featured: document.getElementById("f-featured").checked,
       items: getItems(),
       fields: getFields(),
       topupTypes: getTopupTypes(),
