@@ -262,6 +262,7 @@ const PAYMENT_METHODS = [
   { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 999 },
   { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 1110 },
   { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 890 },
+  { id: "paypal", group: "Internasional", name: "PayPal", icon: "▪", fee: 0 },
   { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 2300 },
   { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 2400 },
 ];
@@ -547,14 +548,14 @@ async function selectPayment(id) {
         document.getElementById("co-qris-display").style.display = "block";
         infoWrap.style.display = "block";
       }
-    } else if (["gopay","ovo","dana","shopeepay"].includes(id)) {
+    } else if (["gopay","ovo","dana","shopeepay","paypal"].includes(id)) {
       // E-Wallet: show account number + optional logo
       const number = pmData.accountNumber || null;
       const name = pmData.accountName || selectedPayment.name;
       const logoUrl = pmData.imageUrl || null;
 
       if (number) {
-        document.getElementById("co-ewallet-label").textContent = `Kirim ke nomor ${selectedPayment.name}:`;
+        document.getElementById("co-ewallet-label").textContent = id === "paypal" ? `Kirim ke PayPal (email/nomor):` : `Kirim ke nomor ${selectedPayment.name}:`;
         document.getElementById("co-ewallet-number").textContent = number;
         document.getElementById("co-ewallet-name").textContent = `a.n. ${name}`;
         document.getElementById("co-ewallet-amount").textContent = `Transfer tepat ${formatIDR(total)}`;
