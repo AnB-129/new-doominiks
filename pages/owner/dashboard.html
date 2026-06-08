@@ -105,32 +105,55 @@ function requireOwner(user) {
   return true;
 }
 
-async function loadDashboard() {
-  try {
-    // Stats
-    const [ordersSnap, productsSnap] = await Promise.all([
-      db.collection("orders").get(),
-      db.collection("products").where("active","==",true).get()
-    ]);
+let dashUnsubscribe = null;
+let isFirstDashLoad = true;
+
+function loadDashboard() {
+  if (dashUnsubscribe) { dashUnsubscribe(); dashUnsubscribe = null; }
+  isFirstDashLoad = true;
+
+  // Real-time orders listener
+  dashUnsubscribe = db.collection("orders").onSnapshot(async ordersSnap => {
     const orders = ordersSnap.docs.map(d => d.data());
     const pending = orders.filter(o => o.status === "pending");
     const revenue = orders.filter(o => o.status === "success").reduce((sum, o) => sum + (o.total||0), 0);
+
     document.getElementById("d-orders").textContent = orders.length;
     document.getElementById("d-pending").textContent = pending.length;
     document.getElementById("d-revenue").textContent = formatIDR(revenue);
-    document.getElementById("d-products").textContent = productsSnap.size;
 
-    // Pending orders
+    // Notify on new order (skip first load)
+    if (!isFirstDashLoad) {
+      ordersSnap.docChanges().forEach(change => {
+        if (change.type === "added") {
+          const o = change.doc.data();
+          toast(`📦 Order baru masuk: ${o.orderId} — ${o.productName}`, "info", 6000);
+          // Flash pending count
+          const el = document.getElementById("d-pending");
+          el.style.color = "var(--red)";
+          setTimeout(() => el.style.color = "", 2000);
+        }
+      });
+    }
+    isFirstDashLoad = false;
+
+    // Products count (one-time ok)
+    try {
+      const productsSnap = await db.collection("products").where("active","==",true).get();
+      document.getElementById("d-products").textContent = productsSnap.size;
+    } catch(e) {}
+
+    // Pending orders table
     const pendingTbody = document.getElementById("pending-orders-tbody");
     if (!pending.length) {
       pendingTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Tidak ada pesanan pending.</td></tr>`;
     } else {
       pendingTbody.innerHTML = pending.slice(0, 10).map(o => `
         <tr>
-          <td style="font-family:var(--font-display);font-size:13px;color:var(--gold);">${o.orderId}</td>
+          <td style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gold);">${o.orderId}</td>
           <td style="font-size:13px;">${o.userDisplayName||o.userEmail||"-"}</td>
           <td style="font-size:13px;">${o.productName} &mdash; ${o.itemName}</td>
-          <td style="font-weight:700;">${formatIDR(o.total)}</td>
+          <td style="font-weight:700;font-family:var(--font-body);">${formatIDR(o.total)}</td>
           <td style="font-size:12px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod}</td>
           <td style="font-size:12px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
           <td>
@@ -143,28 +166,26 @@ async function loadDashboard() {
       `).join("");
     }
 
-    // Recent orders
-    const recentSnap = await db.collection("orders").orderBy("createdAt","desc").limit(10).get();
-    const recentTbody = document.getElementById("recent-orders-tbody");
+    // Recent orders table
+    const sorted = [...orders].sort((a,b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    }).slice(0, 10);
     const statusBadge = s => {
       const map = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
       const lbl = { pending:"Pending", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
       return `<span class="badge ${map[s]||'badge-pending'}">${lbl[s]||s}</span>`;
     };
-    recentTbody.innerHTML = recentSnap.docs.map(d => {
-      const o = d.data();
-      return `<tr>
-        <td style="font-family:var(--font-display);font-size:13px;color:var(--gold);">${o.orderId}</td>
-        <td style="font-size:13px;">${o.userDisplayName||o.userEmail||"-"}</td>
-        <td style="font-size:13px;">${o.productName} &mdash; ${o.itemName}</td>
-        <td style="font-weight:700;">${formatIDR(o.total)}</td>
-        <td>${statusBadge(o.status)}</td>
-        <td style="font-size:12px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
-      </tr>`;
-    }).join("");
-  } catch (e) {
-    console.error(e);
-  }
+    document.getElementById("recent-orders-tbody").innerHTML = sorted.map(o => `<tr>
+      <td style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gold);">${o.orderId}</td>
+      <td style="font-size:13px;">${o.userDisplayName||o.userEmail||"-"}</td>
+      <td style="font-size:13px;">${o.productName} &mdash; ${o.itemName}</td>
+      <td style="font-weight:700;font-family:var(--font-body);">${formatIDR(o.total)}</td>
+      <td>${statusBadge(o.status)}</td>
+      <td style="font-size:12px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
+    </tr>`).join("");
+  }, e => { console.error(e); });
 }
 
 async function approveOrder(orderId) {
