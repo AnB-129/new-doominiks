@@ -317,6 +317,49 @@
 
     <!-- Owner UIDs -->
     <div class="card settings-section">
+      <div class="settings-section-title">📢 Popup Iklan</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Aktifkan Popup</div>
+          <div class="sr-desc">Tampilkan popup iklan saat user membuka halaman utama.</div>
+        </div>
+        <div class="settings-row-control">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="s-popup-enabled" style="width:18px;height:18px;accent-color:var(--gold);" />
+            <span style="font-size:14px;">Aktif</span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Gambar Popup</div>
+          <div class="sr-desc">Upload gambar iklan (PNG/JPG, maks 3MB). Ukuran ideal 420×600px.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:10px;">
+          <div id="popup-img-preview" style="width:100%;max-width:200px;border-radius:12px;background:var(--bg-panel);border:1px solid var(--border);overflow:hidden;aspect-ratio:7/10;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;">
+            Belum ada gambar
+          </div>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;width:fit-content;">
+            ↑ Upload Gambar Iklan
+            <input type="file" id="popup-img-file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="uploadPopupImage(this)" />
+          </label>
+          <input type="hidden" id="s-popup-image" />
+          <div id="popup-img-status" style="font-size:12px;color:var(--text-muted);"></div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Link Popup (opsional)</div>
+          <div class="sr-desc">Saat user klik gambar, diarahkan ke URL ini.</div>
+        </div>
+        <div class="settings-row-control">
+          <input class="form-input" id="s-popup-link" placeholder="https://..." />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="savePopupSettings()">Simpan Popup Iklan</button>
+    </div>
+
+    <div class="card settings-section">
       <div class="settings-section-title">★ Akses Owner</div>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
         UID berikut memiliki akses penuh ke panel owner. Edit file <code style="background:var(--bg-panel);padding:2px 6px;border-radius:4px;font-size:12px;">js/firebase-config.js</code> untuk menambah/hapus owner.
@@ -444,6 +487,13 @@ async function loadSettings() {
       document.getElementById("s-tagline").value = s.tagline || "";
       document.getElementById("s-discord").value = s.discord || "";
       document.getElementById("s-whatsapp").value = s.whatsapp || "";
+      // Popup iklan
+      document.getElementById("s-popup-enabled").checked = !!s.popupAdEnabled;
+      document.getElementById("s-popup-link").value = s.popupAdLink || "";
+      document.getElementById("s-popup-image").value = s.popupAdImage || "";
+      if (s.popupAdImage) {
+        document.getElementById("popup-img-preview").innerHTML = `<img src="${s.popupAdImage}" style="width:100%;height:100%;object-fit:cover;">`;
+      }
       if (s.discordLogoUrl) {
         document.getElementById("s-discord-logo-url").value = s.discordLogoUrl;
         document.getElementById("discord-logo-preview").innerHTML = `<img src="${s.discordLogoUrl}" style="width:100%;height:100%;object-fit:contain;">`;
@@ -833,6 +883,42 @@ function onAuthReady(user) {
   loadSettings();
   loadPmImages();
   loadCategoryImages();
+}
+
+async function uploadPopupImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { toast("Maks 3MB", "error"); return; }
+  const status = document.getElementById("popup-img-status");
+  status.textContent = "Mengupload...";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "doominiks-store/popup");
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.secure_url) {
+      document.getElementById("s-popup-image").value = data.secure_url;
+      document.getElementById("popup-img-preview").innerHTML = `<img src="${data.secure_url}" style="width:100%;height:100%;object-fit:cover;">`;
+      status.innerHTML = `<span style="color:var(--green);">✓ Berhasil diupload</span>`;
+      toast("Gambar popup diupload!", "success");
+    } else { status.textContent = "Gagal upload"; }
+  } catch(e) { status.textContent = "Error: " + e.message; }
+}
+
+async function savePopupSettings() {
+  const image = document.getElementById("s-popup-image").value.trim();
+  const enabled = document.getElementById("s-popup-enabled").checked;
+  const link = document.getElementById("s-popup-link").value.trim();
+  try {
+    await db.collection("settings").doc("store").set({
+      popupAdEnabled: enabled,
+      popupAdImage: image || null,
+      popupAdLink: link || null,
+    }, { merge: true });
+    toast("Pengaturan popup disimpan!", "success");
+  } catch(e) { toast("Gagal simpan: " + e.message, "error"); }
 }
 </script>
 </body>
