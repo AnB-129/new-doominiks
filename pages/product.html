@@ -203,7 +203,7 @@
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
+    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
     <div class="nav-links">
       <a href="../index.html">Beranda</a>
       <a href="catalog.html" class="active">Katalog</a>
@@ -425,25 +425,77 @@ function selectItemByObj(item, i) {
   renderBuySection();
 }
 
+let countdownInterval = null;
+
 function renderBuySection() {
   const el = document.getElementById("buy-section");
   if (!el) return;
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
   if (!selectedItem) {
     el.innerHTML = `<div style="text-align:center;color:var(--text-secondary);font-size:14px;padding:20px 0;">Pilih nominal di atas</div>`;
-  } else {
-    const imgUrl = selectedItem.imageUrl || null;
-    el.innerHTML = `
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
-          <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedItem.name}</div>
-          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price)}</div>
-        </div>
-        ${imgUrl ? `<img src="${imgUrl}" alt="${selectedItem.name}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;background:var(--bg-panel);padding:4px;">` : ""}
+    return;
+  }
+  const imgUrl = selectedItem.imageUrl || null;
+  const stock = selectedItem.stock ?? null;
+  const expiredAt = productData.expiredAt || null;
+
+  // Badge stok
+  let stockBadge = "";
+  if (stock !== null && stock !== undefined) {
+    if (stock <= 0) {
+      stockBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;">✕ Stok Habis</span>`;
+    } else if (stock <= 5) {
+      stockBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(249,115,22,0.15);color:#f97316;border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;">⚠ Stok: ${stock}</span>`;
+    } else {
+      stockBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;">✓ Stok: ${stock}</span>`;
+    }
+  }
+
+  // Badge countdown
+  let countdownBadge = expiredAt ? `<span id="countdown-badge" style="display:inline-flex;align-items:center;gap:4px;background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;">⏱ ...</span>` : "";
+
+  const hasBadges = stockBadge || countdownBadge;
+
+  el.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
+        <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedItem.name}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price + (selectedPayment ? selectedPayment.fee || 0 : 0))}</div>
+        ${hasBadges ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${stockBadge}${countdownBadge}</div>` : ""}
       </div>
-      <button class="btn btn-primary btn-full btn-lg" onclick="startCheckout()">
-        Beli Sekarang &rarr;
-      </button>`;
+      ${imgUrl ? `<img src="${imgUrl}" alt="${selectedItem.name}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;background:var(--bg-panel);padding:4px;">` : ""}
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="startCheckout()" ${stock !== null && stock <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ""}>
+      Beli Sekarang &rarr;
+    </button>`;
+
+  // Start countdown real-time
+  if (expiredAt) {
+    const getExpiredMs = () => {
+      if (expiredAt.toDate) return expiredAt.toDate().getTime();
+      return new Date(expiredAt).getTime();
+    };
+    const updateCountdown = () => {
+      const badge = document.getElementById("countdown-badge");
+      if (!badge) { clearInterval(countdownInterval); return; }
+      const diff = getExpiredMs() - Date.now();
+      if (diff <= 0) {
+        badge.textContent = "⏱ Kedaluwarsa";
+        badge.style.color = "#ef4444";
+        clearInterval(countdownInterval);
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      badge.textContent = d > 0
+        ? `⏱ ${d}h ${h}j ${m}m ${s}d`
+        : `⏱ ${h}j ${m}m ${s}d`;
+    };
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
   }
 }
 
