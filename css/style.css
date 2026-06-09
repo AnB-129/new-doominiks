@@ -429,13 +429,13 @@ tr:last-child td { border-bottom: none; }
   .hero-mascot { display: none; }
 }
 .hero-mascot-inline {
-  width: 90px; height: auto; object-fit: contain;
+  width: 80px; height: auto; object-fit: contain;
   animation: mascotFloat 3s ease-in-out infinite;
   filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
-  flex-shrink: 0;
+  flex-shrink: 0; align-self: flex-end;
 }
 @media (max-width: 480px) {
-  .hero-mascot-inline { width: 70px; }
+  .hero-mascot-inline { width: 64px; }
 }
 
 @keyframes mascotFloat {
