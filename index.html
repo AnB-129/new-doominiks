@@ -72,6 +72,14 @@
 </head>
 <body>
 
+<!-- POPUP IKLAN -->
+<div id="popup-ad-overlay" style="display:none;">
+  <div id="popup-ad-box">
+    <button id="popup-ad-close" onclick="closePopupAd()" title="Tutup">&times;</button>
+    <img id="popup-ad-img" src="" alt="Iklan" />
+  </div>
+</div>
+
 <!-- Loader -->
 <div class="page-loader" id="page-loader">
   <div class="loader-ring"></div>
@@ -155,7 +163,7 @@
         </div>
         <h1 class="hero-title">
           Top Up Game<br>
-          <span class="gradient-line">Satset, Anti Drama</span>
+          <span class="gradient-line">Cepat, No Drama</span>
         </h1>
         <p class="hero-desc">
           Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
@@ -244,7 +252,7 @@
 </section>
 
 <!-- VOUCHER POPULER -->
-<section class="section" style="background:var(--bg-deep);">
+<section class="section" style="background:var(--bg-deep);" id="voucher-section">
   <div class="container">
     <div class="section-header">
       <div>
@@ -318,7 +326,7 @@
     <div class="section-header">
       <div>
         <h2 class="section-title">Top <span>Orang Kaya</span></h2>
-        <p class="section-sub">Sultan dengan transaksi terbanyak bulan ini</p>
+        <p class="section-sub">Pelanggan dengan transaksi terbanyak bulan ini</p>
       </div>
       <a href="pages/leaderboard.html" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
     </div>
@@ -798,20 +806,15 @@ async function loadFeaturedProducts() {
 
 async function loadFeaturedVouchers() {
   try {
-    let snap = await db.collection("products")
+    const snap = await db.collection("products")
       .where("active","==",true)
       .where("category","==","Voucher")
       .limit(8).get();
-    // Fallback: cari yang mengandung kata "voucher" di nama
-    if (snap.empty) {
-      snap = await db.collection("products")
-        .where("active","==",true)
-        .where("featured","==",true)
-        .limit(8).get();
-    }
     const grid = document.getElementById("voucher-grid");
+    // Kalau tidak ada produk voucher, sembunyikan section
     if (snap.empty) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">▪</div><h4>Belum ada voucher</h4><p>Produk voucher akan segera hadir.</p></div>`;
+      const section = document.getElementById("voucher-section");
+      if (section) section.style.display = "none";
       return;
     }
     grid.innerHTML = snap.docs.map(doc => {
