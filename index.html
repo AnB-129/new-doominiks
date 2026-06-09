@@ -119,7 +119,7 @@
 <nav class="navbar">
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">
-      <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">
+      <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" class="logo-mascot" alt="D! Store" />
       DOOMINIKS <span>STORE</span>
     </a>
     <div class="nav-links">
@@ -220,6 +220,18 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- BANNER SLIDESHOW -->
+<section id="banner-slideshow" style="display:none;padding:24px 0 0;">
+  <div class="container">
+    <div class="banner-slide-wrap">
+      <div class="banner-slide-track" id="banner-track"></div>
+      <button class="banner-prev" onclick="slideBanner(-1)">&#8249;</button>
+      <button class="banner-next" onclick="slideBanner(1)">&#8250;</button>
+      <div class="banner-dots" id="banner-dots"></div>
     </div>
   </div>
 </section>
@@ -325,7 +337,7 @@
   <div class="container">
     <div class="section-header">
       <div>
-        <h2 class="section-title">Top <span>Orang Kaya</span></h2>
+        <h2 class="section-title">Top <span>Pembeli</span></h2>
         <p class="section-sub">Pelanggan dengan transaksi terbanyak bulan ini</p>
       </div>
       <a href="pages/leaderboard.html" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
@@ -951,6 +963,58 @@ async function loadPopupAd() {
   } catch(e) {}
 }
 
+// ---- BANNER SLIDESHOW ----
+let bannerSlides = [];
+let bannerIdx = 0;
+let bannerTimer = null;
+
+async function loadBannerSlides() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    const slides = data.bannerSlides || [];
+    if (!slides.length) return;
+    bannerSlides = slides.filter(s => s.image);
+    if (!bannerSlides.length) return;
+
+    const section = document.getElementById("banner-slideshow");
+    const track = document.getElementById("banner-track");
+    const dots = document.getElementById("banner-dots");
+    section.style.display = "block";
+
+    track.innerHTML = bannerSlides.map((s, i) => `
+      <div class="banner-slide-item" onclick="${s.link ? `window.open('${s.link}','_blank')` : ''}">
+        <img src="${s.image}" alt="Banner ${i+1}" loading="lazy">
+      </div>`).join("");
+
+    dots.innerHTML = bannerSlides.map((_, i) =>
+      `<button class="banner-dot${i===0?' active':''}" onclick="goSlide(${i})"></button>`
+    ).join("");
+
+    startBannerTimer();
+  } catch(e) {}
+}
+
+function goSlide(idx) {
+  bannerIdx = (idx + bannerSlides.length) % bannerSlides.length;
+  document.getElementById("banner-track").style.transform = `translateX(-${bannerIdx * 100}%)`;
+  document.querySelectorAll(".banner-dot").forEach((d, i) => d.classList.toggle("active", i === bannerIdx));
+  resetBannerTimer();
+}
+
+function slideBanner(dir) { goSlide(bannerIdx + dir); }
+
+function startBannerTimer() {
+  if (bannerSlides.length <= 1) return;
+  bannerTimer = setInterval(() => goSlide(bannerIdx + 1), 4000);
+}
+
+function resetBannerTimer() {
+  clearInterval(bannerTimer);
+  startBannerTimer();
+}
+
 async function loadPaymentMethods() {
   const grid = document.getElementById("pm-grid-homepage");
   if (!grid) return;
@@ -989,6 +1053,7 @@ async function loadPaymentMethods() {
 function onAuthReady(user) {
   hideLoader();
   loadPopupAd();
+  loadBannerSlides();
 }
 
 async function loadReviews() {
