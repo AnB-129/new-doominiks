@@ -428,6 +428,16 @@ tr:last-child td { border-bottom: none; }
 @media (max-width: 600px) {
   .hero-mascot { display: none; }
 }
+.hero-mascot-inline {
+  width: 90px; height: auto; object-fit: contain;
+  animation: mascotFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+  flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .hero-mascot-inline { width: 70px; }
+}
+
 @keyframes mascotFloat {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50%       { transform: translateX(-50%) translateY(-12px); }
