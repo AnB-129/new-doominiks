@@ -894,9 +894,9 @@ async function uploadPopupImage(input) {
   try {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_S);
     formData.append("folder", "doominiks-store/popup");
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_S}/image/upload`, { method: "POST", body: formData });
     const data = await res.json();
     if (data.secure_url) {
       document.getElementById("s-popup-image").value = data.secure_url;
