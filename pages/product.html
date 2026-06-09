@@ -437,7 +437,7 @@ function renderBuySection() {
   }
   const imgUrl = selectedItem.imageUrl || null;
   const stock = selectedItem.stock ?? null;
-  const expiredAt = productData.expiredAt || null;
+  const expiredAt = selectedItem.expiredAt || null;
 
   // Badge stok
   let stockBadge = "";
