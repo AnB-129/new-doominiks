@@ -394,6 +394,65 @@ tr:last-child td { border-bottom: none; }
 .pm-name { font-size: 12px; font-weight: 600; }
 .pm-category { font-size: 11px; color: var(--text-muted); }
 
+/* ---- LOGO MASCOT ---- */
+.logo-mascot {
+  width: 36px; height: 36px; object-fit: contain;
+  border-radius: 8px; flex-shrink: 0;
+  animation: logoWiggle 2.5s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes logoWiggle {
+  0%,100% { transform: rotate(0deg); }
+  15%      { transform: rotate(-12deg); }
+  30%      { transform: rotate(10deg); }
+  45%      { transform: rotate(-8deg); }
+  60%      { transform: rotate(6deg); }
+  75%      { transform: rotate(-4deg); }
+  88%      { transform: rotate(2deg); }
+}
+
+/* ---- BANNER SLIDESHOW ---- */
+.banner-slide-wrap {
+  position: relative; border-radius: var(--radius-xl);
+  overflow: hidden; aspect-ratio: 21/7;
+  background: var(--bg-card);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+@media (max-width: 600px) {
+  .banner-slide-wrap { aspect-ratio: 16/7; }
+}
+.banner-slide-track {
+  display: flex; width: 100%; height: 100%;
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.banner-slide-item {
+  min-width: 100%; height: 100%; flex-shrink: 0;
+  cursor: pointer; overflow: hidden;
+}
+.banner-slide-item img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.banner-prev, .banner-next {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(0,0,0,0.45); border: none; border-radius: 50%;
+  width: 36px; height: 36px; color: #fff; font-size: 22px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s; z-index: 2; line-height: 1;
+}
+.banner-prev { left: 10px; }
+.banner-next { right: 10px; }
+.banner-prev:hover, .banner-next:hover { background: rgba(0,0,0,0.75); }
+.banner-dots {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; z-index: 2;
+}
+.banner-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.4); border: none; cursor: pointer;
+  transition: background 0.2s, transform 0.2s; padding: 0;
+}
+.banner-dot.active { background: var(--gold); transform: scale(1.3); }
+
 /* ---- POPUP IKLAN ---- */
 #popup-ad-overlay {
   position: fixed; inset: 0; z-index: 10000;
