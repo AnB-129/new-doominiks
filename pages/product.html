@@ -771,7 +771,7 @@ async function loadProductReviews() {
     if (!allReviews.length) return;
     document.getElementById("product-reviews-section").style.display = "block";
     renderReviewSummary();
-    renderReviewPage(1);
+    renderReviewPage(1, true);
   } catch(e) { console.error(e); }
 }
 
@@ -801,7 +801,7 @@ function renderReviewSummary() {
   }).join("");
 }
 
-function renderReviewPage(page) {
+function renderReviewPage(page, skipScroll=false) {
   reviewPage = page;
   const total = allReviews.length;
   const totalPages = Math.ceil(total / REVIEWS_PER_PAGE);
@@ -841,8 +841,8 @@ function renderReviewPage(page) {
       ${p}
     </button>
   `).join("");
-  // Scroll ke atas review section
-  document.getElementById("product-reviews-section").scrollIntoView({behavior:"smooth", block:"start"});
+  // Scroll ke atas review section (hanya saat user klik pagination)
+  if (!skipScroll) document.getElementById("product-reviews-section").scrollIntoView({behavior:"smooth", block:"start"});
 }
 
 loadProduct();
