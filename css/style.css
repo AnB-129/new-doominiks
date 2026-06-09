@@ -394,7 +394,7 @@ tr:last-child td { border-bottom: none; }
 .pm-name { font-size: 12px; font-weight: 600; }
 .pm-category { font-size: 11px; color: var(--text-muted); }
 
-/* ---- LOGO MASCOT ---- */
+/* ---- LOGO MASCOT (navbar) ---- */
 .logo-mascot {
   width: 36px; height: 36px; object-fit: contain;
   border-radius: 8px; flex-shrink: 0;
@@ -409,6 +409,28 @@ tr:last-child td { border-bottom: none; }
   60%      { transform: rotate(6deg); }
   75%      { transform: rotate(-4deg); }
   88%      { transform: rotate(2deg); }
+}
+
+/* ---- HERO MASCOT ---- */
+.hero-mascot {
+  width: 220px; height: auto; object-fit: contain;
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  animation: mascotFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 16px 32px rgba(0,0,0,0.5));
+  pointer-events: none; z-index: 2;
+}
+@media (max-width: 1024px) {
+  .hero-mascot { width: 160px; }
+}
+@media (max-width: 768px) {
+  .hero-mascot { width: 120px; }
+}
+@media (max-width: 600px) {
+  .hero-mascot { display: none; }
+}
+@keyframes mascotFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(-12px); }
 }
 
 /* ---- BANNER SLIDESHOW ---- */
