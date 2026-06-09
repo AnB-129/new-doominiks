@@ -382,10 +382,15 @@ function selectTopupType(typeId) {
   // Filter items by typeId
   const filtered = (productData.items || []).filter(item => !item.typeId || item.typeId === typeId);
   renderItems(filtered);
-  // Smooth scroll to nominal
-  setTimeout(() => {
-    document.getElementById("items-grid")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 100);
+  // Scroll ke items-grid hanya jika user berada di atas section ini
+  const grid = document.getElementById("items-grid");
+  if (grid) {
+    const rect = grid.getBoundingClientRect();
+    // Hanya scroll jika items-grid belum terlihat di viewport
+    if (rect.top > window.innerHeight || rect.bottom < 0) {
+      setTimeout(() => grid.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  }
 }
 
 function renderItems(items) {
