@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780962969/0fcf671c-95d4-4a90-8717-c2d518a0c665_zgjcd4.png">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780962969/0fcf671c-95d4-4a90-8717-c2d518a0c665_zgjcd4.png">
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DOOMINIKS STORE &mdash; Top Up Game Terpercaya</title>
   <meta name="description" content="Top up game murah, cepat, dan terpercaya. Mobile Legends, Free Fire, PUBG, Genshin Impact & lebih banyak lagi." />
@@ -169,7 +169,7 @@
           Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
           Harga terbaik, proses kilat, transaksi terjamin. Jangan Datang Jika Anda Ragu!
         </p>
-        <div style="position:relative;display:inline-flex;align-items:center;gap:12px;">
+        <div style="display:flex;align-items:flex-end;gap:0;">
           <div class="hero-actions">
             <a href="pages/catalog.html" class="btn btn-primary btn-lg">Lihat Semua Game</a>
             <a href="pages/orders.html" class="btn btn-secondary btn-lg">Cek Pesanan</a>
@@ -751,18 +751,21 @@ function buildReviews(reviews) {
 // Load products from Firestore
 async function loadFeaturedProducts() {
   try {
-    // Try featured first
+    // Try featured first (exclude Voucher)
     let snap = await db.collection("products").where("active","==",true).where("featured","==",true).limit(8).get();
-    // Fallback: if no featured set, show all active
-    if (snap.empty) {
-      snap = await db.collection("products").where("active","==",true).limit(8).get();
+    // Filter out Voucher category client-side
+    let docs = snap.docs.filter(d => (d.data().category||"").toLowerCase() !== "voucher");
+    // Fallback: if no featured non-voucher, show all active non-voucher
+    if (!docs.length) {
+      snap = await db.collection("products").where("active","==",true).limit(20).get();
+      docs = snap.docs.filter(d => (d.data().category||"").toLowerCase() !== "voucher").slice(0,8);
     }
     const grid = document.getElementById("products-grid");
-    if (snap.empty) {
+    if (!docs.length) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">▪</div><h4>Belum ada produk</h4><p>Produk akan segera hadir.</p></div>`;
       return;
     }
-    grid.innerHTML = snap.docs.map(doc => {
+    grid.innerHTML = docs.map(doc => {
       const p = doc.data();
       const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
       return `
@@ -777,7 +780,6 @@ async function loadFeaturedProducts() {
           <div class="product-price-value">${formatIDR(minPrice)}</div>
         </div>`;
     }).join("");
-    // Animate in
     setTimeout(() => {
       grid.querySelectorAll(".card-product").forEach((el, i) => {
         setTimeout(() => el.classList.add("visible"), i * 80);
