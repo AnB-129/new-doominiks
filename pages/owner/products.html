@@ -92,10 +92,7 @@
           <label class="form-label">Badge (Opsional)</label>
           <input class="form-input" id="f-badge" placeholder="HOT, NEW, PROMO" />
         </div>
-        <div class="form-group">
-          <label class="form-label">Countdown Expired <span style="font-size:11px;color:var(--text-muted);">— kosongkan jika tidak perlu</span></label>
-          <input class="form-input" id="f-expired-at" type="datetime-local" />
-        </div>
+
       </div>
       <div class="grid-2" style="gap:16px;">
         <div class="form-group">
@@ -388,6 +385,7 @@ function addItemRow(item) {
     <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1 1 40%;" />
     <input class="form-input item-typeid" id="item-typeid-${i}" placeholder="ID Tipe (opsional, mis. robux_5hari)" value="${item ? (item.typeId||'') : ''}" style="flex:1 1 100%;font-size:12px;" />
     <input class="form-input" id="item-stock-${i}" type="number" min="0" placeholder="Stok (kosongkan = tidak terbatas)" value="${item && item.stock !== undefined && item.stock !== null ? item.stock : ''}" style="flex:1 1 40%;font-size:12px;" />
+    <input class="form-input" id="item-expired-${i}" type="datetime-local" title="Countdown Expired (opsional)" value="${item && item.expiredAt ? (() => { try { const d = item.expiredAt.toDate ? item.expiredAt.toDate() : new Date(item.expiredAt); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16); } catch(e){ return ''; } })() : ''}" style="flex:1 1 55%;font-size:12px;" />
     <div style="flex:1 1 100%;display:flex;align-items:center;gap:8px;">
       <div id="item-img-preview-${i}" style="width:48px;height:48px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
         ${item && item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;height:100%;object-fit:contain;">` : `<span style="font-size:18px;color:var(--text-muted);">🖼</span>`}
@@ -415,11 +413,14 @@ function getItems() {
     const imageUrl = document.getElementById(`item-img-${i}`)?.value?.trim() || null;
     const stockVal = document.getElementById(`item-stock-${i}`)?.value;
     const stock = stockVal !== "" && stockVal !== undefined ? parseInt(stockVal) : null;
+    const expiredVal = document.getElementById(`item-expired-${i}`)?.value;
+    const expiredAt = expiredVal ? new Date(expiredVal) : null;
     if (!name || !price) return null;
     const obj = { name, price, ...(orig ? { originalPrice: orig } : {}) };
     if (typeId) obj.typeId = typeId;
     if (imageUrl) obj.imageUrl = imageUrl;
     if (stock !== null && !isNaN(stock)) obj.stock = stock;
+    if (expiredAt) obj.expiredAt = expiredAt;
     return obj;
   }).filter(Boolean);
 }
@@ -574,7 +575,6 @@ async function saveProduct(e) {
       items: getItems(),
       fields: getFields(),
       topupTypes: getTopupTypes(),
-      expiredAt: (() => { const v = document.getElementById("f-expired-at").value; return v ? new Date(v) : null; })(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     if (!data.name) { toast("Nama produk wajib diisi!", "error"); return; }
