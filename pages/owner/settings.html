@@ -360,6 +360,21 @@
     </div>
 
     <div class="card settings-section">
+      <div class="settings-section-title">🖼 Banner Slideshow</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Slide Banner</div>
+          <div class="sr-desc">Tambah hingga 5 slide. Setiap slide bisa punya gambar dan link tujuan.</div>
+        </div>
+        <div class="settings-row-control" style="width:100%;">
+          <div id="banner-slides-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px;"></div>
+          <button class="btn btn-secondary btn-sm" onclick="addBannerSlide()" id="btn-add-slide">+ Tambah Slide</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveBannerSlides()">Simpan Banner</button>
+    </div>
+
+    <div class="card settings-section">
       <div class="settings-section-title">★ Akses Owner</div>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
         UID berikut memiliki akses penuh ke panel owner. Edit file <code style="background:var(--bg-panel);padding:2px 6px;border-radius:4px;font-size:12px;">js/firebase-config.js</code> untuk menambah/hapus owner.
@@ -487,6 +502,10 @@ async function loadSettings() {
       document.getElementById("s-tagline").value = s.tagline || "";
       document.getElementById("s-discord").value = s.discord || "";
       document.getElementById("s-whatsapp").value = s.whatsapp || "";
+      // Banner slides
+      const bSnap = await db.collection("settings").doc("store").get();
+      bannerSlidesData = (bSnap.exists ? bSnap.data().bannerSlides : null) || [];
+      renderBannerSlidesList();
       // Popup iklan
       document.getElementById("s-popup-enabled").checked = !!s.popupAdEnabled;
       document.getElementById("s-popup-link").value = s.popupAdLink || "";
@@ -905,6 +924,71 @@ async function uploadPopupImage(input) {
       toast("Gambar popup diupload!", "success");
     } else { status.textContent = "Gagal upload"; }
   } catch(e) { status.textContent = "Error: " + e.message; }
+}
+
+// ---- BANNER SLIDES ----
+let bannerSlidesData = [];
+
+function renderBannerSlidesList() {
+  const list = document.getElementById("banner-slides-list");
+  if (!bannerSlidesData.length) {
+    list.innerHTML = `<div style="color:var(--text-muted);font-size:13px;">Belum ada slide.</div>`;
+    return;
+  }
+  list.innerHTML = bannerSlidesData.map((s, i) => `
+    <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;gap:12px;align-items:flex-start;">
+      <div style="flex-shrink:0;width:80px;height:40px;border-radius:6px;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;">
+        ${s.image ? `<img src="${s.image}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="font-size:18px;color:var(--text-muted);">🖼</span>`}
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer;width:fit-content;font-size:11px;">
+          ${s.image ? '✎ Ganti Gambar' : '↑ Upload Gambar'}
+          <input type="file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="uploadBannerSlideImg(${i}, this)" />
+        </label>
+        <input class="form-input" style="font-size:12px;" placeholder="Link tujuan (opsional)" value="${s.link||''}" oninput="bannerSlidesData[${i}].link=this.value" />
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeBannerSlide(${i})">✕</button>
+    </div>
+  `).join("");
+  document.getElementById("btn-add-slide").style.display = bannerSlidesData.length >= 5 ? "none" : "inline-flex";
+}
+
+function addBannerSlide() {
+  if (bannerSlidesData.length >= 5) return;
+  bannerSlidesData.push({ image: "", link: "" });
+  renderBannerSlidesList();
+}
+
+function removeBannerSlide(i) {
+  bannerSlidesData.splice(i, 1);
+  renderBannerSlidesList();
+}
+
+async function uploadBannerSlideImg(i, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { toast("Maks 3MB", "error"); return; }
+  toast("Mengupload gambar slide...", "info");
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_S);
+    formData.append("folder", "doominiks-store/banners");
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_S}/image/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.secure_url) {
+      bannerSlidesData[i].image = data.secure_url;
+      renderBannerSlidesList();
+      toast("Gambar slide diupload!", "success");
+    } else { toast("Upload gagal", "error"); }
+  } catch(e) { toast("Error: " + e.message, "error"); }
+}
+
+async function saveBannerSlides() {
+  try {
+    await db.collection("settings").doc("store").set({ bannerSlides: bannerSlidesData }, { merge: true });
+    toast("Banner slides disimpan!", "success");
+  } catch(e) { toast("Gagal simpan: " + e.message, "error"); }
 }
 
 async function savePopupSettings() {
