@@ -203,7 +203,7 @@
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
+    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
     <div class="nav-links">
       <a href="../index.html">Beranda</a>
       <a href="catalog.html" class="active">Katalog</a>
@@ -232,13 +232,24 @@
   <!-- Reviews section -->
   <div id="product-reviews-section" style="display:none;margin-top:40px;">
     <div style="border-top:1px solid var(--border);padding-top:32px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
-        <div>
-          <h3 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:2px;">Ulasan Pembeli</h3>
-          <div id="review-count" style="font-size:13px;color:var(--text-muted);font-family:var(--font-body);"></div>
+      <h3 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:4px;">Review Pembeli</h3>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Liat pendapat pembeli tentang produk ini</div>
+      <!-- Rating summary -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;gap:20px;align-items:center;margin-bottom:24px;flex-wrap:wrap;">
+        <div style="text-align:center;flex-shrink:0;min-width:70px;">
+          <div id="rv-avg" style="font-size:48px;font-weight:800;font-family:var(--font-display);line-height:1;color:var(--gold);">-</div>
+          <div id="rv-stars" style="color:var(--gold);font-size:16px;letter-spacing:2px;margin:4px 0;">★★★★★</div>
+          <div id="rv-total" style="font-size:12px;color:var(--text-muted);"></div>
         </div>
+        <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:5px;" id="rv-bars"></div>
       </div>
-      <div id="product-reviews-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <!-- Review list -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div id="review-count" style="font-size:15px;font-weight:700;font-family:var(--font-display);"></div>
+      </div>
+      <div id="product-reviews-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <!-- Pagination -->
+      <div id="rv-pagination" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:20px;"></div>
     </div>
   </div>
 </div>
@@ -268,7 +279,7 @@ const PAYMENT_METHODS = [
   { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 999 },
   { id: "dana", group: "QRIS / E-Wallet", name: "DANA", icon: "▲", fee: 1110 },
   { id: "shopeepay", group: "QRIS / E-Wallet", name: "ShopeePay", icon: "▲", fee: 890 },
-  { id: "paypal", group: "Internasional", name: "PayPal", icon: "▪", fee: 3400 },
+  { id: "paypal", group: "Internasional", name: "PayPal", icon: "▪", fee: 0 },
   { id: "indomaret", group: "Gerai Ritel", name: "Indomaret", icon: "▪", fee: 2300 },
   { id: "alfamart", group: "Gerai Ritel", name: "Alfamart", icon: "▪", fee: 2400 },
 ];
@@ -735,16 +746,19 @@ async function handleProofUpload(event) {
 function onAuthReady() { hideLoader(); }
 
 
+let allReviews = [];
+const REVIEWS_PER_PAGE = 8;
+let reviewPage = 1;
+
 async function loadProductReviews() {
   const productId = new URLSearchParams(window.location.search).get("id");
   if (!productId) return;
   try {
     const snap = await db.collection("reviews")
       .where("productId", "==", productId)
-      .limit(20).get();
-    // Deduplicate by orderId+userId to prevent duplicate display
+      .limit(100).get();
     const seen = new Set();
-    const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => {
+    allReviews = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => {
       const key = r.orderId || r.id;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -754,31 +768,81 @@ async function loadProductReviews() {
       const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
       return tb - ta;
     });
-    if (!reviews.length) return;
-    const avgRating = (reviews.reduce((s,r) => s + (r.rating||5), 0) / reviews.length).toFixed(1);
-    const section = document.getElementById("product-reviews-section");
-    const countEl = document.getElementById("review-count");
-    const listEl = document.getElementById("product-reviews-list");
-    if (!section || !countEl || !listEl) return;
-    section.style.display = "block";
-    countEl.textContent = `${reviews.length} ulasan  •  ⭐ ${avgRating}`;
-    listEl.innerHTML = reviews.map(r => `
-      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">
-            ${r.userPhoto ? `<img src="${r.userPhoto}" style="width:100%;height:100%;object-fit:cover;">` : (r.userName||"A")[0].toUpperCase()}
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;">${r.userName||"Anonim"}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${formatDate(r.createdAt)}${r.itemName ? ` &bull; Beli: <span style="color:var(--gold);">${r.itemName}</span>` : ""}</div>
-          </div>
-          <div style="color:var(--gold);font-size:13px;flex-shrink:0;letter-spacing:1px;">${"★".repeat(r.rating||5)}${"☆".repeat(5-(r.rating||5))}</div>
-        </div>
-        ${r.text ? `<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;${r.photoUrl ? 'margin-bottom:10px;' : ''}">${r.text}</div>` : ""}
-        ${r.photoUrl ? `<img src="${r.photoUrl}" alt="Foto ulasan" style="max-width:100%;max-height:200px;border-radius:var(--radius);border:1px solid var(--border);object-fit:cover;cursor:pointer;" onclick="window.open('${r.photoUrl}','_blank')">` : ""}
-      </div>
-    `).join("");
+    if (!allReviews.length) return;
+    document.getElementById("product-reviews-section").style.display = "block";
+    renderReviewSummary();
+    renderReviewPage(1);
   } catch(e) { console.error(e); }
+}
+
+function renderReviewSummary() {
+  const total = allReviews.length;
+  const avg = (allReviews.reduce((s,r) => s + (r.rating||5), 0) / total).toFixed(1);
+  document.getElementById("rv-avg").textContent = avg;
+  document.getElementById("rv-total").textContent = total + " review";
+  document.getElementById("review-count").textContent = `Semua Review (${total})`;
+  // Star display
+  const avgNum = parseFloat(avg);
+  const fullStars = Math.floor(avgNum);
+  document.getElementById("rv-stars").textContent = "★".repeat(fullStars) + (avgNum - fullStars >= 0.5 ? "½" : "") + "☆".repeat(5 - Math.ceil(avgNum));
+  // Bars per bintang
+  const counts = [5,4,3,2,1].map(s => allReviews.filter(r => (r.rating||5) === s).length);
+  document.getElementById("rv-bars").innerHTML = [5,4,3,2,1].map((star, i) => {
+    const pct = total ? Math.round((counts[i]/total)*100) : 0;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--gold);flex-shrink:0;width:14px;text-align:right;">${star}</span>
+        <span style="color:var(--gold);font-size:11px;">★</span>
+        <div style="flex:1;height:6px;background:var(--bg-card);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:var(--gold);border-radius:3px;transition:width 0.6s;"></div>
+        </div>
+        <span style="font-size:12px;color:var(--text-muted);flex-shrink:0;width:28px;">${counts[i]}</span>
+      </div>`;
+  }).join("");
+}
+
+function renderReviewPage(page) {
+  reviewPage = page;
+  const total = allReviews.length;
+  const totalPages = Math.ceil(total / REVIEWS_PER_PAGE);
+  const start = (page - 1) * REVIEWS_PER_PAGE;
+  const pageReviews = allReviews.slice(start, start + REVIEWS_PER_PAGE);
+
+  document.getElementById("product-reviews-list").innerHTML = pageReviews.map(r => `
+    <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">
+          ${r.userPhoto ? `<img src="${r.userPhoto}" style="width:100%;height:100%;object-fit:cover;">` : (r.userName||"A")[0].toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <div style="font-size:13px;font-weight:700;">${r.userName||"Anonim"}</div>
+            <div style="color:var(--gold);font-size:12px;letter-spacing:1px;">${"★".repeat(r.rating||5)}${"☆".repeat(5-(r.rating||5))}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            ${formatDate(r.createdAt)}${r.itemName ? ` &bull; Beli: <span style="color:var(--gold);">${r.itemName}</span>` : ""}
+          </div>
+        </div>
+      </div>
+      ${r.text ? `<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:${r.photoUrl?'10px':'0'};">${r.text}</div>` : ""}
+      ${r.photoUrl ? `<img src="${r.photoUrl}" alt="Foto ulasan" style="width:56px;height:56px;border-radius:8px;border:1px solid var(--border);object-fit:cover;cursor:pointer;" onclick="window.open('${r.photoUrl}','_blank')" title="Klik untuk lihat full">` : ""}
+    </div>
+  `).join("");
+
+  // Pagination
+  const pg = document.getElementById("rv-pagination");
+  if (totalPages <= 1) { pg.innerHTML = ""; return; }
+  pg.innerHTML = Array.from({length: totalPages}, (_,i) => i+1).map(p => `
+    <button onclick="renderReviewPage(${p})" style="
+      width:34px;height:34px;border-radius:8px;border:1px solid ${p===page?'var(--gold)':'var(--border)'};
+      background:${p===page?'var(--gold)':'var(--bg-panel)'};
+      color:${p===page?'#000':'var(--text-primary)'};
+      font-size:13px;font-weight:${p===page?'700':'400'};cursor:pointer;transition:all 0.2s;">
+      ${p}
+    </button>
+  `).join("");
+  // Scroll ke atas review section
+  document.getElementById("product-reviews-section").scrollIntoView({behavior:"smooth", block:"start"});
 }
 
 loadProduct();
