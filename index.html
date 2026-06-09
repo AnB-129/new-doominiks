@@ -155,10 +155,10 @@
         </div>
         <h1 class="hero-title">
           Top Up Game<br>
-          <span class="gradient-line">Satset, No Drama</span>
+          <span class="gradient-line">Satset, Anti Drama</span>
         </h1>
         <p class="hero-desc">
-          Isi diamond, UC, Robux,Gift in game, Voucher, dan berbagai mata uang game favoritmu dalam hitungan detik. 
+          Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
           Harga terbaik, proses kilat, transaksi terjamin. Jangan Datang Jika Anda Ragu!
         </p>
         <div class="hero-actions">
@@ -317,8 +317,8 @@
   <div class="container">
     <div class="section-header">
       <div>
-        <h2 class="section-title">Top <span>Pembeli</span></h2>
-        <p class="section-sub">Pelanggan dengan transaksi terbanyak bulan ini</p>
+        <h2 class="section-title">Top <span>Orang Kaya</span></h2>
+        <p class="section-sub">Sultan dengan transaksi terbanyak bulan ini</p>
       </div>
       <a href="pages/leaderboard.html" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
     </div>
@@ -523,7 +523,7 @@
         </div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;font-size:13px;color:var(--gold);text-align:center;font-weight:600;">
-        ✦ Dipercaya oleh ribuan gamer Indonesia sejak 2024
+        ✦ Dipercaya oleh ribuan orang kaya Indonesia sejak 2024
       </div>
     </div>
   </div>
@@ -985,6 +985,7 @@ async function loadPaymentMethods() {
 // INIT
 function onAuthReady(user) {
   hideLoader();
+  loadPopupAd();
 }
 
 async function loadReviews() {
@@ -1020,7 +1021,6 @@ loadFeaturedProducts();
 loadFeaturedVouchers();
 loadStats();
 loadLeaderboardPreview();
-loadPopupAd();
 loadPaymentMethods();
 buildFAQ();
 buildHubungi();
