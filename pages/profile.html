@@ -138,6 +138,34 @@
       </div>
     </div>
 
+    <!-- Nomor Telepon -->
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700;">📱 Nomor Telepon</div>
+          <div style="font-size:13px;color:var(--text-secondary);">Digunakan untuk konfirmasi pesanan</div>
+        </div>
+        <span id="phone-verified-badge" style="display:none;" class="badge badge-success">✓ Tersimpan</span>
+      </div>
+      <!-- View mode -->
+      <div id="phone-view-mode">
+        <div id="phone-display" style="font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text-primary);">Belum ada nomor</div>
+        <button class="btn btn-secondary btn-sm" onclick="togglePhoneEdit(true)">✎ Ubah Nomor</button>
+      </div>
+      <!-- Edit mode -->
+      <div id="phone-edit-mode" style="display:none;">
+        <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="flex:1;min-width:200px;">
+            <input class="form-input" id="phone-input" type="tel" placeholder="Contoh: 08123456789" style="font-size:15px;" oninput="validatePhoneInput(this)" />
+            <div id="phone-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Format: 08xx atau +628xx (10-15 digit)</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="savePhone()" style="flex-shrink:0;">✓ Simpan</button>
+          <button class="btn btn-secondary btn-sm" onclick="togglePhoneEdit(false)" style="flex-shrink:0;">Batal</button>
+        </div>
+        <div id="phone-status" style="font-size:12px;margin-top:2px;"></div>
+      </div>
+    </div>
+
     <!-- Recent Orders -->
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
@@ -239,6 +267,58 @@ async function uploadProfilePhoto(input) {
   }
 }
 
+function validatePhoneInput(input) {
+  const val = input.value.replace(/\s/g, "");
+  const hint = document.getElementById("phone-hint");
+  const valid = /^(\+62|62|0)[0-9]{9,13}$/.test(val);
+  input.style.borderColor = val.length > 3 ? (valid ? "var(--green)" : "var(--red)") : "";
+  hint.style.color = val.length > 3 ? (valid ? "var(--green)" : "var(--red)") : "var(--text-muted)";
+  hint.textContent = val.length > 3
+    ? (valid ? "✓ Format nomor valid" : "✕ Format tidak valid. Gunakan 08xx atau +628xx")
+    : "Format: 08xx atau +628xx (10-15 digit)";
+}
+
+function togglePhoneEdit(on) {
+  document.getElementById("phone-view-mode").style.display = on ? "none" : "block";
+  document.getElementById("phone-edit-mode").style.display = on ? "block" : "none";
+  if (on) {
+    const current = document.getElementById("phone-display").dataset.raw || "";
+    document.getElementById("phone-input").value = current;
+    document.getElementById("phone-status").textContent = "";
+    document.getElementById("phone-hint").textContent = "Format: 08xx atau +628xx (10-15 digit)";
+    document.getElementById("phone-hint").style.color = "var(--text-muted)";
+    document.getElementById("phone-input").style.borderColor = "";
+  }
+}
+
+async function savePhone() {
+  const raw = document.getElementById("phone-input").value.replace(/\s/g, "");
+  const status = document.getElementById("phone-status");
+  if (!raw) {
+    status.style.color = "var(--red)"; status.textContent = "Nomor tidak boleh kosong."; return;
+  }
+  const valid = /^(\+62|62|0)[0-9]{9,13}$/.test(raw);
+  if (!valid) {
+    status.style.color = "var(--red)"; status.textContent = "Format nomor tidak valid."; return;
+  }
+  // Normalisasi ke format +62
+  let normalized = raw;
+  if (raw.startsWith("0")) normalized = "+62" + raw.slice(1);
+  else if (raw.startsWith("62")) normalized = "+" + raw;
+
+  status.style.color = "var(--text-muted)"; status.textContent = "Menyimpan...";
+  try {
+    await db.collection("users").doc(currentProfileUser.uid).set({ phone: normalized }, { merge: true });
+    document.getElementById("phone-display").textContent = normalized;
+    document.getElementById("phone-display").dataset.raw = normalized;
+    document.getElementById("phone-verified-badge").style.display = "inline-flex";
+    togglePhoneEdit(false);
+    toast("Nomor telepon disimpan!", "success");
+  } catch(e) {
+    status.style.color = "var(--red)"; status.textContent = "Gagal: " + e.message;
+  }
+}
+
 async function loadProfile(user) {
   currentProfileUser = user;
   const avatar = document.getElementById("profile-avatar");
@@ -253,6 +333,19 @@ async function loadProfile(user) {
 
   document.getElementById("profile-name").textContent = displayName;
   document.getElementById("profile-email").textContent = user.email || "";
+  // Load phone
+  const phone = userData.phone || null;
+  const phoneDisplay = document.getElementById("phone-display");
+  const phoneBadge = document.getElementById("phone-verified-badge");
+  if (phone) {
+    phoneDisplay.textContent = phone;
+    phoneDisplay.dataset.raw = phone;
+    phoneBadge.style.display = "inline-flex";
+  } else {
+    phoneDisplay.textContent = "Belum ada nomor";
+    phoneDisplay.dataset.raw = "";
+    phoneBadge.style.display = "none";
+  }
 
   try {
     const lbSnap = await db.collection("leaderboard").doc(user.uid).get();
