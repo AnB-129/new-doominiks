@@ -94,6 +94,7 @@
             <th>Metode</th>
             <th>Status</th>
             <th>Tanggal</th>
+            <th>Kode</th>
             <th>Ulasan</th>
           </tr></thead>
           <tbody id="orders-tbody"></tbody>
@@ -221,6 +222,14 @@ function renderOrders() {
       <td style="font-size:13px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod}</td>
       <td>${statusBadge(o.status)}</td>
       <td style="font-size:13px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
+      <td>
+        ${o.redeemCode ? `
+          <div style="background:var(--bg-panel);border:1px solid var(--gold);border-radius:8px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;max-width:200px;">
+            <span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;word-break:break-all;">${o.redeemCode}</span>
+            <button onclick="navigator.clipboard.writeText('${o.redeemCode}').then(()=>toast('Kode disalin!','success'))" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;flex-shrink:0;" title="Salin kode">⎘</button>
+          </div>
+        ` : `<span style="font-size:12px;color:var(--text-muted);">-</span>`}
+      </td>
       <td>
         ${o.status === "success" && !o.reviewed && !reviewedOrderIds.has(o.id)
           ? `<button class="btn btn-secondary btn-sm" onclick="openReviewModal('${o.id}','${o.orderId}','${o.productId}','${o.productName}','${o.itemName}')">⭐ Ulasan</button>`
