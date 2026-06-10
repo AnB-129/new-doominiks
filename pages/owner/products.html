@@ -134,6 +134,29 @@
         <input type="hidden" id="f-img-url" value="" />
       </div>
 
+      <!-- BANNER UPLOAD -->
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Gambar Banner <span style="font-size:11px;color:var(--text-muted);font-weight:400;">— tampil di halaman detail produk (opsional, disarankan landscape 16:9)</span></label>
+        <div id="banner-upload-area" class="img-upload-area" onclick="document.getElementById('f-banner-file').click()">
+          <input type="file" id="f-banner-file" accept="image/png,image/jpeg,image/webp" onchange="handleBannerSelect(event)" style="display:none;" />
+          <div id="banner-placeholder">
+            <div style="font-size:32px;margin-bottom:8px;color:var(--text-muted);">🖼</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Upload gambar banner</div>
+            <div style="font-size:12px;color:var(--text-muted);">PNG, JPG &bull; Maks 2MB &bull; Landscape 16:9</div>
+          </div>
+          <div id="banner-preview-container" style="display:none;">
+            <div class="img-preview-wrap">
+              <img id="banner-preview" class="img-preview" src="" alt="Banner Preview" />
+              <button type="button" class="img-preview-remove" onclick="removeBanner(event)">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="upload-progress" id="banner-progress" style="display:none;">
+          <div class="upload-progress-bar" id="banner-progress-bar"></div>
+        </div>
+        <input type="hidden" id="f-banner-url" value="" />
+      </div>
+
       <div class="form-group">
         <label class="form-label">Urutan Tampil</label>
         <input class="form-input" id="f-sort" type="number" value="99" min="0" />
@@ -566,6 +589,7 @@ async function saveProduct(e) {
       icon: document.getElementById("f-icon").value.trim(),
       badge: document.getElementById("f-badge").value.trim(),
       imageUrl: document.getElementById("f-img-url").value.trim() || null,
+      bannerUrl: document.getElementById("f-banner-url").value.trim() || null,
       color1: document.getElementById("f-color1-text").value.trim() || "#1E2535",
       color2: document.getElementById("f-color2-text").value.trim() || "#0D1018",
       sortOrder: parseInt(document.getElementById("f-sort").value) || 99,
@@ -739,6 +763,55 @@ async function uploadItemImage(i, input) {
     xhr.onerror = () => { status.textContent = "Error"; };
     xhr.send(formData);
   } catch(e) { status.textContent = "Error"; toast("Upload gagal: " + e.message, "error"); }
+}
+
+function handleBannerSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast("Banner maks 2MB!", "error"); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById("banner-preview").src = e.target.result;
+    document.getElementById("banner-preview-container").style.display = "flex";
+    document.getElementById("banner-placeholder").style.display = "none";
+  };
+  reader.readAsDataURL(file);
+  uploadBannerToStorage(file);
+}
+
+function removeBanner(event) {
+  event.stopPropagation();
+  document.getElementById("f-banner-url").value = "";
+  document.getElementById("banner-preview").src = "";
+  document.getElementById("banner-preview-container").style.display = "none";
+  document.getElementById("banner-placeholder").style.display = "block";
+  document.getElementById("f-banner-file").value = "";
+}
+
+async function uploadBannerToStorage(file) {
+  const progressWrap = document.getElementById("banner-progress");
+  const progressBar = document.getElementById("banner-progress-bar");
+  progressWrap.style.display = "block";
+  progressBar.style.width = "0%";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "doominiks-store/banners-product");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) progressBar.style.width = `${(e.loaded/e.total*100).toFixed(0)}%`; };
+    xhr.onload = () => {
+      progressWrap.style.display = "none";
+      if (xhr.status === 200) {
+        const url = JSON.parse(xhr.responseText).secure_url;
+        document.getElementById("f-banner-url").value = url;
+        toast("Banner diupload!", "success");
+      } else { toast("Gagal upload banner", "error"); }
+    };
+    xhr.onerror = () => { progressWrap.style.display = "none"; toast("Error upload", "error"); };
+    xhr.send(formData);
+  } catch(e) { progressWrap.style.display = "none"; toast("Error: " + e.message, "error"); }
 }
 
 function removeImage(event) {
