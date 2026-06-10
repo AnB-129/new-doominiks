@@ -4,7 +4,7 @@
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyCwBPPYAF6vuJkeH74GFDXNTtK1Cn_l6uI",
-  authDomain: "doominiks-gold.firebaseapp.com",
+  authDomain: "doominiksstore.xyz",
   projectId: "doominiks-gold",
   storageBucket: "doominiks-gold.firebasestorage.app",
   messagingSenderId: "455827305732",
@@ -51,4 +51,3 @@ function generateOrderId() {
   for (let i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
   return id;
 }
-
