@@ -44,34 +44,16 @@
 <div id="toast-container"></div>
 
 <div class="modal-overlay" id="modal-login">
-  <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:20px;">
-    <button class="modal-close" onclick="closeModal('modal-login')" style="position:absolute;top:14px;right:14px;z-index:2;background:var(--bg-panel);border:1px solid var(--border);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted);">&times;</button>
-    <div style="padding:28px 28px 0;">
-      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;margin-bottom:24px;">
-        <span style="color:#22c55e;font-size:16px;flex-shrink:0;margin-top:1px;">🛡</span>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:2px;">Data kamu aman</div>
-          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Login di sini cuma buat transaksi di DOOMINIKS STORE aja, nggak bakal ngaruh sama akun game kamu.</div>
-        </div>
-      </div>
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:6px;">Masuk ke Akun</div>
-        <div style="font-size:13px;color:var(--text-secondary);">Kamu bisa langsung masuk pakai Google</div>
-      </div>
-      <button class="btn btn-full btn-lg" onclick="handleGoogleLogin()" style="background:#fff;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:12px;font-weight:600;font-size:15px;gap:12px;margin-bottom:10px;justify-content:center;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Masuk pakai Google
-      </button>
-    </div>
-    <div style="padding:16px 28px 24px;text-align:center;">
-      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Kalau lanjut, kamu setuju sama<br><a href="#" style="color:var(--gold);text-decoration:underline;">Syarat &amp; Ketentuan</a> dan <a href="#" style="color:var(--gold);text-decoration:underline;">Kebijakan Privasi</a>.</div>
-    </div>
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><span class="modal-title">Login Diperlukan</span><button class="modal-close" onclick="closeModal('modal-login')">&times;</button></div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">Login untuk melihat profil kamu.</p>
+    <button class="btn btn-secondary btn-full btn-lg" onclick="handleGoogleLogin()">Lanjutkan dengan Google</button>
   </div>
 </div>
 
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
+    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" class="logo-mascot" alt="D! Store" />DOOMINIKS <span>STORE</span></a>
     <div class="nav-links">
       <a href="../index.html">Beranda</a>
       <a href="catalog.html">Katalog</a>
@@ -109,15 +91,32 @@
   <div id="profile-content" style="display:none;">
     <!-- Profile Hero -->
     <div class="profile-hero">
-      <div class="profile-avatar-wrap">
+      <div class="profile-avatar-wrap" style="position:relative;">
         <div class="profile-avatar" id="profile-avatar"></div>
+        <label style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg-deep);font-size:13px;" title="Ganti foto profil">
+          ✎
+          <input type="file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="uploadProfilePhoto(this)" />
+        </label>
       </div>
       <div style="flex:1;min-width:0;">
-        <div class="profile-name" id="profile-name">-</div>
-        <div class="profile-email" id="profile-email">-</div>
-        <div class="profile-badges">
-          <span class="badge badge-success">✓ Terverifikasi Google</span>
-          <span class="badge badge-processing" id="profile-rank-badge" style="display:none;"></span>
+        <!-- View mode -->
+        <div id="profile-view-mode">
+          <div class="profile-name" id="profile-name">-</div>
+          <div class="profile-email" id="profile-email">-</div>
+          <div class="profile-badges" style="margin-bottom:10px;">
+            <span class="badge badge-success">✓ Terverifikasi Google</span>
+            <span class="badge badge-processing" id="profile-rank-badge" style="display:none;"></span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="toggleEditMode(true)">✎ Edit Nama</button>
+        </div>
+        <!-- Edit mode -->
+        <div id="profile-edit-mode" style="display:none;">
+          <input class="form-input" id="edit-name-input" placeholder="Nama kamu" style="margin-bottom:8px;font-size:15px;" />
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="saveProfile()">✓ Simpan</button>
+            <button class="btn btn-secondary btn-sm" onclick="toggleEditMode(false)">Batal</button>
+          </div>
+          <div id="edit-status" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
         </div>
       </div>
       <button class="btn btn-danger btn-sm" onclick="signOut()">→ Logout</button>
@@ -159,25 +158,109 @@
 <script src="../js/firebase-config.js"></script>
 <script src="../js/app.js"></script>
 <script>
-async function loadProfile(user) {
-  // Set basic info
-  const avatar = document.getElementById("profile-avatar");
-  if (user.photoURL) avatar.innerHTML = `<img src="${user.photoURL}" alt="">`;
-  else avatar.textContent = (user.displayName || user.email || "U")[0].toUpperCase();
+// Cloudinary config (sama dengan settings)
+const CLOUD_NAME = "dnpvgpqka";
+const UPLOAD_PRESET = "vaultstore";
 
-  document.getElementById("profile-name").textContent = user.displayName || "Pengguna";
+let currentProfileUser = null;
+
+function toggleEditMode(on) {
+  document.getElementById("profile-view-mode").style.display = on ? "none" : "block";
+  document.getElementById("profile-edit-mode").style.display = on ? "block" : "none";
+  if (on && currentProfileUser) {
+    document.getElementById("edit-name-input").value = currentProfileUser.displayName || "";
+    document.getElementById("edit-status").textContent = "";
+  }
+}
+
+async function saveProfile() {
+  const newName = document.getElementById("edit-name-input").value.trim();
+  if (!newName) { toast("Nama tidak boleh kosong.", "error"); return; }
+  const status = document.getElementById("edit-status");
+  status.textContent = "Menyimpan...";
+  try {
+    // Update Firebase Auth displayName
+    await auth.currentUser.updateProfile({ displayName: newName });
+    // Update Firestore users
+    await db.collection("users").doc(currentProfileUser.uid).set({ displayName: newName }, { merge: true });
+    // Sync ke leaderboard
+    await db.collection("leaderboard").doc(currentProfileUser.uid).set({ displayName: newName }, { merge: true });
+    // Sync ke reviews (batch update)
+    const reviewsSnap = await db.collection("reviews").where("userId", "==", currentProfileUser.uid).get();
+    if (!reviewsSnap.empty) {
+      const batch = db.batch();
+      reviewsSnap.docs.forEach(d => batch.update(d.ref, { userName: newName }));
+      await batch.commit();
+    }
+    currentProfileUser = auth.currentUser;
+    document.getElementById("profile-name").textContent = newName;
+    toggleEditMode(false);
+    toast("Nama berhasil diperbarui!", "success");
+  } catch(e) {
+    status.textContent = "Gagal: " + e.message;
+    toast("Gagal simpan.", "error");
+  }
+}
+
+async function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB", "error"); return; }
+  toast("Mengupload foto...", "info");
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+    formData.append("folder", "doominiks-store/avatars");
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error("Upload gagal");
+    const photoURL = data.secure_url;
+    // Update Firebase Auth
+    await auth.currentUser.updateProfile({ photoURL });
+    // Update Firestore users
+    await db.collection("users").doc(currentProfileUser.uid).set({ photoURL }, { merge: true });
+    // Sync ke leaderboard
+    await db.collection("leaderboard").doc(currentProfileUser.uid).set({ photoURL }, { merge: true });
+    // Sync ke reviews
+    const reviewsSnap = await db.collection("reviews").where("userId", "==", currentProfileUser.uid).get();
+    if (!reviewsSnap.empty) {
+      const batch = db.batch();
+      reviewsSnap.docs.forEach(d => batch.update(d.ref, { userPhoto: photoURL }));
+      await batch.commit();
+    }
+    // Update UI avatar
+    const avatar = document.getElementById("profile-avatar");
+    avatar.innerHTML = `<img src="${photoURL}" alt="">`;
+    currentProfileUser = auth.currentUser;
+    toast("Foto profil diperbarui!", "success");
+  } catch(e) {
+    toast("Gagal upload: " + e.message, "error");
+  }
+}
+
+async function loadProfile(user) {
+  currentProfileUser = user;
+  const avatar = document.getElementById("profile-avatar");
+  // Prioritas: cek Firestore dulu (bisa lebih update dari Firebase Auth)
+  const userDoc = await db.collection("users").doc(user.uid).get().catch(() => null);
+  const userData = userDoc?.exists ? userDoc.data() : {};
+  const displayName = userData.displayName || user.displayName || "Pengguna";
+  const photoURL = userData.photoURL || user.photoURL;
+
+  if (photoURL) avatar.innerHTML = `<img src="${photoURL}" alt="">`;
+  else avatar.textContent = (displayName)[0].toUpperCase();
+
+  document.getElementById("profile-name").textContent = displayName;
   document.getElementById("profile-email").textContent = user.email || "";
 
   try {
-    // Load leaderboard stats
     const lbSnap = await db.collection("leaderboard").doc(user.uid).get();
     if (lbSnap.exists) {
       const lb = lbSnap.data();
       document.getElementById("p-stat-orders").textContent = lb.orderCount || 0;
       document.getElementById("p-stat-spent").textContent = formatIDR(lb.totalSpent || 0);
     }
-
-    // Get rank
     const rankSnap = await db.collection("leaderboard").orderBy("totalSpent","desc").get();
     const rank = rankSnap.docs.findIndex(d => d.id === user.uid) + 1;
     if (rank > 0) {
@@ -186,15 +269,8 @@ async function loadProfile(user) {
       badge.style.display = "inline-flex";
       badge.textContent = rank <= 3 ? ["★ Top 1","★ Top 2","★ Top 3"][rank-1] : "Peringkat #" + rank;
     }
-
-    // Load recent orders
-    const ordersSnap = await db.collection("orders")
-      .where("userId","==",user.uid)
-      
-      .limit(5).get();
-
+    const ordersSnap = await db.collection("orders").where("userId","==",user.uid).limit(5).get();
     const container = document.getElementById("profile-orders");
-    // Sort client-side
     const orderDocs = ordersSnap.docs.sort((a,b) => {
       const ta = a.data().createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
       const tb = b.data().createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
@@ -204,28 +280,23 @@ async function loadProfile(user) {
       container.innerHTML = `<div class="empty-state"><div class="empty-icon">⊞</div><h4>Belum ada pesanan</h4><p>Yuk top up game favoritmu!</p><a href="catalog.html" class="btn btn-primary btn-sm">Lihat Katalog</a></div>`;
       return;
     }
-
     const statusMap = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
     const statusLbl = { pending:"Menunggu", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
-
     container.innerHTML = orderDocs.map(d => {
       const o = d.data();
-      return `
-      <div class="order-item">
+      return `<div class="order-item">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.2px;">${o.orderId}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--gold);font-family:var(--font-body);">${o.orderId}</div>
           <div style="font-size:14px;font-weight:600;margin-top:2px;">${o.productName}</div>
           <div style="font-size:12px;color:var(--text-secondary);">${o.itemName} &bull; ${formatDate(o.createdAt)}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-weight:700;font-size:15px;margin-bottom:4px;font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(o.total)}</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">${formatIDR(o.total)}</div>
           <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
         </div>
       </div>`;
     }).join("");
-  } catch(e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 }
 
 async function handleGoogleLogin() {
