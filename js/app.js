@@ -37,7 +37,11 @@ document.addEventListener("click", (e) => {
 // ---- Page Loader ----
 function hideLoader() {
   const loader = document.getElementById("page-loader");
-  if (loader) { loader.style.opacity = "0"; setTimeout(() => loader.remove(), 400); }
+  if (loader) {
+    loader.style.pointerEvents = "none";
+    loader.style.opacity = "0";
+    setTimeout(() => { if (loader.parentNode) loader.remove(); }, 400);
+  }
 }
 
 // ---- Auth State ----
