@@ -79,6 +79,9 @@ async function signInWithGoogle() {
   try {
     const result = await auth.signInWithPopup(googleProvider);
     const user = result.user;
+    // Reset overflow & tutup semua modal
+    document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
+    document.body.style.overflow = "";
     // Upsert user document
     await db.collection("users").doc(user.uid).set({
       displayName: user.displayName,
@@ -97,6 +100,9 @@ async function signInWithGoogle() {
 }
 
 async function signOut() {
+  // Tutup semua modal dan reset overflow dulu
+  document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
+  document.body.style.overflow = "";
   await auth.signOut();
   toast("Kamu telah logout.", "info");
   if (window.location.pathname.includes("owner")) window.location.href = "../index.html";
