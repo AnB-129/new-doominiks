@@ -44,10 +44,28 @@
 <div id="toast-container"></div>
 
 <div class="modal-overlay" id="modal-login">
-  <div class="modal" style="max-width:400px;">
-    <div class="modal-header"><span class="modal-title">Login Diperlukan</span><button class="modal-close" onclick="closeModal('modal-login')">&times;</button></div>
-    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">Login untuk melihat profil kamu.</p>
-    <button class="btn btn-secondary btn-full btn-lg" onclick="handleGoogleLogin()">Lanjutkan dengan Google</button>
+  <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:20px;">
+    <button class="modal-close" onclick="closeModal('modal-login')" style="position:absolute;top:14px;right:14px;z-index:2;background:var(--bg-panel);border:1px solid var(--border);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted);">&times;</button>
+    <div style="padding:28px 28px 0;">
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;margin-bottom:24px;">
+        <span style="color:#22c55e;font-size:16px;flex-shrink:0;margin-top:1px;">🛡</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:2px;">Data kamu aman</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Login di sini cuma buat transaksi di DOOMINIKS STORE aja, nggak bakal ngaruh sama akun game kamu.</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:6px;">Masuk ke Akun</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Kamu bisa langsung masuk pakai Google</div>
+      </div>
+      <button class="btn btn-full btn-lg" onclick="handleGoogleLogin()" style="background:#fff;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:12px;font-weight:600;font-size:15px;gap:12px;margin-bottom:10px;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Masuk pakai Google
+      </button>
+    </div>
+    <div style="padding:16px 28px 24px;text-align:center;">
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Kalau lanjut, kamu setuju sama<br><a href="#" style="color:var(--gold);text-decoration:underline;">Syarat &amp; Ketentuan</a> dan <a href="#" style="color:var(--gold);text-decoration:underline;">Kebijakan Privasi</a>.</div>
+    </div>
   </div>
 </div>
 
