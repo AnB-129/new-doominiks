@@ -261,6 +261,15 @@ function viewOrder(orderId) {
     </div>` : `<div style="margin-bottom:16px;font-size:13px;color:var(--text-muted);">Tidak ada bukti pembayaran diupload.</div>`}
     <div class="order-detail-grid" style="display:none;">
     </div>
+    <!-- Kode Redeem -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--gold);">🎟 Kode Redeem</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input class="form-input" id="redeem-code-input" placeholder="Masukkan kode redeem (opsional)" value="${o.redeemCode||''}" style="flex:1;font-family:monospace;font-size:13px;min-width:180px;" />
+        <button class="btn btn-secondary btn-sm" onclick="saveRedeemCode('${o.orderId}')">💾 Simpan Kode</button>
+      </div>
+      <div id="redeem-code-status" style="font-size:12px;color:var(--text-muted);margin-top:6px;">${o.redeemCode ? '✓ Kode sudah tersimpan' : 'Belum ada kode'}</div>
+    </div>
     ${o.status === "pending" || o.status === "processing" ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       ${o.status === "pending" ? `<button class="btn btn-secondary btn-sm" onclick="changeStatus('${o.orderId}','processing');closeModal('modal-order-detail')">▶ Set Diproses</button>` : ""}
@@ -269,6 +278,26 @@ function viewOrder(orderId) {
     </div>` : ""}
   `;
   openModal("modal-order-detail");
+}
+
+async function saveRedeemCode(orderId) {
+  const code = document.getElementById("redeem-code-input").value.trim();
+  const status = document.getElementById("redeem-code-status");
+  status.textContent = "Menyimpan...";
+  try {
+    await db.collection("orders").doc(orderId).update({
+      redeemCode: code || null,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Update local
+    const idx = allOrders.findIndex(o => o.orderId === orderId);
+    if (idx !== -1) allOrders[idx].redeemCode = code || null;
+    status.innerHTML = `<span style="color:var(--green);">✓ Kode berhasil disimpan</span>`;
+    toast("Kode redeem disimpan!", "success");
+  } catch(e) {
+    status.textContent = "Gagal: " + e.message;
+    toast("Gagal simpan kode.", "error");
+  }
 }
 
 function onAuthReady(user) {
