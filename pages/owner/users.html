@@ -90,6 +90,7 @@
             <th>Email</th>
             <th>Bergabung</th>
             <th>Login Terakhir</th>
+            <th>No. Telp</th>
             <th>Total Order</th>
             <th>Aksi</th>
           </tr></thead>
@@ -180,6 +181,7 @@ function renderUsers() {
       <td style="font-size:13px;color:var(--text-secondary);">${u.email||"-"}</td>
       <td style="font-size:12px;color:var(--text-muted);">${formatDate(u.createdAt)}</td>
       <td style="font-size:12px;color:var(--text-muted);">${formatDate(u.lastLogin)}</td>
+      <td style="font-size:13px;color:var(--text-secondary);">${u.phone || '-'}</td>
       <td style="text-align:center;"><span class="badge ${orderCount > 0 ? 'badge-success' : 'badge-pending'}">${orderCount} order</span></td>
       <td><button class="btn btn-ghost btn-sm" onclick="viewUser('${u.id}')">☰ Detail</button></td>
     </tr>`;
@@ -208,6 +210,7 @@ function viewUser(uid) {
       <div class="detail-item"><div class="di-label">UID</div><div class="di-value" style="font-size:11px;font-family:monospace;">${u.id}</div></div>
       <div class="detail-item"><div class="di-label">Bergabung</div><div class="di-value">${formatDate(u.createdAt)}</div></div>
       <div class="detail-item"><div class="di-label">Login Terakhir</div><div class="di-value">${formatDate(u.lastLogin)}</div></div>
+      <div class="detail-item"><div class="di-label">No. Telepon</div><div class="di-value">${u.phone || '-'}</div></div>
       <div class="detail-item"><div class="di-label">Total Order</div><div class="di-value">${userOrders.length}</div></div>
       <div class="detail-item"><div class="di-label">Order Berhasil</div><div class="di-value">${userOrders.filter(o=>o.status==="success").length}</div></div>
       <div class="detail-item"><div class="di-label">Total Belanja</div><div class="di-value" style="color:var(--gold);font-weight:700;">${formatIDR(totalSpent)}</div></div>
