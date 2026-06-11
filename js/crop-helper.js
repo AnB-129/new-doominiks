@@ -7,22 +7,9 @@ let _cropperInstance = null;
 let _cropCallback = null;
 let _cropRatio = 1;
 
-// Inject crop modal HTML + Cropper.js ke DOM (sekali saja)
+// Inject crop modal HTML ke DOM (sekali saja) — Cropper.js dimuat via <head>
 function initCropModal() {
   if (document.getElementById("crop-modal-overlay")) return;
-
-  // Load Cropper.js CSS
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css";
-  document.head.appendChild(link);
-
-  // Load Cropper.js script
-  const script = document.createElement("script");
-  script.src = "https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js";
-  document.head.appendChild(script);
-
-  // Inject HTML
   const html = `
   <div id="crop-modal-overlay">
     <div id="crop-modal-box">
@@ -40,7 +27,6 @@ function initCropModal() {
       </div>
     </div>
   </div>`;
-
   document.body.insertAdjacentHTML("afterbegin", html);
 }
 
