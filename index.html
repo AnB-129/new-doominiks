@@ -361,7 +361,7 @@
 <section class="section" style="background:var(--bg-deep);">
   <div class="container">
     <div class="section-header" style="justify-content:center;text-align:center;display:block;margin-bottom:40px;">
-      <h2 class="section-title">Ulasan <span>Pelanggan</span></h2>
+      <h2 class="section-title">Ulasan <span>Netizen</span></h2>
       <p class="section-sub">Apa kata mereka yang sudah top up di sini</p>
     </div>
   </div>
@@ -1052,7 +1052,8 @@ async function loadReviews() {
     const snap = await db.collection("reviews").limit(50).get();
     const seen = new Set();
     const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => {
-      const key = r.orderId || r.id;
+      // Dedup: kalau ada orderId pakai itu, kalau tidak pakai doc id (unik per dokumen)
+      const key = r.orderId ? `order_${r.orderId}` : `doc_${r.id}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
