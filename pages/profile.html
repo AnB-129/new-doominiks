@@ -143,7 +143,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div>
           <div style="font-family:var(--font-display);font-size:16px;font-weight:700;">☎ Nomor Telepon</div>
-          <div style="font-size:13px;color:var(--text-secondary);">Masukan No Telp Kamu Agar Makin Aman!</div>
+          <div style="font-size:13px;color:var(--text-secondary);">Digunakan untuk kamanan akun kamu (tidak berpengaruh ke akun game kamu)</div>
         </div>
         <span id="phone-verified-badge" style="display:none;" class="badge badge-success">✓ Tersimpan</span>
       </div>
@@ -184,6 +184,7 @@
 </footer>
 
 <script src="../js/firebase-config.js"></script>
+<script src="../js/crop-helper.js"></script>
 <script src="../js/app.js"></script>
 <script>
 // Cloudinary config (sama dengan settings)
@@ -233,7 +234,12 @@ async function saveProfile() {
 async function uploadProfilePhoto(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB", "error"); return; }
+  if (file.size > 10 * 1024 * 1024) { toast("Maks 10MB", "error"); return; }
+  openCropModal(file, 1, async (blob) => {
+    await _doUploadProfilePhoto(blob);
+  });
+}
+async function _doUploadProfilePhoto(file) {
   toast("Mengupload foto...", "info");
   try {
     const formData = new FormData();
