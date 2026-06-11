@@ -134,7 +134,7 @@
 <nav class="navbar">
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">
-      <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" class="logo-mascot" alt="D! Store" />
+      <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781035509/31abb615-5ff0-48ea-a961-dd67a06503c0_vg4vjn.png" class="logo-mascot" alt="D! Store" />
       DOOMINIKS <span>STORE</span>
     </a>
     <div class="nav-links">
@@ -170,6 +170,8 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-bg-lines"></div>
+  <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png"
+    class="hero-mascot-abs" alt="Maskot" />
   <div class="container">
     <div class="hero-grid">
       <div class="hero-content">
@@ -184,14 +186,10 @@
           Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
           Harga terbaik, proses kilat, transaksi terjamin. Jangan Datang Jika Anda Ragu!
         </p>
-        <div style="display:flex;align-items:flex-end;gap:0;">
-          <div class="hero-actions">
+        <div class="hero-actions">
             <a href="pages/catalog.html" class="btn btn-primary btn-lg">Lihat Semua Game</a>
             <a href="pages/orders.html" class="btn btn-secondary btn-lg">Cek Pesanan</a>
           </div>
-          <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781035509/31abb615-5ff0-48ea-a961-dd67a06503c0_vg4vjn.png"
-            class="hero-mascot-inline" alt="Maskot" />
-        </div>
         <div class="hero-stats" id="hero-stats">
           <div>
             <div class="hero-stat-val" id="stat-transactions">-</div>
@@ -531,7 +529,7 @@
         </div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;font-size:13px;color:var(--gold);text-align:center;font-weight:600;">
-        ✦ Dipercaya oleh ribuan orang kaya Indonesia sejak 2024
+        ✦ Dipercaya oleh ribuan gamer Indonesia sejak 2024
       </div>
     </div>
   </div>
@@ -1042,6 +1040,9 @@ async function loadPaymentMethods() {
 // INIT
 function onAuthReady(user) {
   hideLoader();
+  // Pastikan loader tidak block klik setelah auth
+  const loader = document.getElementById("page-loader");
+  if (loader) { loader.style.opacity = "0"; loader.style.pointerEvents = "none"; }
   loadPopupAd();
   loadBannerSlides();
 }
