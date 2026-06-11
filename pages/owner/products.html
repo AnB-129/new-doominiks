@@ -564,11 +564,7 @@ function openEditProduct(id) {
   ];
   fields.forEach(field => addFieldRow(field));
   openModal("modal-product");
-  // Auto scroll ke fields section supaya owner tau fields sudah ada
-  setTimeout(() => {
-    const fieldsEl = document.getElementById("fields-list");
-    if (fieldsEl) fieldsEl.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 350);
+
 }
 
 // ---- Save product ----
