@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780962969/0fcf671c-95d4-4a90-8717-c2d518a0c665_zgjcd4.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780962969/0fcf671c-95d4-4a90-8717-c2d518a0c665_zgjcd4.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Kelola Produk &mdash; DOOMINIKS STORE Owner</title>
   <link rel="stylesheet" href="../../css/style.css" />
@@ -315,7 +315,7 @@ function renderProductList() {
     const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
     return `
     <div class="product-row-card">
-      <div class="product-icon-sm" style="background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : (p.icon||"◆")}</div>
+      <div class="product-icon-sm" style="background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : (p.icon||"◆")}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">${p.name}</div>
         <div style="font-size:12px;color:var(--text-secondary);">${p.category||""} &bull; ${p.items ? p.items.length : 0} item &bull; Mulai ${formatIDR(minPrice)}</div>
@@ -523,6 +523,16 @@ function openAddProduct() {
   addFieldRow({ id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true });
   addFieldRow({ id: "serverId", label: "Server ID", placeholder: "Kosongkan jika tidak ada", required: false });
   addItemRow();
+  // Load banner
+  document.getElementById("f-banner-url").value = p.bannerUrl || "";
+  if (p.bannerUrl) {
+    document.getElementById("banner-preview").src = p.bannerUrl;
+    document.getElementById("banner-preview-container").style.display = "flex";
+    document.getElementById("banner-placeholder").style.display = "none";
+  } else {
+    document.getElementById("banner-preview-container").style.display = "none";
+    document.getElementById("banner-placeholder").style.display = "block";
+  }
   openModal("modal-product");
 }
 
@@ -570,11 +580,7 @@ function openEditProduct(id) {
   ];
   fields.forEach(field => addFieldRow(field));
   openModal("modal-product");
-  // Auto scroll ke fields section supaya owner tau fields sudah ada
-  setTimeout(() => {
-    const fieldsEl = document.getElementById("fields-list");
-    if (fieldsEl) fieldsEl.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 350);
+
 }
 
 // ---- Save product ----
