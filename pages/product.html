@@ -416,10 +416,12 @@ function renderItems(items) {
     return;
   }
   if (!items.length) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>Belum ada item.</p></div>`; return; }
+  // Simpan items ke window supaya bisa diakses by index tanpa embed JSON di HTML
+  window._currentItems = items;
   grid.innerHTML = items.map((item, i) => {
     const save = item.originalPrice ? Math.round((1 - item.price/item.originalPrice) * 100) : 0;
     return `
-      <div class="item-card reveal" id="item-${i}" onclick="selectItemByObj(${JSON.stringify(item).replace(/"/g,'&quot;')}, ${i})">
+      <div class="item-card reveal" id="item-${i}" onclick="selectItemByIndex(${i})">
         ${save > 0 ? `<div class="item-save">-${save}%</div>` : ""}
         <div class="item-name">${item.name}</div>
         ${item.originalPrice ? `<div class="item-orig">${formatIDR(item.originalPrice)}</div>` : ""}
@@ -430,7 +432,9 @@ function renderItems(items) {
   renderBuySection();
 }
 
-function selectItemByObj(item, i) {
+function selectItemByIndex(i) {
+  const item = (window._currentItems || [])[i];
+  if (!item) return;
   document.querySelectorAll(".item-card").forEach(c => c.classList.remove("selected"));
   const card = document.getElementById(`item-${i}`);
   if (card) card.classList.add("selected");
