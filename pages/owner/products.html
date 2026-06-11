@@ -280,6 +280,7 @@
 </div>
 
 <script src="../../js/firebase-config.js"></script>
+<script src="../../js/crop-helper.js"></script>
 <script src="../../js/app.js"></script>
 <script>
 let allProds = [];
@@ -649,27 +650,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function validateAndPreviewImage(file) {
-  const maxSize = 2 * 1024 * 1024; // 2MB
   const allowed = ["image/png","image/jpeg","image/webp","image/gif"];
   if (!allowed.includes(file.type)) {
     toast("Format tidak didukung. Gunakan PNG, JPG, atau WEBP.", "error");
     return;
   }
-  if (file.size > maxSize) {
-    toast("Ukuran file terlalu besar. Maks 2MB.", "error");
+  if (file.size > 10 * 1024 * 1024) {
+    toast("Ukuran file terlalu besar. Maks 10MB.", "error");
     return;
   }
-  // Show local preview immediately
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    document.getElementById("img-preview").src = e.target.result;
+  // Buka crop modal dulu (ratio 1:1 untuk thumbnail produk)
+  openCropModal(file, 1, (blob, url) => {
+    document.getElementById("img-preview").src = url;
     document.getElementById("img-preview-container").style.display = "block";
     document.getElementById("img-placeholder").style.display = "none";
     document.getElementById("img-url-display").textContent = "Siap diupload...";
-  };
-  reader.readAsDataURL(file);
-  // Upload to Firebase Storage
-  uploadImageToStorage(file);
+    uploadImageToStorage(blob);
+  });
 }
 
 // ============================================================
@@ -735,7 +732,13 @@ async function uploadImageToStorage(file) {
 async function uploadItemImage(i, input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB", "error"); return; }
+  if (file.size > 5 * 1024 * 1024) { toast("Maks 5MB", "error"); return; }
+  openCropModal(file, 1, async (blob) => {
+    await _doUploadItemImage(i, blob);
+  });
+}
+async function _doUploadItemImage(i, file) {
+  if (true) {
   const status = document.getElementById(`item-img-status-${i}`);
   const label = document.getElementById(`item-img-label-${i}`);
   const preview = document.getElementById(`item-img-preview-${i}`);
@@ -768,15 +771,13 @@ async function uploadItemImage(i, input) {
 function handleBannerSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast("Banner maks 2MB!", "error"); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById("banner-preview").src = e.target.result;
+  if (file.size > 5 * 1024 * 1024) { toast("Banner maks 5MB!", "error"); return; }
+  openCropModal(file, 16/9, (blob, url) => {
+    document.getElementById("banner-preview").src = url;
     document.getElementById("banner-preview-container").style.display = "flex";
     document.getElementById("banner-placeholder").style.display = "none";
-  };
-  reader.readAsDataURL(file);
-  uploadBannerToStorage(file);
+    uploadBannerToStorage(blob);
+  });
 }
 
 function removeBanner(event) {
