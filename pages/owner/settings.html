@@ -458,6 +458,7 @@
 </div>
 
 <script src="../../js/firebase-config.js"></script>
+<script src="../../js/crop-helper.js"></script>
 <script src="../../js/app.js"></script>
 <script>
 function requireOwner(user) {
@@ -907,7 +908,12 @@ function onAuthReady(user) {
 async function uploadPopupImage(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 3 * 1024 * 1024) { toast("Maks 3MB", "error"); return; }
+  if (file.size > 10 * 1024 * 1024) { toast("Maks 10MB", "error"); return; }
+  openCropModal(file, 0, async (blob) => {
+    await _doUploadPopupImage(blob);
+  });
+}
+async function _doUploadPopupImage(file) {
   const status = document.getElementById("popup-img-status");
   status.textContent = "Mengupload...";
   try {
@@ -967,7 +973,12 @@ function removeBannerSlide(i) {
 async function uploadBannerSlideImg(i, input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 3 * 1024 * 1024) { toast("Maks 3MB", "error"); return; }
+  if (file.size > 10 * 1024 * 1024) { toast("Maks 10MB", "error"); return; }
+  openCropModal(file, 16/9, async (blob) => {
+    await _doUploadBannerSlide(i, blob);
+  });
+}
+async function _doUploadBannerSlide(i, file) {
   toast("Mengupload gambar slide...", "info");
   try {
     const formData = new FormData();
