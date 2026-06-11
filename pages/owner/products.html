@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Kelola Produk &mdash; DOOMINIKS STORE Owner</title>
   <link rel="stylesheet" href="../../css/style.css" />
@@ -508,15 +508,10 @@ function openAddProduct() {
   addFieldRow({ id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true });
   addFieldRow({ id: "serverId", label: "Server ID", placeholder: "Kosongkan jika tidak ada", required: false });
   addItemRow();
-  document.getElementById("f-banner-url").value = p.bannerUrl || "";
-  if (p.bannerUrl) {
-    document.getElementById("banner-preview").src = p.bannerUrl;
-    document.getElementById("banner-preview-container").style.display = "flex";
-    document.getElementById("banner-placeholder").style.display = "none";
-  } else {
-    document.getElementById("banner-preview-container").style.display = "none";
-    document.getElementById("banner-placeholder").style.display = "block";
-  }
+  // Reset banner
+  document.getElementById("f-banner-url").value = "";
+  document.getElementById("banner-preview-container").style.display = "none";
+  document.getElementById("banner-placeholder").style.display = "block";
   openModal("modal-product");
 }
 
