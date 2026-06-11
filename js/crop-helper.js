@@ -30,10 +30,34 @@ function initCropModal() {
   document.body.insertAdjacentHTML("afterbegin", html);
 }
 
+// Load Cropper.js secara lazy (hanya saat diperlukan)
+function loadCropperJS(callback) {
+  if (typeof Cropper !== "undefined") { callback(); return; }
+  // Load CSS
+  if (!document.querySelector('link[href*="cropperjs"]')) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css";
+    document.head.appendChild(link);
+  }
+  // Load JS
+  const script = document.createElement("script");
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js";
+  script.onload = callback;
+  script.onerror = () => { if(typeof toast==="function") toast("Gagal load crop tool, coba lagi.", "error"); };
+  document.head.appendChild(script);
+}
+
 // Buka crop modal
 // ratio: 1 = square, 16/9 = landscape, 0 = free
 // onDone(blob, url) dipanggil setelah crop selesai
 function openCropModal(file, ratio, onDone) {
+  loadCropperJS(() => {
+    _openCropModalInner(file, ratio, onDone);
+  });
+}
+
+function _openCropModalInner(file, ratio, onDone) {
   initCropModal();
   _cropRatio = ratio;
   _cropCallback = onDone;
