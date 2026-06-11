@@ -437,9 +437,10 @@ tr:last-child td { border-bottom: none; }
   animation: mascotFloat 3s ease-in-out infinite;
   filter: drop-shadow(0 16px 32px rgba(0,0,0,0.5));
   pointer-events: none; z-index: 2;
+  display: none;
 }
-@media (max-width: 768px) {
-  .hero-mascot-abs { display: none; }
+@media (min-width: 1024px) {
+  .hero-mascot-abs { display: block; }
 }
 
 @keyframes mascotFloat {
