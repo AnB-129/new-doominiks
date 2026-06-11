@@ -196,7 +196,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
               radial-gradient(ellipse 40% 60% at 20% 60%, rgba(78,205,196,0.05) 0%, transparent 60%),
               var(--bg-void);
 }
-.hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.hero-grid { display: grid; grid-template-columns: 1fr; gap: 0; align-items: center; max-width: 680px; }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--gold-glow); border: 1px solid rgba(201,168,76,0.25);
@@ -204,7 +204,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
   padding: 6px 14px; border-radius: 100px; margin-bottom: 24px;
 }
 .hero-title {
-  font-size: clamp(26px, 6vw, 52px); font-weight: 800; line-height: 1.1;
+  font-size: clamp(26px, 4vw, 56px); font-weight: 800; line-height: 1.1;
   margin-bottom: 20px; letter-spacing: -1px;
 }
 .hero-title .accent { color: var(--gold); }
@@ -433,7 +433,6 @@ tr:last-child td { border-bottom: none; }
   animation: mascotFloat 3s ease-in-out infinite;
   filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
   flex-shrink: 0; align-self: flex-end;
-  margin-left: auto;
 }
 @media (max-width: 480px) {
   .hero-mascot-inline { width: 75px; }
