@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DOOMINIKS STORE &mdash; Top Up Game Terpercaya</title>
+  <meta name="description" content="Top up game murah, cepat, dan terpercaya. Mobile Legends, Free Fire, PUBG, Genshin Impact & lebih banyak lagi." />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .user-dropdown { position: relative; }
+    .user-dropdown-menu {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--bg-card); border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg); padding: 8px; min-width: 180px;
+      box-shadow: var(--shadow-card); opacity: 0; pointer-events: none;
+      transform: translateY(-4px); transition: var(--transition); z-index: 200;
+    }
+    .user-dropdown:hover .user-dropdown-menu,
+    .user-dropdown.open .user-dropdown-menu { opacity: 1; pointer-events: all; transform: translateY(0); }
+    .dropdown-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px; font-size: 14px; color: var(--text-secondary);
+      cursor: pointer; transition: var(--transition);
+    }
+    .dropdown-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+    .dropdown-item.danger:hover { color: var(--red); }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* Hero mockup animation */
+    .mockup-item { animation: mockupFloat 3s ease-in-out infinite; }
+    .mockup-item:nth-child(2) { animation-delay: 0.4s; }
+    .mockup-item:nth-child(3) { animation-delay: 0.8s; }
+    .mockup-item:nth-child(4) { animation-delay: 1.2s; }
+    @keyframes mockupFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+    .hero-bg-lines {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .hero-bg-lines::before {
+      content: ""; position: absolute; right: -10%; top: 10%;
+      width: 600px; height: 600px; border-radius: 50%;
+      border: 1px solid rgba(201,168,76,0.06); 
+    }
+    .hero-bg-lines::after {
+      content: ""; position: absolute; right: 5%; top: 25%;
+      width: 400px; height: 400px; border-radius: 50%;
+      border: 1px solid rgba(201,168,76,0.04);
+    }
+    .gradient-line {
+      display: inline-block;
+      background: linear-gradient(90deg, var(--gold), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    #products-grid .card-product { opacity: 0; transform: translateY(16px); transition: opacity 0.4s, transform 0.4s; }
+    #products-grid .card-product.visible { opacity: 1; transform: translateY(0); }
+    .review-slide-track {
+      display: flex; gap: 16px;
+      animation: slideLoop 30s linear infinite;
+      width: max-content;
+      touch-action: pan-y;
+      pointer-events: none;
+    }
+    .review-slide-track:hover { animation-play-state: paused; }
+    .review-card { min-width: 300px; max-width: 300px; flex-shrink: 0; pointer-events: all; }
+  </style>
+</head>
+<body>
+
+<!-- POPUP IKLAN -->
+<div id="popup-ad-overlay" style="display:none;">
+  <div id="popup-ad-box">
+    <button id="popup-ad-close" onclick="closePopupAd()" title="Tutup">&times;</button>
+    <img id="popup-ad-img" src="" alt="Iklan" />
+  </div>
+</div>
+
+<!-- Loader -->
+<div class="page-loader" id="page-loader">
+  <div class="loader-ring"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:20px;">
+    <button class="modal-close" onclick="closeModal('modal-login')" style="position:absolute;top:14px;right:14px;z-index:2;background:var(--bg-panel);border:1px solid var(--border);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted);">&times;</button>
+    <div style="padding:28px 28px 0;">
+      <!-- Security notice -->
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;margin-bottom:24px;">
+        <span style="color:#22c55e;font-size:16px;flex-shrink:0;margin-top:1px;">🛡</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:2px;">Data kamu aman</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Login di sini cuma buat transaksi di DOOMINIKS STORE aja, nggak bakal ngaruh sama akun game kamu.</div>
+        </div>
+      </div>
+      <!-- Title -->
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:6px;">Masuk ke Akun</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Kamu bisa langsung masuk pakai Google</div>
+      </div>
+      <!-- Google button -->
+      <button class="btn btn-full btn-lg" id="btn-google-login" onclick="handleGoogleLogin()" style="background:#fff;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:12px;font-weight:600;font-size:15px;gap:12px;margin-bottom:10px;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Masuk pakai Google
+      </button>
+    </div>
+    <!-- Footer -->
+    <div style="padding:16px 28px 24px;text-align:center;">
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Kalau lanjut, kamu setuju sama<br><a href="#" style="color:var(--gold);text-decoration:underline;">Syarat &amp; Ketentuan</a> dan <a href="#" style="color:var(--gold);text-decoration:underline;">Kebijakan Privasi</a>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="modal-checkout">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">Checkout</span>
+      <button class="modal-close" onclick="closeModal('modal-checkout')">&times;</button>
+    </div>
+    <div id="checkout-body"><!-- filled by JS --></div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png" class="logo-mascot" alt="D! Store" />
+      DOOMINIKS <span>STORE</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="active">Beranda</a>
+      <a href="pages/catalog.html">Katalog</a>
+      <a href="pages/orders.html">Pesanan</a>
+      <a href="pages/leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">
+        Masuk
+      </button>
+      <div class="nav-actions" id="user-menu" style="display:none;">
+        <div class="user-dropdown">
+          <button class="btn btn-secondary btn-sm" style="gap:8px;">
+            <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
+            <span id="nav-username"></span>
+            ▾
+          </button>
+          <div class="user-dropdown-menu">
+            <a href="pages/orders.html" class="dropdown-item">☰ Pesanan Saya</a>
+            <a href="pages/profile.html" class="dropdown-item">✎ Profil</a>
+            <a href="pages/owner/dashboard.html" class="dropdown-item" id="nav-admin-link" style="display:none;color:var(--gold);">★ Panel Owner</a>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" onclick="signOut()">→ Logout</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-lines"></div>
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          ✦ Libur Kalo Udah Kaya!
+        </div>
+        <h1 class="hero-title">
+          Top Up Game<br>
+          <span class="gradient-line">Satset, No Drama</span>
+        </h1>
+        <p class="hero-desc">
+          Isi diamond, UC, Robux,Gift in game, dan berbagai mata uang game favoritmu dalam hitungan detik. 
+          Harga terbaik, proses kilat, transaksi terjamin. Jangan Datang Jika Anda Ragu!
+        </p>
+        <div style="display:flex;align-items:flex-end;gap:0;">
+          <div class="hero-actions">
+            <a href="pages/catalog.html" class="btn btn-primary btn-lg">Lihat Semua Game</a>
+            <a href="pages/orders.html" class="btn btn-secondary btn-lg">Cek Pesanan</a>
+          </div>
+          <img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781035509/31abb615-5ff0-48ea-a961-dd67a06503c0_vg4vjn.png"
+            class="hero-mascot-inline" alt="Maskot" />
+        </div>
+        <div class="hero-stats" id="hero-stats">
+          <div>
+            <div class="hero-stat-val" id="stat-transactions">-</div>
+            <div class="hero-stat-lbl">Transaksi</div>
+          </div>
+          <div>
+            <div class="hero-stat-val" id="stat-products">-</div>
+            <div class="hero-stat-lbl">Produk</div>
+          </div>
+          <div>
+            <div class="hero-stat-val" id="stat-users">-</div>
+            <div class="hero-stat-lbl">Pelanggan</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- BANNER SLIDESHOW -->
+<section id="banner-slideshow" style="display:none;padding:24px 0 0;">
+  <div class="container">
+    <div class="banner-slide-wrap">
+      <div class="banner-slide-track" id="banner-track"></div>
+      <button class="banner-prev" onclick="slideBanner(-1)">&#8249;</button>
+      <button class="banner-next" onclick="slideBanner(1)">&#8250;</button>
+      <div class="banner-dots" id="banner-dots"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORY SLIDER -->
+<div style="padding:32px 0;border-bottom:1px solid var(--border);overflow:hidden;">
+  <div class="category-slider-wrap">
+    <div class="category-slider-track" id="cat-track">
+      <!-- filled by JS + duplicated for infinite loop -->
+    </div>
+  </div>
+</div>
+
+<!-- FEATURED PRODUCTS -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Game <span>Populer</span></h2>
+        <p class="section-sub">Top up game favoritmu dengan harga terbaik</p>
+      </div>
+      <a href="pages/catalog.html" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
+    </div>
+    <div class="grid-4" id="products-grid">
+      <div class="card" style="grid-column:1/-1;text-align:center;padding:48px;">
+        <div class="loader-ring" style="margin:0 auto;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VOUCHER POPULER -->
+<section class="section" style="background:var(--bg-deep);" id="voucher-section">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Voucher <span>Populer</span></h2>
+        <p class="section-sub">Voucher game & platform dengan harga terbaik</p>
+      </div>
+      <a href="pages/catalog.html?cat=Voucher" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
+    </div>
+    <div class="grid-4" id="voucher-grid">
+      <div class="card" style="grid-column:1/-1;text-align:center;padding:48px;">
+        <div class="loader-ring" style="margin:0 auto;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div style="background:var(--bg-deep);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:32px 0;">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;" id="stat-cards" class="stat-cards-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold">◈</div>
+        <div><div class="stat-label">Total Transaksi</div><div class="stat-value" id="sc-orders">...</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon cyan">⬡</div>
+        <div><div class="stat-label">Game Tersedia</div><div class="stat-value" id="sc-products">...</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">◎</div>
+        <div><div class="stat-label">Pelanggan Aktif</div><div class="stat-value" id="sc-users">...</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">◉</div>
+        <div><div class="stat-label">Rating</div><div class="stat-value">4.9/5</div><div class="stat-sub">dari 2.400+ ulasan</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" style="background:var(--bg-deep);">
+  <div class="container">
+    <div class="section-header" style="justify-content:center;text-align:center;display:block;margin-bottom:48px;">
+      <h2 class="section-title">Cara <span>Pesan</span></h2>
+      <p class="section-sub">Top up dalam 3 langkah mudah</p>
+    </div>
+    <div class="grid-3">
+      <div class="card" style="text-align:center;">
+        <div style="width:56px;height:56px;border-radius:16px;background:var(--gold-glow);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--gold);">◈</div>
+        <h4 style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:10px;">Pilih Game & Nominal</h4>
+        <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">Cari game favoritmu dan pilih nominal top up yang sesuai budget kamu.</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="width:56px;height:56px;border-radius:16px;background:var(--cyan-dim);border:1px solid rgba(78,205,196,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--cyan);">⬡</div>
+        <h4 style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:10px;">Isi ID & Bayar</h4>
+        <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">Masukkan ID game kamu, pilih metode pembayaran dan selesaikan transaksi.</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="width:56px;height:56px;border-radius:16px;background:rgba(60,179,113,0.1);border:1px solid rgba(60,179,113,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--green);">✦</div>
+        <h4 style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:10px;">Item Langsung Masuk</h4>
+        <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">Diamond, UC, koin langsung masuk ke akun game kamu secara otomatis.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LEADERBOARD PREVIEW -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Top <span>Pembeli</span></h2>
+        <p class="section-sub">Pelanggan dengan transaksi terbanyak bulan ini</p>
+      </div>
+      <a href="pages/leaderboard.html" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
+    </div>
+    <div class="grid-2">
+      <div class="card" id="lb-preview">
+        <div class="loader-ring" style="margin:0 auto;"></div>
+      </div>
+      <div>
+        <div class="card" style="background:linear-gradient(135deg,var(--bg-card),var(--bg-card-hover));border-color:var(--gold-dim);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:16px;">★ Program Reward</div>
+          <h3 style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:12px;">Belanja Lebih,<br>Dapat Lebih!</h3>
+          <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px;">Setiap transaksi menambah poin kamu di leaderboard. Top 3 pembeli mendapat hadiah eksklusif setiap bulan.</p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);">
+              <div style="font-size:20px;color:var(--gold);">△</div>
+              <div><div style="font-size:13px;font-weight:600;">Peringkat #1</div><div style="font-size:12px;color:var(--text-secondary);">Voucher game senilai Rp 500.000</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);">
+              <div style="font-size:20px;color:#A8B2C8;">△</div>
+              <div><div style="font-size:13px;font-weight:600;">Peringkat #2</div><div style="font-size:12px;color:var(--text-secondary);">Voucher game senilai Rp 250.000</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);">
+              <div style="font-size:20px;color:#CD7F32;">△</div>
+              <div><div style="font-size:13px;font-weight:600;">Peringkat #3</div><div style="font-size:12px;color:var(--text-secondary);">Voucher game senilai Rp 100.000</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="section" style="background:var(--bg-deep);">
+  <div class="container">
+    <div class="section-header" style="justify-content:center;text-align:center;display:block;margin-bottom:40px;">
+      <h2 class="section-title">Ulasan <span>Pelanggan</span></h2>
+      <p class="section-sub">Apa kata mereka yang sudah top up di sini</p>
+    </div>
+  </div>
+  <div style="overflow:hidden;">
+    <div class="review-slide-track" id="reviews-track">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- PAYMENT METHODS -->
+<section class="section">
+  <div class="container">
+    <div class="section-header" style="justify-content:center;text-align:center;display:block;margin-bottom:40px;">
+      <h2 class="section-title">Metode <span>Pembayaran</span></h2>
+      <p class="section-sub">Berbagai pilihan pembayaran tersedia</p>
+    </div>
+    <div id="pm-grid-homepage" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
+      <!-- Payment methods loaded dynamically from settings -->
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<!-- ============================================================
+     FOOTER MODALS
+     ============================================================ -->
+
+<!-- Modal: Cara Pembelian -->
+<div class="modal-overlay" id="modal-cara-beli">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">🛒 Cara Pembelian</span>
+      <button class="modal-close" onclick="closeModal('modal-cara-beli')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#0D1018;flex-shrink:0;">1</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Pilih Produk</div><div style="font-size:13px;color:var(--text-secondary);">Cari game favorit kamu di halaman Katalog. Tersedia ratusan produk top up dari berbagai publisher terkemuka.</div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#0D1018;flex-shrink:0;">2</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Pilih Nominal</div><div style="font-size:13px;color:var(--text-secondary);">Tentukan jumlah yang ingin kamu beli. Harga sudah termasuk pajak dan biaya layanan yang transparan.</div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#0D1018;flex-shrink:0;">3</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Masukkan Data Game</div><div style="font-size:13px;color:var(--text-secondary);">Isi User ID / ID Game kamu dengan benar. Pastikan data yang dimasukkan sudah tepat sebelum melanjutkan.</div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#0D1018;flex-shrink:0;">4</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Pilih Metode Pembayaran</div><div style="font-size:13px;color:var(--text-secondary);">Pilih salah satu metode pembayaran yang tersedia — transfer bank, QRIS, e-wallet, atau gerai ritel.</div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#0D1018;flex-shrink:0;">5</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Upload Bukti & Selesai</div><div style="font-size:13px;color:var(--text-secondary);">Upload screenshot bukti pembayaran, lalu klik Bayar Sekarang. Item akan dikirim ke akunmu dalam hitungan menit setelah pembayaran dikonfirmasi.</div></div>
+      </div>
+      <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:13px;color:var(--gold);font-weight:600;">✦ Tips: Login terlebih dahulu untuk melacak pesanan dan mendapatkan reward!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Metode Pembayaran -->
+<div class="modal-overlay" id="modal-metode-bayar">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+      <span class="modal-title">💳 Metode Pembayaran</span>
+      <button class="modal-close" onclick="closeModal('modal-metode-bayar')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">🏦 Transfer Bank</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
+          <div style="display:flex;justify-content:space-between;"><span>BCA Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.230</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>BNI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.400</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Mandiri Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.100</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>BRI Virtual Account</span><span style="color:var(--text-primary);">+Rp 1.090</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Bank Jago</span><span style="color:var(--green);">890</span></div>
+        </div>
+      </div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">📱 QRIS / E-Wallet</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
+          <div style="display:flex;justify-content:space-between;"><span>QRIS (Semua E-Wallet)</span><span style="color:var(--green);">998</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>GoPay</span><span style="color:var(--green);">900</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>OVO</span><span style="color:var(--green);">999</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>DANA</span><span style="color:var(--green);">990</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>ShopeePay</span><span style="color:var(--green);">1100</span></div>
+        </div>
+      </div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">🏪 Gerai Ritel</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
+          <div style="display:flex;justify-content:space-between;"><span>Indomaret</span><span style="color:var(--text-primary);">+Rp 2.300</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>Alfamart</span><span style="color:var(--text-primary);">+Rp 2.400</span></div>
+        </div>
+      </div>
+      <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--gold);">
+        ✦ Pembayaran dikonfirmasi dalam 1–15 menit setelah bukti transfer diterima.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: FAQ -->
+<div class="modal-overlay" id="modal-faq">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">❓ FAQ — Pertanyaan Umum</span>
+      <button class="modal-close" onclick="closeModal('modal-faq')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;" id="faq-list"></div>
+  </div>
+</div>
+
+<!-- Modal: Hubungi Kami -->
+<div class="modal-overlay" id="modal-hubungi">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <span class="modal-title">📞 Hubungi Kami</span>
+      <button class="modal-close" onclick="closeModal('modal-hubungi')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;">Tim DOOMINIKS STORE siap membantu kamu 24 jam sehari, 7 hari seminggu. Hubungi kami melalui salah satu channel di bawah:</p>
+      <div id="hubungi-links" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:4px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">⏱ Jam Respon</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Kami biasanya merespons dalam <strong style="color:var(--gold);">kurang dari 1 jam</strong>. Untuk urusan mendesak, gunakan WhatsApp.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Tentang Kami -->
+<div class="modal-overlay" id="modal-tentang">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+      <span class="modal-title">⬡ Tentang DOOMINIKS STORE</span>
+      <button class="modal-close" onclick="closeModal('modal-tentang')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div style="text-align:center;padding:24px 0 8px;">
+        <div style="font-family:var(--font-display);font-size:28px;font-weight:800;">DOOMINIKS <span style="color:var(--gold);">STORE</span></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">Platform Top Up Game Terpercaya #1</div>
+      </div>
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">DOOMINIKS STORE adalah platform top up game digital yang menyediakan layanan pengisian diamond, koin, UC, Robux, dan berbagai mata uang game lainnya dengan harga terjangkau dan proses yang cepat.</p>
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">Kami berkomitmen untuk memberikan pengalaman belanja yang aman, transparan, dan menyenangkan bagi seluruh gamer Indonesia.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+          <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--gold);">500+</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Transaksi Berhasil</div>
+        </div>
+        <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+          <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--gold);">100%</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Kepuasan Pelanggan</div>
+        </div>
+        <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+          <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--gold);">24/7</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Layanan Aktif</div>
+        </div>
+        <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;">
+          <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--gold);">10+</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Game Tersedia</div>
+        </div>
+      </div>
+      <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;font-size:13px;color:var(--gold);text-align:center;font-weight:600;">
+        ✦ Dipercaya oleh ribuan orang kaya Indonesia sejak 2024
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Syarat & Ketentuan -->
+<div class="modal-overlay" id="modal-syarat">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">📋 Syarat & Ketentuan</span>
+      <button class="modal-close" onclick="closeModal('modal-syarat')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text-secondary);line-height:1.7;">
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">1. Ketentuan Umum</div><p>Dengan menggunakan layanan DOOMINIKS STORE, kamu menyetujui seluruh syarat dan ketentuan yang berlaku. Kami berhak mengubah ketentuan ini sewaktu-waktu tanpa pemberitahuan sebelumnya.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">2. Transaksi & Pembayaran</div><p>Setiap pesanan yang telah dibayar tidak dapat dibatalkan atau dikembalikan kecuali terbukti ada kesalahan dari pihak DOOMINIKS STORE. Pastikan data game yang dimasukkan sudah benar sebelum melakukan pembayaran.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">3. Pengiriman Item</div><p>Item akan dikirim ke akun game yang sesuai dengan data yang diinput. DOOMINIKS STORE tidak bertanggung jawab atas kesalahan input data yang dilakukan oleh pembeli.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">4. Keamanan Akun</div><p>Pembeli bertanggung jawab penuh atas keamanan akun game mereka. DOOMINIKS STORE tidak meminta password atau data sensitif apapun selain User ID game.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">5. Larangan</div><p>Dilarang melakukan penipuan, chargeback, atau penyalahgunaan layanan. Pelanggaran akan mengakibatkan pemblokiran akun secara permanen.</p></div>
+      <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:12px;color:var(--gold);">✦ Terakhir diperbarui: Juni 2025</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Kebijakan Privasi -->
+<div class="modal-overlay" id="modal-privasi">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">🔒 Kebijakan Privasi</span>
+      <button class="modal-close" onclick="closeModal('modal-privasi')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text-secondary);line-height:1.7;">
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">Data yang Kami Kumpulkan</div><p>Kami mengumpulkan nama, email, dan foto profil dari akun Google yang kamu gunakan untuk login. Data ini digunakan semata-mata untuk keperluan identifikasi dan layanan.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">Penggunaan Data</div><p>Data kamu hanya digunakan untuk memproses pesanan, mengirimkan notifikasi transaksi, dan meningkatkan pengalaman berbelanja. Kami tidak menjual data kamu kepada pihak ketiga manapun.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">Keamanan Data</div><p>Seluruh data disimpan dengan enkripsi menggunakan layanan Firebase dari Google. Transaksi diamankan dengan SSL/TLS sehingga data kamu aman dari ancaman siber.</p></div>
+      <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">Hak Pengguna</div><p>Kamu berhak meminta penghapusan data akun kapan saja dengan menghubungi tim kami melalui Discord atau WhatsApp.</p></div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🔐</span>
+          <div><div style="font-weight:600;font-size:13px;">SSL Secured & Firebase Protected</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Data kamu dilindungi enkripsi tingkat enterprise</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Promo & Diskon -->
+<div class="modal-overlay" id="modal-promo">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <span class="modal-title">🎁 Promo & Diskon</span>
+      <button class="modal-close" onclick="closeModal('modal-promo')">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.4);border-radius:var(--radius-lg);padding:20px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">⚡</div>
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--gold);margin-bottom:6px;">Harga Terbaik Setiap Hari</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Semua produk kami sudah dibanderol dengan harga yang kompetitif tanpa perlu kode promo apapun.</div>
+      </div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">✦ Keuntungan Berbelanja di Sini</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
+          <div>✓ Harga lebih murah dari toko resmi</div>
+          <div>✓ Proses cepat 1–15 menit</div>
+          <div>✓ Tanpa minimum pembelian</div>
+          <div>✓ Reward poin untuk pelanggan setia</div>
+          <div>✓ Diskon otomatis pada produk tertentu</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:6px;">🏆 Program Leaderboard</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Pembeli teratas tiap bulan mendapat hadiah eksklusif! Cek posisi kamu di halaman <a href="pages/leaderboard.html" style="color:var(--gold);">Leaderboard</a>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="brand-name">DOOMINIKS <span>STORE</span></div>
+        <p>Platform top up game terpercaya dengan ribuan produk dari berbagai publisher. Proses cepat, harga terbaik, layanan 24/7.</p>
+        <div style="margin-top:20px;display:flex;gap:12px;" id="footer-social-links">
+          <!-- Diisi dari Firestore -->
+        </div>
+      </div>
+      <div class="footer-section">
+        <h5>Layanan</h5>
+        <ul>
+          <li><a href="pages/catalog.html">Semua Produk</a></li>
+          <li><a href="pages/orders.html">Cek Pesanan</a></li>
+          <li><a href="pages/leaderboard.html">Leaderboard</a></li>
+          <li><a href="#" onclick="openModal('modal-promo');return false;">Promo & Diskon</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h5>Bantuan</h5>
+        <ul>
+          <li><a href="#" onclick="openModal('modal-cara-beli');return false;">Cara Pembelian</a></li>
+          <li><a href="#" onclick="openModal('modal-metode-bayar');return false;">Metode Pembayaran</a></li>
+          <li><a href="#" onclick="openModal('modal-faq');return false;">FAQ</a></li>
+          <li><a href="#" onclick="openModal('modal-hubungi');return false;">Hubungi Kami</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h5>Perusahaan</h5>
+        <ul>
+          <li><a href="#" onclick="openModal('modal-tentang');return false;">Tentang Kami</a></li>
+          <li><a href="#" onclick="openModal('modal-syarat');return false;">Syarat & Ketentuan</a></li>
+          <li><a href="#" onclick="openModal('modal-privasi');return false;">Kebijakan Privasi</a></li>
+          <li><a href="#" onclick="openModal('modal-hubungi');return false;">Karir / Kerjasama</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2025 DOOMINIKS STORE. Hak cipta dilindungi.</span>
+      <div class="footer-trust">
+        <div class="trust-badge">✦ SSL Secured</div>
+        <div class="trust-badge">✦ 24/7 Support</div>
+        <div class="trust-badge">✦ Terpercaya</div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/app.js"></script>
+<script>
+// ============================================================
+// HOMEPAGE LOGIC
+// ============================================================
+
+const CATEGORIES = [
+  { name: "Mobile Legends", icon: "◆" },
+  { name: "Free Fire", icon: "▪" },
+  { name: "PUBG Mobile", icon: "▲" },
+  { name: "Genshin Impact", icon: "△" },
+  { name: "Valorant", icon: "◇" },
+  { name: "Honor of Kings", icon: "★" },
+  { name: "Stumble Guys", icon: "▪" },
+  { name: "League of Legends", icon: "◆" },
+  { name: "Roblox", icon: "⊞" },
+  { name: "Call of Duty", icon: "▸" },
+  { name: "Clash of Clans", icon: "▪" },
+  { name: "Among Us", icon: "◆" },
+];
+
+const STATIC_REVIEWS = [
+  { name: "Andi Pratama", rating: 5, text: "Proses top up sangat cepat, tidak sampai 1 menit diamond sudah masuk. Sangat recommended!", avatar: "A", date: "2 hari lalu" },
+  { name: "Siti Rahma", rating: 5, text: "Harga lebih murah dari tempat lain, dan prosesnya langsung otomatis. Top banget!", avatar: "S", date: "3 hari lalu" },
+  { name: "Budi Santoso", rating: 5, text: "Sudah langganan di sini selama 6 bulan. Tidak pernah ada masalah, selalu lancar.", avatar: "B", date: "5 hari lalu" },
+  { name: "Dewi Kusuma", rating: 4, text: "Pelayanan bagus, top up ML ku langsung berhasil. Metode pembayarannya juga banyak pilihannya.", avatar: "D", date: "1 minggu lalu" },
+  { name: "Rizky Fadillah", rating: 5, text: "Coba top up UC PUBG pertama kali di sini. Ternyata mudah banget, langsung masuk!", avatar: "R", date: "1 minggu lalu" },
+  { name: "Maya Indah", rating: 5, text: "Tampilan webnya keren, mudah dipakai, dan yang penting harganya terjangkau.", avatar: "M", date: "2 minggu lalu" },
+];
+
+// Build category slider
+function buildCategorySlider(categories) {
+  const track = document.getElementById("cat-track");
+  if (!track) return;
+  const all = [...categories, ...categories];
+  track.innerHTML = all.map(c => `
+    <div class="cat-pill" onclick="filterByCategory('${c.name}')">
+      ${c.imageUrl
+        ? `<img src="${c.imageUrl}" alt="${c.name}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">`
+        : `<span style="font-size:20px;">🎮</span>`}
+      <span>${c.name}</span>
+    </div>
+  `).join("");
+}
+
+async function loadCategoriesFromDB() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (snap.exists && snap.data().categories && snap.data().categories.length) {
+      buildCategorySlider(snap.data().categories);
+    } else {
+      buildCategorySlider(CATEGORIES);
+    }
+    // Load social links (Discord & WA)
+    if (snap.exists) {
+      const s = snap.data();
+      const container = document.getElementById("footer-social-links");
+      if (container) {
+        let html = "";
+        if (s.discord) {
+          const logoHtml = s.discordLogoUrl
+            ? `<img src="${s.discordLogoUrl}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;border-radius:3px;">`
+            : `<span style="margin-right:6px;">▪</span>`;
+          html += `<a href="${s.discord}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;">${logoHtml}Discord</a>`;
+        }
+        if (s.whatsapp) {
+          const waUrl = s.whatsapp.startsWith("http") ? s.whatsapp : `https://wa.me/${s.whatsapp.replace(/[^0-9]/g,"")}`;
+          const logoHtml = s.whatsappLogoUrl
+            ? `<img src="${s.whatsappLogoUrl}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;border-radius:3px;">`
+            : `<span style="margin-right:6px;">▪</span>`;
+          html += `<a href="${waUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;">${logoHtml}WhatsApp</a>`;
+        }
+        container.innerHTML = html || `<span style="color:var(--text-muted);font-size:13px;">-</span>`;
+      }
+    }
+  } catch(e) {
+    buildCategorySlider(CATEGORIES);
+  }
+}
+
+function filterByCategory(name) {
+  window.location.href = `pages/catalog.html?cat=${encodeURIComponent(name)}`;
+}
+
+// Build review slider
+function buildReviews(reviews) {
+  const track = document.getElementById("reviews-track");
+  if (!track) return;
+  // Only duplicate for infinite scroll if there are enough reviews (min 3)
+  const all = reviews.length >= 3 ? [...reviews, ...reviews] : reviews;
+  track.innerHTML = all.map(r => `
+    <div class="review-card">
+      <div class="review-stars">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
+      <p class="review-text">${r.text}</p>
+      <div class="review-author">
+        <div class="review-avatar" style="width:36px;height:36px;font-size:14px;">${r.avatar}</div>
+        <div>
+          <div class="review-name">${r.name}</div>
+          <div class="review-date">${r.date}</div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// Load products from Firestore
+async function loadFeaturedProducts() {
+  try {
+    // Try featured first (exclude Voucher)
+    let snap = await db.collection("products").where("active","==",true).where("featured","==",true).limit(8).get();
+    // Filter out Voucher category client-side
+    let docs = snap.docs.filter(d => (d.data().category||"").toLowerCase() !== "voucher");
+    // Fallback: if no featured non-voucher, show all active non-voucher
+    if (!docs.length) {
+      snap = await db.collection("products").where("active","==",true).limit(20).get();
+      docs = snap.docs.filter(d => (d.data().category||"").toLowerCase() !== "voucher").slice(0,8);
+    }
+    const grid = document.getElementById("products-grid");
+    if (!docs.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">▪</div><h4>Belum ada produk</h4><p>Produk akan segera hadir.</p></div>`;
+      return;
+    }
+    grid.innerHTML = docs.map(doc => {
+      const p = doc.data();
+      const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
+      return `
+        <div class="card card-product" onclick="goProduct('${doc.id}')">
+          ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ""}
+          <div style="width:100%;aspect-ratio:16/9;border-radius:8px;margin-bottom:16px;background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;">
+            ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;">` : (p.icon || "◆")}
+          </div>
+          <div class="product-name">${p.name}</div>
+          <div class="product-category">${p.category || ""}</div>
+          <div class="product-price-from">Mulai dari</div>
+          <div class="product-price-value">${formatIDR(minPrice)}</div>
+        </div>`;
+    }).join("");
+    setTimeout(() => {
+      grid.querySelectorAll(".card-product").forEach((el, i) => {
+        setTimeout(() => el.classList.add("visible"), i * 80);
+      });
+    }, 50);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("products-grid").innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">Gagal memuat produk.</div>`;
+  }
+}
+
+async function loadFeaturedVouchers() {
+  try {
+    const snap = await db.collection("products")
+      .where("active","==",true)
+      .where("category","==","Voucher")
+      .limit(8).get();
+    const grid = document.getElementById("voucher-grid");
+    // Kalau tidak ada produk voucher, sembunyikan section
+    if (snap.empty) {
+      const section = document.getElementById("voucher-section");
+      if (section) section.style.display = "none";
+      return;
+    }
+    grid.innerHTML = snap.docs.map(doc => {
+      const p = doc.data();
+      const minPrice = p.items && p.items.length ? Math.min(...p.items.map(i => i.price)) : 0;
+      return `
+        <div class="card card-product" onclick="goProduct('${doc.id}')">
+          ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ""}
+          <div style="width:100%;aspect-ratio:16/9;border-radius:8px;margin-bottom:16px;background:linear-gradient(135deg,${p.color1||'#1E2535'},${p.color2||'#0D1018'});display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;">
+            ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;">` : (p.icon || "◆")}
+          </div>
+          <div class="product-name">${p.name}</div>
+          <div class="product-category">${p.category || ""}</div>
+          <div class="product-price-from">Mulai dari</div>
+          <div class="product-price-value">${formatIDR(minPrice)}</div>
+        </div>`;
+    }).join("");
+    setTimeout(() => {
+      grid.querySelectorAll(".card-product").forEach((el, i) => {
+        setTimeout(() => el.classList.add("visible"), i * 80);
+      });
+    }, 50);
+  } catch(e) {
+    document.getElementById("voucher-grid").innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:40px;">Gagal memuat voucher.</div>`;
+  }
+}
+
+function goProduct(id) {
+  window.location.href = `pages/product.html?id=${id}`;
+}
+
+// Load stats
+async function loadStats() {
+  try {
+    const snap = await db.collection("stats").doc("global").get();
+    if (snap.exists) {
+      const s = snap.data();
+      const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+"K+" : n+"+";
+      if (s.orders) {
+        document.getElementById("stat-transactions").textContent = fmt(s.orders);
+        document.getElementById("sc-orders").textContent = fmt(s.orders);
+      }
+      if (s.products) {
+        document.getElementById("stat-products").textContent = s.products+"+";
+        document.getElementById("sc-products").textContent = s.products+"+";
+      }
+      if (s.users) {
+        document.getElementById("stat-users").textContent = fmt(s.users);
+        document.getElementById("sc-users").textContent = fmt(s.users);
+      }
+    }
+  } catch (e) {}
+}
+
+// Load leaderboard preview
+async function loadLeaderboardPreview() {
+  const el = document.getElementById("lb-preview");
+  try {
+    const snap = await db.collection("leaderboard").orderBy("totalSpent", "desc").limit(5).get();
+    if (snap.empty) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">▲</div><h4>Belum ada data</h4></div>`;
+      return;
+    }
+    const rankClass = i => i === 0 ? "gold-rank" : i === 1 ? "silver-rank" : i === 2 ? "bronze-rank" : "other-rank";
+    el.innerHTML = `
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:16px;">Bulan Ini</div>
+      ${snap.docs.map((doc, i) => {
+        const d = doc.data();
+        return `
+        <div class="lb-row">
+          <div class="lb-rank ${rankClass(i)}">${i+1}</div>
+          <div class="lb-avatar">${d.photoURL ? `<img src="${d.photoURL}" alt="">` : (d.displayName||"U")[0].toUpperCase()}</div>
+          <div>
+            <div class="lb-name">${d.displayName || "Anonim"}</div>
+            <div class="lb-orders">${d.orderCount || 0} pesanan</div>
+          </div>
+          <div class="lb-total">${formatIDR(d.totalSpent || 0)}</div>
+        </div>`;
+      }).join("")}
+    `;
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--text-muted);font-size:14px;padding:20px;">Gagal memuat data.</div>`;
+  }
+}
+
+// Google login handler
+async function handleGoogleLogin() {
+  const btn = document.getElementById("btn-google-login");
+  btn.disabled = true; btn.textContent = "Memproses...";
+  try {
+    await signInWithGoogle();
+    closeModal("modal-login");
+  } catch (e) {}
+  btn.disabled = false; btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Lanjutkan dengan Google`;
+}
+
+
+// Default payment methods with clean symbols
+const DEFAULT_PAYMENT_METHODS = [
+  { id: "bank_transfer", name: "Bank Transfer", sub: "BCA, BNI, Mandiri, BRI", symbol: "🏦" },
+  { id: "bank_jago",     name: "Bank Jago",     sub: "Transfer Virtual",      symbol: "💳" },
+  { id: "qris",          name: "QRIS",          sub: "Semua e-wallet",         symbol: "⬛" },
+  { id: "gopay",         name: "GoPay",         sub: "Dompet Digital",         symbol: "💚" },
+  { id: "ovo",           name: "OVO",           sub: "Dompet Digital",         symbol: "💜" },
+  { id: "dana",          name: "DANA",          sub: "Dompet Digital",         symbol: "🔵" },
+  { id: "shopeepay",     name: "ShopeePay",     sub: "Dompet Digital",         symbol: "🧡" },
+  { id: "paypal",        name: "PayPal",        sub: "Internasional",          symbol: "💙" },
+  { id: "indomaret",     name: "Indomaret",     sub: "Gerai Ritel",            symbol: "🏪" },
+  { id: "alfamart",      name: "Alfamart",      sub: "Gerai Ritel",            symbol: "🏪" },
+];
+
+function closePopupAd() {
+  const el = document.getElementById("popup-ad-overlay");
+  el.classList.add("hide");
+  setTimeout(() => el.style.display = "none", 250);
+}
+
+async function loadPopupAd() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    if (!data.popupAdImage || !data.popupAdEnabled) return;
+    const overlay = document.getElementById("popup-ad-overlay");
+    document.getElementById("popup-ad-img").src = data.popupAdImage;
+    if (data.popupAdLink) {
+      document.getElementById("popup-ad-box").style.cursor = "pointer";
+      document.getElementById("popup-ad-box").onclick = (e) => {
+        if (e.target.id === "popup-ad-close") return;
+        window.open(data.popupAdLink, "_blank");
+      };
+    }
+    overlay.style.display = "flex";
+  } catch(e) {}
+}
+
+// ---- BANNER SLIDESHOW ----
+let bannerSlides = [];
+let bannerIdx = 0;
+let bannerTimer = null;
+
+async function loadBannerSlides() {
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    const slides = data.bannerSlides || [];
+    if (!slides.length) return;
+    bannerSlides = slides.filter(s => s.image);
+    if (!bannerSlides.length) return;
+
+    const section = document.getElementById("banner-slideshow");
+    const track = document.getElementById("banner-track");
+    const dots = document.getElementById("banner-dots");
+    section.style.display = "block";
+
+    track.innerHTML = bannerSlides.map((s, i) => `
+      <div class="banner-slide-item" onclick="${s.link ? `window.open('${s.link}','_blank')` : ''}">
+        <img src="${s.image}" alt="Banner ${i+1}" loading="lazy">
+      </div>`).join("");
+
+    dots.innerHTML = bannerSlides.map((_, i) =>
+      `<button class="banner-dot${i===0?' active':''}" onclick="goSlide(${i})"></button>`
+    ).join("");
+
+    startBannerTimer();
+  } catch(e) {}
+}
+
+function goSlide(idx) {
+  bannerIdx = (idx + bannerSlides.length) % bannerSlides.length;
+  document.getElementById("banner-track").style.transform = `translateX(-${bannerIdx * 100}%)`;
+  document.querySelectorAll(".banner-dot").forEach((d, i) => d.classList.toggle("active", i === bannerIdx));
+  resetBannerTimer();
+}
+
+function slideBanner(dir) { goSlide(bannerIdx + dir); }
+
+function startBannerTimer() {
+  if (bannerSlides.length <= 1) return;
+  bannerTimer = setInterval(() => goSlide(bannerIdx + 1), 4000);
+}
+
+function resetBannerTimer() {
+  clearInterval(bannerTimer);
+  startBannerTimer();
+}
+
+async function loadPaymentMethods() {
+  const grid = document.getElementById("pm-grid-homepage");
+  if (!grid) return;
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    const data = snap.exists ? snap.data() : {};
+    const pmMethodsData = data.paymentMethods || {};
+    const pmLegacy = data.paymentMethodImages || {};
+    // Gabung: prioritaskan paymentMethods[id].imageUrl, fallback ke legacy paymentMethodImages[id]
+    const pmImages = {};
+    DEFAULT_PAYMENT_METHODS.forEach(pm => {
+      pmImages[pm.id] = pmMethodsData[pm.id]?.imageUrl || pmLegacy[pm.id] || null;
+    });
+    grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
+      <div class="pm-card" style="cursor:default;min-width:110px;">
+        ${pmImages[pm.id]
+          ? `<img src="${pmImages[pm.id]}" alt="${pm.name}" style="width:56px;height:40px;object-fit:contain;border-radius:6px;margin-bottom:2px;">`
+          : `<div class="pm-icon" style="font-size:28px;">${pm.symbol}</div>`}
+        <div class="pm-name">${pm.name}</div>
+        <div class="pm-category">${pm.sub}</div>
+      </div>
+    `).join("");
+  } catch(e) {
+    // fallback static
+    grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
+      <div class="pm-card" style="cursor:default;min-width:110px;">
+        <div class="pm-icon" style="font-size:28px;">${pm.symbol}</div>
+        <div class="pm-name">${pm.name}</div>
+        <div class="pm-category">${pm.sub}</div>
+      </div>
+    `).join("");
+  }
+}
+
+// INIT
+function onAuthReady(user) {
+  hideLoader();
+  loadPopupAd();
+  loadBannerSlides();
+}
+
+async function loadReviews() {
+  try {
+    const snap = await db.collection("reviews").limit(20).get();
+    const reviews = snap.docs.map(d => d.data()).sort((a,b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+    if (reviews.length >= 3) {
+      buildReviews(reviews.map(r => ({
+        name: r.userName || "Anonim",
+        avatar: r.userPhoto
+          ? `<img src="${r.userPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+          : (r.userName || "A")[0].toUpperCase(),
+        rating: r.rating || 5,
+        text: r.text || "Pelayanan sangat memuaskan!",
+        date: r.productName || "",
+        product: r.productName || "",
+      })));
+    } else {
+      buildReviews(STATIC_REVIEWS);
+    }
+  } catch(e) {
+    buildReviews(STATIC_REVIEWS);
+  }
+}
+
+loadCategoriesFromDB();
+loadReviews();
+loadFeaturedProducts();
+loadFeaturedVouchers();
+loadStats();
+loadLeaderboardPreview();
+loadPaymentMethods();
+buildFAQ();
+buildHubungi();
+
+function buildFAQ() {
+  const faqs = [
+    { q: "Berapa lama proses pengiriman item?", a: "Item biasanya dikirim dalam 1–15 menit setelah pembayaran dikonfirmasi. Pada jam sibuk bisa memakan waktu hingga 2 jam." },
+    { q: "Apakah transaksi di DOOMINIKS STORE aman?", a: "Ya, 100% aman. Semua transaksi diproses secara manual oleh tim kami dan dilindungi dengan enkripsi SSL. Data kamu tidak pernah kami jual ke pihak ketiga." },
+    { q: "Bagaimana jika item tidak masuk setelah saya bayar?", a: "Hubungi kami segera melalui Discord atau WhatsApp dengan menyertakan Order ID dan bukti pembayaran. Tim kami akan memproses dalam 1x24 jam." },
+    { q: "Apakah bisa refund jika saya salah input ID?", a: "Sayangnya item yang sudah dikirim tidak bisa di-refund. Pastikan User ID kamu benar sebelum melakukan pembayaran." },
+    { q: "Metode pembayaran apa saja yang tersedia?", a: "Kami menerima transfer bank (BCA, BNI, Mandiri, BRI, Bank Jago), QRIS, GoPay, OVO, DANA, ShopeePay, Indomaret, dan Alfamart." },
+    { q: "Apakah perlu login untuk melakukan pembelian?", a: "Tidak wajib, tapi sangat disarankan. Dengan login kamu bisa melacak pesanan, melihat riwayat transaksi, dan mendapatkan reward poin." },
+    { q: "Kenapa harga di DOOMINIKS STORE lebih murah?", a: "Kami mendapatkan harga spesial dari mitra publisher dan memotong biaya operasional seminim mungkin agar kamu dapat harga terbaik." },
+    { q: "Apakah akun game saya aman?", a: "Sangat aman. Kami hanya membutuhkan User ID (bukan password). Proses top up dilakukan langsung ke akun game tanpa perlu akses ke akun kamu." },
+  ];
+  const container = document.getElementById("faq-list");
+  if (!container) return;
+  container.innerHTML = faqs.map((f, i) => `
+    <div style="border-bottom:1px solid var(--border);">
+      <button onclick="toggleFaq(${i})" style="width:100%;text-align:left;padding:14px 4px;background:none;border:none;color:var(--text-primary);font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:12px;">
+        <span>${f.q}</span>
+        <span id="faq-icon-${i}" style="color:var(--gold);font-size:18px;flex-shrink:0;transition:transform 0.2s;">+</span>
+      </button>
+      <div id="faq-ans-${i}" style="display:none;padding:0 4px 14px;font-size:13px;color:var(--text-secondary);line-height:1.7;">${f.a}</div>
+    </div>
+  `).join("");
+}
+
+function toggleFaq(i) {
+  const ans = document.getElementById(`faq-ans-${i}`);
+  const icon = document.getElementById(`faq-icon-${i}`);
+  const isOpen = ans.style.display !== "none";
+  ans.style.display = isOpen ? "none" : "block";
+  icon.textContent = isOpen ? "+" : "−";
+}
+
+async function buildHubungi() {
+  const container = document.getElementById("hubungi-links");
+  if (!container) return;
+  try {
+    const snap = await db.collection("settings").doc("store").get();
+    const s = snap.exists ? snap.data() : {};
+    let html = "";
+    if (s.discord) {
+      const logoHtml = s.discordLogoUrl ? `<img src="${s.discordLogoUrl}" style="width:24px;height:24px;object-fit:contain;border-radius:4px;">` : `<span style="font-size:20px;">💬</span>`;
+      html += `<a href="${s.discord}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-decoration:none;color:var(--text-primary);transition:var(--transition);" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        ${logoHtml}<div><div style="font-weight:600;font-size:14px;">Discord</div><div style="font-size:12px;color:var(--text-muted);">Respon cepat di server kami</div></div>
+        <span style="margin-left:auto;color:var(--gold);">→</span>
+      </a>`;
+    }
+    if (s.whatsapp) {
+      const waUrl = s.whatsapp.startsWith("http") ? s.whatsapp : `https://wa.me/${s.whatsapp.replace(/[^0-9]/g,"")}`;
+      const logoHtml = s.whatsappLogoUrl ? `<img src="${s.whatsappLogoUrl}" style="width:24px;height:24px;object-fit:contain;border-radius:4px;">` : `<span style="font-size:20px;">📱</span>`;
+      html += `<a href="${waUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;text-decoration:none;color:var(--text-primary);transition:var(--transition);" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        ${logoHtml}<div><div style="font-weight:600;font-size:14px;">WhatsApp</div><div style="font-size:12px;color:var(--text-muted);">Chat langsung dengan admin</div></div>
+        <span style="margin-left:auto;color:var(--gold);">→</span>
+      </a>`;
+    }
+    if (!html) html = `<div style="font-size:13px;color:var(--text-muted);">Info kontak belum dikonfigurasi oleh admin.</div>`;
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="font-size:13px;color:var(--text-muted);">Gagal memuat kontak.</div>`;
+  }
+}
+</script>
+</body>
+</html>
