@@ -529,7 +529,7 @@
         </div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;font-size:13px;color:var(--gold);text-align:center;font-weight:600;">
-        ✦ Dipercaya oleh ribuan orang kaya Indonesia sejak 2024
+        ✦ Dipercaya oleh ribuan gamer Indonesia sejak 2024
       </div>
     </div>
   </div>
@@ -1062,7 +1062,7 @@ async function loadReviews() {
       const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
       return tb - ta;
     }).slice(0, 20);
-    if (reviews.length >= 3) {
+    if (reviews.length >= 1) {
       buildReviews(reviews.map(r => ({
         name: r.userName || "Anonim",
         avatar: r.userPhoto
