@@ -77,7 +77,17 @@ function updateNavAuth(user) {
 
 async function signInWithGoogle() {
   try {
-    const result = await auth.signInWithPopup(googleProvider);
+    await auth.signInWithRedirect(googleProvider);
+  } catch (err) {
+    console.error(err);
+    toast("Login gagal. Coba lagi.", "error");
+    throw err;
+  }
+}
+
+// Handle redirect result on page load
+auth.getRedirectResult().then(async (result) => {
+  if (result && result.user) {
     const user = result.user;
     // Reset overflow & tutup semua modal
     document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
@@ -91,13 +101,10 @@ async function signInWithGoogle() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     toast(`Selamat datang, ${user.displayName ? user.displayName.split(" ")[0] : "User"}!`, "success");
-    return user;
-  } catch (err) {
-    console.error(err);
-    toast("Login gagal. Coba lagi.", "error");
-    throw err;
   }
-}
+}).catch(err => {
+  if (err.code !== 'auth/no-current-user') console.error(err);
+});
 
 async function signOut() {
   // Tutup semua modal dan reset overflow dulu
