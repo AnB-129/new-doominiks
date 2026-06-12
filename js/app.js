@@ -48,6 +48,13 @@ function hideLoader() {
 let currentUser = null;
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
+  // Selalu reset body overflow dan pastikan tidak ada yang block klik
+  document.body.style.overflow = "";
+  document.body.style.pointerEvents = "";
+  // Tutup semua modal yang masih terbuka
+  document.querySelectorAll(".modal-overlay.open").forEach(m => {
+    m.classList.remove("open");
+  });
   updateNavAuth(user);
   if (typeof onAuthReady === "function") onAuthReady(user);
 });
@@ -77,22 +84,10 @@ function updateNavAuth(user) {
 
 async function signInWithGoogle() {
   try {
-    await auth.signInWithRedirect(googleProvider);
-  } catch (err) {
-    console.error(err);
-    toast("Login gagal. Coba lagi.", "error");
-    throw err;
-  }
-}
-
-// Handle redirect result on page load
-auth.getRedirectResult().then(async (result) => {
-  if (result && result.user) {
+    const result = await auth.signInWithPopup(googleProvider);
     const user = result.user;
-    // Reset overflow & tutup semua modal
     document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
     document.body.style.overflow = "";
-    // Upsert user document
     await db.collection("users").doc(user.uid).set({
       displayName: user.displayName,
       email: user.email,
@@ -101,10 +96,15 @@ auth.getRedirectResult().then(async (result) => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     toast(`Selamat datang, ${user.displayName ? user.displayName.split(" ")[0] : "User"}!`, "success");
+    return user;
+  } catch (err) {
+    if (err.code === 'auth/popup-closed-by-user') return;
+    if (err.code === 'auth/cancelled-popup-request') return;
+    console.error(err);
+    toast("Login gagal. Coba lagi.", "error");
+    throw err;
   }
-}).catch(err => {
-  if (err.code !== 'auth/no-current-user') console.error(err);
-});
+}
 
 async function signOut() {
   // Tutup semua modal dan reset overflow dulu
