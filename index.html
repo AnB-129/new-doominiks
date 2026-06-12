@@ -15,13 +15,16 @@
   <style>
     .user-dropdown { position: relative; }
     .user-dropdown-menu {
-      position: absolute; top: calc(100% + 8px); right: 0;
+      position: absolute; top: calc(100% + 4px); right: 0;
       background: var(--bg-card); border: 1px solid var(--border-bright);
       border-radius: var(--radius-lg); padding: 8px; min-width: 180px;
       box-shadow: var(--shadow-card); opacity: 0; pointer-events: none;
       transform: translateY(-4px); transition: var(--transition); z-index: 200;
     }
-    .user-dropdown:hover .user-dropdown-menu,
+    /* Bridge gap antara tombol dan menu supaya tidak hilang saat mouse gerak */
+    .user-dropdown-menu::before {
+      content: ''; position: absolute; top: -12px; left: 0; right: 0; height: 12px;
+    }
     .user-dropdown.open .user-dropdown-menu { opacity: 1; pointer-events: all; transform: translateY(0); }
     .dropdown-item {
       display: flex; align-items: center; gap: 10px;
@@ -148,8 +151,8 @@
         Masuk
       </button>
       <div class="nav-actions" id="user-menu" style="display:none;">
-        <div class="user-dropdown">
-          <button class="btn btn-secondary btn-sm" style="gap:8px;">
+        <div class="user-dropdown" id="user-dropdown">
+          <button class="btn btn-secondary btn-sm" style="gap:8px;" onclick="toggleUserDropdown(event)">
             <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
             <span id="nav-username"></span>
             ▾
@@ -529,7 +532,7 @@
         </div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;font-size:13px;color:var(--gold);text-align:center;font-weight:600;">
-        ✦ Dipercaya oleh ribuan orang kaya Indonesia sejak 2024
+        ✦ Dipercaya oleh ribuan gamer Indonesia sejak 2024
       </div>
     </div>
   </div>
@@ -1038,6 +1041,16 @@ async function loadPaymentMethods() {
 }
 
 // INIT
+function toggleUserDropdown(e) {
+  e.stopPropagation();
+  document.getElementById("user-dropdown").classList.toggle("open");
+}
+// Tutup dropdown kalau klik di luar
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("user-dropdown");
+  if (dd && !dd.contains(e.target)) dd.classList.remove("open");
+});
+
 function onAuthReady(user) {
   hideLoader();
   // Pastikan loader tidak block klik setelah auth
