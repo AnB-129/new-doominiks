@@ -87,21 +87,8 @@ function updateNavAuth(user) {
 async function signInWithGoogle() {
   try {
     googleProvider.setCustomParameters({ prompt: 'select_account' });
-    await auth.signInWithRedirect(googleProvider);
-  } catch (err) {
-    console.error(err);
-    toast("Login gagal. Coba lagi.", "error");
-  }
-}
-
-// Proses hasil redirect saat halaman load
-document.addEventListener("DOMContentLoaded", () => {
-  auth.getRedirectResult().then(async (result) => {
-    if (!result || !result.user) return;
+    const result = await auth.signInWithPopup(googleProvider);
     const user = result.user;
-    document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
-    document.body.style.overflow = "";
-    document.body.style.pointerEvents = "";
     await db.collection("users").doc(user.uid).set({
       displayName: user.displayName,
       email: user.email,
@@ -109,11 +96,15 @@ document.addEventListener("DOMContentLoaded", () => {
       lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-    toast(`Selamat datang, ${user.displayName ? user.displayName.split(" ")[0] : "User"}!`, "success");
-  }).catch(err => {
-    if (err.code && err.code !== 'auth/no-current-user') console.error(err);
-  });
-});
+    // Reload halaman supaya COOP state bersih dan semua klik normal
+    window.location.reload();
+  } catch (err) {
+    if (err.code === 'auth/popup-closed-by-user') return;
+    if (err.code === 'auth/cancelled-popup-request') return;
+    console.error(err);
+    toast("Login gagal. Coba lagi.", "error");
+  }
+}
 
 async function signOut() {
   // Tutup semua modal dan reset overflow dulu
