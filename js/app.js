@@ -48,13 +48,15 @@ function hideLoader() {
 let currentUser = null;
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
-  // Selalu reset body overflow dan pastikan tidak ada yang block klik
+  // Reset semua yang bisa block UI
   document.body.style.overflow = "";
   document.body.style.pointerEvents = "";
-  // Tutup semua modal yang masih terbuka
-  document.querySelectorAll(".modal-overlay.open").forEach(m => {
-    m.classList.remove("open");
-  });
+  document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
+  // Double-reset setelah 500ms untuk handle COOP delay
+  setTimeout(() => {
+    document.body.style.overflow = "";
+    document.body.style.pointerEvents = "";
+  }, 500);
   updateNavAuth(user);
   if (typeof onAuthReady === "function") onAuthReady(user);
 });
@@ -84,10 +86,13 @@ function updateNavAuth(user) {
 
 async function signInWithGoogle() {
   try {
+    // Set custom parameters untuk minimize COOP issues
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
     const result = await auth.signInWithPopup(googleProvider);
     const user = result.user;
     document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
     document.body.style.overflow = "";
+    document.body.style.pointerEvents = "";
     await db.collection("users").doc(user.uid).set({
       displayName: user.displayName,
       email: user.email,
@@ -100,6 +105,18 @@ async function signInWithGoogle() {
   } catch (err) {
     if (err.code === 'auth/popup-closed-by-user') return;
     if (err.code === 'auth/cancelled-popup-request') return;
+    // Kalau COOP error tapi user sudah login, cek auth state
+    if (err.code === 'auth/internal-error' || err.message?.includes('window.closed')) {
+      setTimeout(() => {
+        const user = auth.currentUser;
+        if (user) {
+          document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
+          document.body.style.overflow = "";
+          document.body.style.pointerEvents = "";
+        }
+      }, 1000);
+      return;
+    }
     console.error(err);
     toast("Login gagal. Coba lagi.", "error");
     throw err;
