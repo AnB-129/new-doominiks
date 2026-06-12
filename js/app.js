@@ -86,9 +86,18 @@ function updateNavAuth(user) {
 
 async function signInWithGoogle() {
   try {
-    // Set custom parameters untuk minimize COOP issues
     googleProvider.setCustomParameters({ prompt: 'select_account' });
-    const result = await auth.signInWithPopup(googleProvider);
+    await auth.signInWithRedirect(googleProvider);
+  } catch (err) {
+    console.error(err);
+    toast("Login gagal. Coba lagi.", "error");
+  }
+}
+
+// Proses hasil redirect saat halaman load
+document.addEventListener("DOMContentLoaded", () => {
+  auth.getRedirectResult().then(async (result) => {
+    if (!result || !result.user) return;
     const user = result.user;
     document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
     document.body.style.overflow = "";
@@ -101,27 +110,10 @@ async function signInWithGoogle() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     toast(`Selamat datang, ${user.displayName ? user.displayName.split(" ")[0] : "User"}!`, "success");
-    return user;
-  } catch (err) {
-    if (err.code === 'auth/popup-closed-by-user') return;
-    if (err.code === 'auth/cancelled-popup-request') return;
-    // Kalau COOP error tapi user sudah login, cek auth state
-    if (err.code === 'auth/internal-error' || err.message?.includes('window.closed')) {
-      setTimeout(() => {
-        const user = auth.currentUser;
-        if (user) {
-          document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
-          document.body.style.overflow = "";
-          document.body.style.pointerEvents = "";
-        }
-      }, 1000);
-      return;
-    }
-    console.error(err);
-    toast("Login gagal. Coba lagi.", "error");
-    throw err;
-  }
-}
+  }).catch(err => {
+    if (err.code && err.code !== 'auth/no-current-user') console.error(err);
+  });
+});
 
 async function signOut() {
   // Tutup semua modal dan reset overflow dulu
