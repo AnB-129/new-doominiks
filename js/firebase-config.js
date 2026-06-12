@@ -51,4 +51,3 @@ function generateOrderId() {
   for (let i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
   return id;
 }
-
