@@ -107,12 +107,10 @@ async function signInWithGoogle() {
 }
 
 async function signOut() {
-  // Tutup semua modal dan reset overflow dulu
   document.querySelectorAll(".modal-overlay.open").forEach(m => m.classList.remove("open"));
   document.body.style.overflow = "";
   await auth.signOut();
-  toast("Kamu telah logout.", "info");
-  if (window.location.pathname.includes("owner")) window.location.href = "../index.html";
+  window.location.reload();
 }
 
 // ---- Active Nav Link ----
