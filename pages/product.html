@@ -549,8 +549,11 @@ async function checkRobloxUsername(username) {
   const errCard = document.getElementById("roblox-error-card");
   if (!icon) return;
   try {
+    // Pakai corsproxy.io untuk bypass CORS
+    const PROXY = "https://corsproxy.io/?";
+
     // Step 1: Username → User ID
-    const res1 = await fetch("https://users.roblox.com/v1/usernames/users", {
+    const res1 = await fetch(PROXY + encodeURIComponent("https://users.roblox.com/v1/usernames/users"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usernames: [username], excludeBannedUsers: false })
@@ -568,11 +571,11 @@ async function checkRobloxUsername(username) {
     const userId = user.id;
 
     // Step 2: Get detail user
-    const res2 = await fetch(`https://users.roblox.com/v1/users/${userId}`);
+    const res2 = await fetch(PROXY + encodeURIComponent(`https://users.roblox.com/v1/users/${userId}`));
     const data2 = await res2.json();
 
     // Step 3: Get avatar thumbnail
-    const res3 = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`);
+    const res3 = await fetch(PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`));
     const data3 = await res3.json();
     const avatarUrl = data3.data?.[0]?.imageUrl || "";
 
@@ -584,7 +587,7 @@ async function checkRobloxUsername(username) {
       card.style.display = "flex";
       document.getElementById("roblox-avatar").src = avatarUrl;
       document.getElementById("roblox-displayname").textContent = data2.displayName || user.name;
-      document.getElementById("roblox-username-display").textContent = "@" + user.requestedUsername;
+      document.getElementById("roblox-username-display").textContent = "@" + (user.requestedUsername || username);
       document.getElementById("roblox-userid").textContent = "User ID: " + userId;
     }
     window._robloxVerified = true;
