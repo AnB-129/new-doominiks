@@ -522,6 +522,83 @@ function renderBuySection() {
   }
 }
 
+// ---- ROBLOX USERNAME CHECKER ----
+let _robloxDebounce = null;
+
+function debounceRobloxCheck(username) {
+  clearTimeout(_robloxDebounce);
+  window._robloxVerified = false;
+  window._robloxUserId = null;
+  const icon = document.getElementById("roblox-check-icon");
+  const card = document.getElementById("roblox-profile-card");
+  const errCard = document.getElementById("roblox-error-card");
+  if (!icon) return;
+  if (!username || username.length < 3) {
+    icon.textContent = "";
+    if (card) card.style.display = "none";
+    if (errCard) errCard.style.display = "none";
+    return;
+  }
+  icon.textContent = "⏳";
+  _robloxDebounce = setTimeout(() => checkRobloxUsername(username), 700);
+}
+
+async function checkRobloxUsername(username) {
+  const icon = document.getElementById("roblox-check-icon");
+  const card = document.getElementById("roblox-profile-card");
+  const errCard = document.getElementById("roblox-error-card");
+  if (!icon) return;
+  try {
+    // Step 1: Username → User ID
+    const res1 = await fetch("https://users.roblox.com/v1/usernames/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false })
+    });
+    const data1 = await res1.json();
+    if (!data1.data || !data1.data.length) {
+      icon.textContent = "✕";
+      icon.style.color = "#ef4444";
+      if (card) card.style.display = "none";
+      if (errCard) { errCard.style.display = "block"; errCard.textContent = "Username tidak ditemukan. Pastikan ejaan benar."; }
+      window._robloxVerified = false;
+      return;
+    }
+    const user = data1.data[0];
+    const userId = user.id;
+
+    // Step 2: Get detail user
+    const res2 = await fetch(`https://users.roblox.com/v1/users/${userId}`);
+    const data2 = await res2.json();
+
+    // Step 3: Get avatar thumbnail
+    const res3 = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`);
+    const data3 = await res3.json();
+    const avatarUrl = data3.data?.[0]?.imageUrl || "";
+
+    // Tampilkan card
+    icon.textContent = "✓";
+    icon.style.color = "#22c55e";
+    if (errCard) errCard.style.display = "none";
+    if (card) {
+      card.style.display = "flex";
+      document.getElementById("roblox-avatar").src = avatarUrl;
+      document.getElementById("roblox-displayname").textContent = data2.displayName || user.name;
+      document.getElementById("roblox-username-display").textContent = "@" + user.requestedUsername;
+      document.getElementById("roblox-userid").textContent = "User ID: " + userId;
+    }
+    window._robloxVerified = true;
+    window._robloxUserId = userId;
+    window._robloxDisplayName = data2.displayName || user.name;
+  } catch(e) {
+    icon.textContent = "⚠";
+    icon.style.color = "#f97316";
+    if (card) card.style.display = "none";
+    if (errCard) { errCard.style.display = "block"; errCard.textContent = "Gagal cek username. Coba lagi."; }
+    window._robloxVerified = false;
+  }
+}
+
 function startCheckout() {
   if (!currentUser) { openModal("modal-login"); return; }
   if (!selectedItem) { toast("Pilih nominal terlebih dahulu", "error"); return; }
@@ -534,12 +611,44 @@ function startCheckout() {
   document.getElementById("co-s-name").textContent = `${productData.name} — ${selectedItem.name}`;
   document.getElementById("co-s-price").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-s-total").textContent = formatIDR(selectedItem.price);
-  document.getElementById("co-fields").innerHTML = fields.map(f => `
+  const isRoblox = (productData.name||"").toLowerCase().includes("roblox");
+  document.getElementById("co-fields").innerHTML = fields.map(f => {
+    const isUsernameField = isRoblox && (f.id === "userId" || f.id === "username" || f.label?.toLowerCase().includes("username"));
+    if (isUsernameField) {
+      return `
+      <div class="form-group">
+        <label class="form-label">${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ""}</label>
+        <div style="position:relative;">
+          <input class="form-input" id="field-${f.id}" placeholder="${f.placeholder||'Masukkan username Roblox'}"
+            ${f.required ? "required" : ""}
+            oninput="debounceRobloxCheck(this.value)"
+            style="padding-right:44px;" />
+          <div id="roblox-check-icon" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;"></div>
+        </div>
+        <!-- Roblox profile card -->
+        <div id="roblox-profile-card" style="display:none;margin-top:10px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:none;align-items:center;gap:12px;">
+          <img id="roblox-avatar" src="" alt="" style="width:52px;height:52px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;flex-shrink:0;" />
+          <div>
+            <div id="roblox-displayname" style="font-weight:700;font-size:15px;"></div>
+            <div id="roblox-username-display" style="font-size:12px;color:var(--text-muted);"></div>
+            <div id="roblox-userid" style="font-size:11px;color:var(--gold);font-family:monospace;margin-top:2px;"></div>
+          </div>
+          <div style="margin-left:auto;flex-shrink:0;">
+            <span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;">✓ Terverifikasi</span>
+          </div>
+        </div>
+        <div id="roblox-error-card" style="display:none;margin-top:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:#ef4444;"></div>
+      </div>`;
+    }
+    return `
     <div class="form-group">
       <label class="form-label">${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ""}</label>
       <input class="form-input" id="field-${f.id}" placeholder="${f.placeholder}" ${f.required ? "required" : ""} />
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
+  // Init Roblox checker state
+  window._robloxVerified = false;
+  window._robloxUserId = null;
   document.getElementById("co-step-1").style.display = "block";
   document.getElementById("co-step-2").style.display = "none";
   document.getElementById("co-step-3").style.display = "none";
@@ -550,10 +659,21 @@ async function goToPayment() {
   const allFields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
   const fields = allFields.filter(f => !f.typeId || f.typeId === selectedTopupType);
   gameFields = {};
+  const isRoblox = (productData.name||"").toLowerCase().includes("roblox");
   for (const f of fields) {
     const val = document.getElementById(`field-${f.id}`)?.value?.trim() || "";
     if (f.required && !val) { toast(`${f.label} wajib diisi`, "error"); return; }
     gameFields[f.id] = val;
+  }
+  // Validasi Roblox username
+  if (isRoblox && !window._robloxVerified) {
+    toast("Verifikasi username Roblox terlebih dahulu", "error");
+    return;
+  }
+  // Simpan data Roblox ke gameFields
+  if (isRoblox && window._robloxUserId) {
+    gameFields["Roblox User ID"] = String(window._robloxUserId);
+    gameFields["Roblox Display Name"] = window._robloxDisplayName || "";
   }
   // Load payment settings from Firestore to filter only configured methods
   let pmSettings = {};
