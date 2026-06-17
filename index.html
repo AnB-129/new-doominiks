@@ -2,12 +2,20 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <link rel="icon" type="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
   <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DOOMINIKS STORE &mdash; Top Up Game Terpercaya</title>
   <meta name="description" content="Top up game murah, cepat, dan terpercaya. Mobile Legends, Free Fire, PUBG, Genshin Impact & lebih banyak lagi." />
   <link rel="stylesheet" href="css/style.css" />
+  <script>
+    // Apply tema sebelum render untuk hindari flash
+    (function() {
+      if (localStorage.getItem("doominiks-theme") === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -609,6 +617,29 @@
   </div>
 </div>
 
+<!-- THEME TOGGLE SECTION -->
+<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:32px 20px;border-top:1px solid var(--border);">
+  <span style="font-size:13px;color:var(--text-secondary);">Suka tampilan gelap atau terang?</span>
+  <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme(event)" aria-label="Ganti tema">
+    <span class="theme-toggle-icon">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+      </svg>
+    </span>
+  </button>
+</div>
+
 <footer>
   <div class="container">
     <div class="footer-grid">
@@ -658,6 +689,26 @@
   </div>
 </footer>
 
+<script>
+  // Apply saved theme immediately (sebelum render) supaya tidak ada flash
+  (function() {
+    const saved = localStorage.getItem("doominiks-theme");
+    if (saved === "light") document.documentElement.setAttribute("data-theme", "light");
+  })();
+  function toggleTheme(e) {
+    const html = document.documentElement;
+    const btn = document.getElementById("theme-toggle-btn");
+    const isLight = html.getAttribute("data-theme") === "light";
+    html.setAttribute("data-theme", isLight ? "dark" : "light");
+    localStorage.setItem("doominiks-theme", isLight ? "dark" : "light");
+    // Ripple animation
+    btn.classList.remove("clicked");
+    requestAnimationFrame(() => {
+      btn.classList.add("clicked");
+      setTimeout(() => btn.classList.remove("clicked"), 500);
+    });
+  }
+</script>
 <script src="js/firebase-config.js"></script>
 <script src="js/app.js"></script>
 <script>
