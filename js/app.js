@@ -14,26 +14,8 @@ function toggleTheme(e) {
   const isLight = html.getAttribute("data-theme") === "light";
   const newTheme = isLight ? "dark" : "light";
 
-  // Efek "tetesan air" — ripple melebar dari titik klik, pakai clip-path (ringan di mobile)
-  if (e) {
-    const ripple = document.createElement("div");
-    ripple.className = "theme-ripple";
-    const x = e.clientX || (e.target.getBoundingClientRect().left + e.target.offsetWidth/2);
-    const y = e.clientY || (e.target.getBoundingClientRect().top + e.target.offsetHeight/2);
-    ripple.style.setProperty("--ripple-x", x + "px");
-    ripple.style.setProperty("--ripple-y", y + "px");
-    ripple.style.background = newTheme === "light" ? "#F7F8FA" : "#080A0F";
-    document.body.appendChild(ripple);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => ripple.classList.add("expand"));
-    });
-    setTimeout(() => ripple.remove(), 1000);
-  }
-
-  setTimeout(() => {
-    html.setAttribute("data-theme", newTheme);
-    localStorage.setItem("doominiks-theme", newTheme);
-  }, e ? 150 : 0);
+  html.setAttribute("data-theme", newTheme);
+  localStorage.setItem("doominiks-theme", newTheme);
 
   // Animasi icon toggle button (kalau ada di halaman ini)
   document.querySelectorAll(".theme-toggle").forEach(btn => {
