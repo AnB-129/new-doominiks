@@ -2,6 +2,47 @@
 // MAIN APP UTILITIES
 // ============================================================
 
+// ---- Theme Toggle (Dark/Light) ----
+// Apply saved theme immediately saat app.js load di halaman manapun
+(function() {
+  const saved = localStorage.getItem("doominiks-theme");
+  if (saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+
+function toggleTheme(e) {
+  const html = document.documentElement;
+  const isLight = html.getAttribute("data-theme") === "light";
+  const newTheme = isLight ? "dark" : "light";
+
+  // Efek "tetesan air" — ripple melebar dari titik klik
+  if (e) {
+    const ripple = document.createElement("div");
+    ripple.className = "theme-ripple";
+    const x = e.clientX || (e.target.getBoundingClientRect().left + e.target.offsetWidth/2);
+    const y = e.clientY || (e.target.getBoundingClientRect().top + e.target.offsetHeight/2);
+    ripple.style.left = x + "px";
+    ripple.style.top = y + "px";
+    ripple.style.background = newTheme === "light" ? "#F7F8FA" : "#080A0F";
+    document.body.appendChild(ripple);
+    requestAnimationFrame(() => ripple.classList.add("expand"));
+    setTimeout(() => ripple.remove(), 700);
+  }
+
+  setTimeout(() => {
+    html.setAttribute("data-theme", newTheme);
+    localStorage.setItem("doominiks-theme", newTheme);
+  }, e ? 80 : 0);
+
+  // Animasi icon toggle button (kalau ada di halaman ini)
+  document.querySelectorAll(".theme-toggle").forEach(btn => {
+    btn.classList.remove("clicked");
+    requestAnimationFrame(() => {
+      btn.classList.add("clicked");
+      setTimeout(() => btn.classList.remove("clicked"), 500);
+    });
+  });
+}
+
 // ---- Toast Notifications ----
 function toast(message, type = "info", duration = 3500) {
   const container = document.getElementById("toast-container");
