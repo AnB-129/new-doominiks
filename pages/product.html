@@ -549,17 +549,19 @@ async function checkRobloxUsername(username) {
   const errCard = document.getElementById("roblox-error-card");
   if (!icon) return;
   try {
-    // Pakai corsproxy.io untuk bypass CORS
-    const PROXY = "https://corsproxy.io/?";
+    // Roblox API via Cloudflare Worker proxy milik sendiri (reliable)
+    const WORKER_PROXY = "https://quiet-moon-d034roblox-proxy.niksstoree.workers.dev/?url=";
 
-    // Step 1: Username → User ID
-    const res1 = await fetch(PROXY + encodeURIComponent("https://users.roblox.com/v1/usernames/users"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false })
-    });
+    const proxyGet = async (url) => {
+      const r = await fetch(WORKER_PROXY + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error("Proxy gagal, status " + r.status);
+      return r;
+    };
+
+    // Step 1: username → userId via GET (legacy endpoint yang support GET)
+    const res1 = await proxyGet(`https://api.roblox.com/users/get-by-username?username=${encodeURIComponent(username)}`);
     const data1 = await res1.json();
-    if (!data1.data || !data1.data.length) {
+    if (!data1 || data1.errorCode || !data1.Id) {
       icon.textContent = "✕";
       icon.style.color = "#ef4444";
       if (card) card.style.display = "none";
@@ -567,17 +569,11 @@ async function checkRobloxUsername(username) {
       window._robloxVerified = false;
       return;
     }
-    const user = data1.data[0];
-    const userId = user.id;
+    const userId = data1.Id;
+    const displayName = data1.DisplayName || data1.Username;
 
-    // Step 2: Get detail user
-    const res2 = await fetch(PROXY + encodeURIComponent(`https://users.roblox.com/v1/users/${userId}`));
-    const data2 = await res2.json();
-
-    // Step 3: Get avatar thumbnail
-    const res3 = await fetch(PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`));
-    const data3 = await res3.json();
-    const avatarUrl = data3.data?.[0]?.imageUrl || "";
+    // Step 2: Avatar langsung via URL (tidak butuh API)
+    const avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`;
 
     // Tampilkan card
     icon.textContent = "✓";
@@ -586,13 +582,13 @@ async function checkRobloxUsername(username) {
     if (card) {
       card.style.display = "flex";
       document.getElementById("roblox-avatar").src = avatarUrl;
-      document.getElementById("roblox-displayname").textContent = data2.displayName || user.name;
-      document.getElementById("roblox-username-display").textContent = "@" + (user.requestedUsername || username);
+      document.getElementById("roblox-displayname").textContent = displayName;
+      document.getElementById("roblox-username-display").textContent = "@" + data1.Username;
       document.getElementById("roblox-userid").textContent = "User ID: " + userId;
     }
     window._robloxVerified = true;
     window._robloxUserId = userId;
-    window._robloxDisplayName = data2.displayName || user.name;
+    window._robloxDisplayName = displayName;
   } catch(e) {
     icon.textContent = "⚠";
     icon.style.color = "#f97316";
