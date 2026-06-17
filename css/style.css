@@ -77,6 +77,47 @@ body, .card, .modal, .navbar, .btn, input, textarea, select,
   transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
 }
 
+/* ---- TETESAN AIR RIPPLE saat ganti tema ---- */
+.theme-ripple {
+  position: fixed;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 0.95;
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease;
+}
+.theme-ripple.expand {
+  transform: translate(-50%, -50%) scale(300);
+  opacity: 0;
+}
+
+/* Pastikan SEMUA elemen teks ikut warna tema, bukan warna fixed putih */
+[data-theme="light"] body { color: var(--text-primary); }
+[data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3,
+[data-theme="light"] h4, [data-theme="light"] h5, [data-theme="light"] h6,
+[data-theme="light"] p, [data-theme="light"] span, [data-theme="light"] div,
+[data-theme="light"] label, [data-theme="light"] li, [data-theme="light"] td, [data-theme="light"] th {
+  color: inherit;
+}
+[data-theme="light"] .hero-title,
+[data-theme="light"] .section-title,
+[data-theme="light"] .card-title,
+[data-theme="light"] .modal-title,
+[data-theme="light"] .nav-logo,
+[data-theme="light"] .product-name,
+[data-theme="light"] .item-name,
+[data-theme="light"] .stat-value {
+  color: var(--text-primary);
+}
+[data-theme="light"] .hero-subtitle,
+[data-theme="light"] .section-subtitle,
+[data-theme="light"] .card-description,
+[data-theme="light"] .text-secondary {
+  color: var(--text-secondary);
+}
+
 /* ---- THEME TOGGLE BUTTON ---- */
 .theme-toggle {
   position: relative;
