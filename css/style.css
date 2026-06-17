@@ -71,27 +71,10 @@
   --shadow-gold: 0 0 30px rgba(184, 134, 11, 0.15);
 }
 
-/* Smooth transition saat ganti tema — durasi lebih panjang & lebih ringan di mobile */
-body {
-  transition: background-color 0.6s ease;
-}
-.card, .navbar, .btn, input, textarea, select,
-.hero, .stat-card, .item-card, .product-card-grid {
-  transition: background-color 0.5s ease, border-color 0.5s ease;
-}
-
-/* ---- TETESAN AIR RIPPLE saat ganti tema (pakai clip-path, ringan di GPU mobile) ---- */
-.theme-ripple {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 999999;
-  clip-path: circle(0px at var(--ripple-x, 50%) var(--ripple-y, 50%));
-  transition: clip-path 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: clip-path;
-}
-.theme-ripple.expand {
-  clip-path: circle(150% at var(--ripple-x, 50%) var(--ripple-y, 50%));
+/* Smooth transition saat ganti tema — sederhana dan aman, tanpa overlay fullscreen */
+body, .card, .navbar, .btn, input, textarea, select,
+.hero, .stat-card, .item-card, .product-card-grid, .modal {
+  transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
 }
 
 /* Pastikan SEMUA elemen teks ikut warna tema, bukan warna fixed putih */
