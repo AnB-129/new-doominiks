@@ -147,6 +147,15 @@
         <label class="form-label">Urutan Tampil</label>
         <input class="form-input" id="f-sort" type="number" value="99" min="0" />
       </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;">
+          <input type="checkbox" id="f-roblox-check" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;" />
+          <div>
+            <div style="font-weight:600;font-size:14px;">🎮 Aktifkan Verifikasi Username Roblox</div>
+            <div style="font-size:12px;color:var(--text-muted);">Field username akan otomatis cek &amp; tampilkan profil Roblox pembeli sebelum checkout</div>
+          </div>
+        </label>
+      </div>
 
       <!-- Tipe Top Up -->
       <div class="divider"></div>
@@ -542,6 +551,7 @@ function openEditProduct(id) {
   document.getElementById("f-color1").value = p.color1 || "#1E2535";
   document.getElementById("f-color2").value = p.color2 || "#0D1018";
   document.getElementById("f-sort").value = p.sortOrder ?? 99;
+  document.getElementById("f-roblox-check").checked = !!p.robloxCheck;
   document.getElementById("f-instructions").value = p.instructions || "";
   document.getElementById("f-active").checked = !!p.active;
   document.getElementById("f-featured").checked = !!p.featured;
@@ -579,6 +589,7 @@ async function saveProduct(e) {
       color1: document.getElementById("f-color1-text").value.trim() || "#1E2535",
       color2: document.getElementById("f-color2-text").value.trim() || "#0D1018",
       sortOrder: parseInt(document.getElementById("f-sort").value) || 99,
+      robloxCheck: document.getElementById("f-roblox-check").checked,
       instructions: document.getElementById("f-instructions").value.trim(),
       active: document.getElementById("f-active").checked,
       featured: document.getElementById("f-featured").checked,
