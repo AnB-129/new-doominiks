@@ -15,10 +15,10 @@
   --border: #1E2535;
   --border-bright: #2A3550;
 
-  --gold: #FFD700;
-  --gold-light: #E8C97A;
-  --gold-dim: #8B6E2E;
-  --gold-glow: rgba(201, 168, 76, 0.15);
+  --gold: #D4A017;
+  --gold-light: #FFD700;
+  --gold-dim: #B8860B;
+  --gold-glow: rgba(212, 160, 23, 0.15);
 
   --cyan: #4ECDC4;
   --cyan-dim: rgba(78, 205, 196, 0.12);
@@ -223,7 +223,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
 }
 .nav-logo .logo-mark {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  background: linear-gradient(135deg, #B8860B, #FFD700, #FFA500);
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 16px; color: var(--bg-void); font-weight: 900;
@@ -246,8 +246,8 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
   transition: var(--transition); white-space: nowrap;
 }
 .btn-primary {
-  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
-  color: var(--bg-void); font-weight: 600;
+  background: linear-gradient(135deg, #B8860B, #FFD700, #FFA500);
+  color: #1A1206; font-weight: 600;
 }
 .btn-primary:hover { filter: brightness(1.12); transform: translateY(-1px); box-shadow: var(--shadow-gold); }
 .btn-secondary {
@@ -286,7 +286,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
 }
 .card-product .product-badge {
   position: absolute; top: 12px; right: 12px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  background: linear-gradient(135deg, #B8860B, #FFD700, #FFA500);
   color: var(--bg-void); font-size: 11px; font-weight: 700;
   padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;
 }
@@ -422,7 +422,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); line-height: 1.15; }
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-size: 13px; font-weight: 800; flex-shrink: 0;
 }
-.lb-rank.gold-rank { background: linear-gradient(135deg, var(--gold), var(--gold-dim)); color: var(--bg-void); }
+.lb-rank.gold-rank { background: linear-gradient(135deg, #B8860B, #FFD700, #FFA500); color: var(--bg-void); }
 .lb-rank.silver-rank { background: linear-gradient(135deg, #A8B2C8, #6B7A8D); color: var(--bg-void); }
 .lb-rank.bronze-rank { background: linear-gradient(135deg, #CD7F32, #8B4513); color: var(--bg-void); }
 .lb-rank.other-rank { background: var(--bg-panel); color: var(--text-secondary); }
