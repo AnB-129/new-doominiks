@@ -15,7 +15,7 @@
   --border: #1E2535;
   --border-bright: #2A3550;
 
-  --gold: #FFD700;
+  --gold: #C9A84C;
   --gold-light: #E8C97A;
   --gold-dim: #8B6E2E;
   --gold-glow: rgba(201, 168, 76, 0.15);
@@ -40,6 +40,91 @@
 
   --font-display: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;
+}
+
+/* ---- LIGHT THEME ---- */
+[data-theme="light"] {
+  --bg-void: #F7F8FA;
+  --bg-deep: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F0F2F5;
+  --bg-panel: #F2F3F6;
+  --border: #E2E5EB;
+  --border-bright: #CBD0DA;
+
+  --gold: #B8860B;
+  --gold-light: #D4A017;
+  --gold-dim: #8B6914;
+  --gold-glow: rgba(184, 134, 11, 0.12);
+
+  --cyan: #1A9E94;
+  --cyan-dim: rgba(26, 158, 148, 0.1);
+
+  --red: #D7263D;
+  --green: #2E9E5B;
+
+  --text-primary: #14161C;
+  --text-secondary: #565E70;
+  --text-muted: #8891A0;
+
+  --shadow-card: 0 4px 24px rgba(20, 22, 28, 0.08);
+  --shadow-gold: 0 0 30px rgba(184, 134, 11, 0.15);
+}
+
+/* Smooth transition saat ganti tema */
+body, .card, .modal, .navbar, .btn, input, textarea, select,
+.hero, .stat-card, .item-card, .product-card-grid {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+/* ---- THEME TOGGLE BUTTON ---- */
+.theme-toggle {
+  position: relative;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.theme-toggle:hover { border-color: var(--gold-dim); background: var(--bg-card-hover); }
+.theme-toggle-icon {
+  position: relative;
+  width: 20px; height: 20px;
+}
+.theme-toggle-icon svg {
+  position: absolute; inset: 0;
+  width: 20px; height: 20px;
+  transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+.icon-sun {
+  color: var(--gold);
+  opacity: 0; transform: rotate(-90deg) scale(0.5);
+}
+.icon-moon {
+  color: var(--cyan);
+  opacity: 1; transform: rotate(0deg) scale(1);
+}
+[data-theme="light"] .icon-sun {
+  opacity: 1; transform: rotate(0deg) scale(1);
+}
+[data-theme="light"] .icon-moon {
+  opacity: 0; transform: rotate(90deg) scale(0.5);
+}
+/* Ripple effect saat klik */
+.theme-toggle::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: var(--gold-glow);
+  opacity: 0; transform: scale(0);
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+.theme-toggle.clicked::after {
+  opacity: 1; transform: scale(1.8);
 }
 
 /* ---- RESET ---- */
