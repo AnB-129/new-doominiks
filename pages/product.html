@@ -573,8 +573,17 @@ async function checkRobloxUsername(username) {
     const userId = user.id;
     const displayName = user.displayName || user.name;
 
-    // Step 2: Avatar langsung via URL (tidak butuh API/proxy tambahan)
-    const avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`;
+    // Step 2: Avatar via thumbnails API (lewat worker proxy)
+    let avatarUrl = "";
+    try {
+      const res2 = await fetch(WORKER_PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`), {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        avatarUrl = data2.data?.[0]?.imageUrl || "";
+      }
+    } catch(e) { /* avatar opsional, lanjut tanpa avatar kalau gagal */ }
 
     // Tampilkan card
     icon.textContent = "✓";
@@ -582,7 +591,9 @@ async function checkRobloxUsername(username) {
     if (errCard) errCard.style.display = "none";
     if (card) {
       card.style.display = "flex";
-      document.getElementById("roblox-avatar").src = avatarUrl;
+      const avatarEl = document.getElementById("roblox-avatar");
+      avatarEl.style.display = "block";
+      avatarEl.src = avatarUrl;
       document.getElementById("roblox-displayname").textContent = displayName;
       document.getElementById("roblox-username-display").textContent = "@" + (user.requestedUsername || user.name);
       document.getElementById("roblox-userid").textContent = "User ID: " + userId;
@@ -627,7 +638,7 @@ function startCheckout() {
         </div>
         <!-- Roblox profile card -->
         <div id="roblox-profile-card" style="display:none;margin-top:10px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:none;align-items:center;gap:12px;">
-          <img id="roblox-avatar" src="" alt="" style="width:52px;height:52px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;flex-shrink:0;" />
+          <img id="roblox-avatar" src="" alt="" onerror="this.style.display='none'" style="width:52px;height:52px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;flex-shrink:0;background:var(--bg-card);" />
           <div>
             <div id="roblox-displayname" style="font-weight:700;font-size:15px;"></div>
             <div id="roblox-username-display" style="font-size:12px;color:var(--text-muted);"></div>
