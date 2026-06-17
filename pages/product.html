@@ -622,7 +622,7 @@ function startCheckout() {
   document.getElementById("co-s-name").textContent = `${productData.name} — ${selectedItem.name}`;
   document.getElementById("co-s-price").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-s-total").textContent = formatIDR(selectedItem.price);
-  const isRoblox = (productData.name||"").toLowerCase().includes("roblox");
+  const isRoblox = !!productData.robloxCheck;
   document.getElementById("co-fields").innerHTML = fields.map(f => {
     const isUsernameField = isRoblox && (f.id === "userId" || f.id === "username" || f.label?.toLowerCase().includes("username"));
     if (isUsernameField) {
@@ -670,7 +670,7 @@ async function goToPayment() {
   const allFields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
   const fields = allFields.filter(f => !f.typeId || f.typeId === selectedTopupType);
   gameFields = {};
-  const isRoblox = (productData.name||"").toLowerCase().includes("roblox");
+  const isRoblox = !!productData.robloxCheck;
   for (const f of fields) {
     const val = document.getElementById(`field-${f.id}`)?.value?.trim() || "";
     if (f.required && !val) { toast(`${f.label} wajib diisi`, "error"); return; }
