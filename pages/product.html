@@ -552,16 +552,16 @@ async function checkRobloxUsername(username) {
     // Roblox API via Cloudflare Worker proxy milik sendiri (reliable)
     const WORKER_PROXY = "https://quiet-moon-d034roblox-proxy.niksstoree.workers.dev/?url=";
 
-    const proxyGet = async (url) => {
-      const r = await fetch(WORKER_PROXY + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
-      if (!r.ok) throw new Error("Proxy gagal, status " + r.status);
-      return r;
-    };
-
-    // Step 1: username → userId via GET (legacy endpoint yang support GET)
-    const res1 = await proxyGet(`https://api.roblox.com/users/get-by-username?username=${encodeURIComponent(username)}`);
+    // Step 1: username → userId via POST (endpoint resmi Roblox yang masih aktif)
+    const res1 = await fetch(WORKER_PROXY + encodeURIComponent("https://users.roblox.com/v1/usernames/users"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res1.ok) throw new Error("Proxy gagal, status " + res1.status);
     const data1 = await res1.json();
-    if (!data1 || data1.errorCode || !data1.Id) {
+    if (!data1.data || !data1.data.length) {
       icon.textContent = "✕";
       icon.style.color = "#ef4444";
       if (card) card.style.display = "none";
@@ -569,10 +569,11 @@ async function checkRobloxUsername(username) {
       window._robloxVerified = false;
       return;
     }
-    const userId = data1.Id;
-    const displayName = data1.DisplayName || data1.Username;
+    const user = data1.data[0];
+    const userId = user.id;
+    const displayName = user.displayName || user.name;
 
-    // Step 2: Avatar langsung via URL (tidak butuh API)
+    // Step 2: Avatar langsung via URL (tidak butuh API/proxy tambahan)
     const avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`;
 
     // Tampilkan card
@@ -583,7 +584,7 @@ async function checkRobloxUsername(username) {
       card.style.display = "flex";
       document.getElementById("roblox-avatar").src = avatarUrl;
       document.getElementById("roblox-displayname").textContent = displayName;
-      document.getElementById("roblox-username-display").textContent = "@" + data1.Username;
+      document.getElementById("roblox-username-display").textContent = "@" + (user.requestedUsername || user.name);
       document.getElementById("roblox-userid").textContent = "User ID: " + userId;
     }
     window._robloxVerified = true;
