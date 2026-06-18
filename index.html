@@ -88,6 +88,10 @@
   <div id="popup-ad-box">
     <button id="popup-ad-close" onclick="closePopupAd()" title="Tutup">&times;</button>
     <img id="popup-ad-img" src="" alt="Iklan" />
+    <label style="display:flex;align-items:center;gap:8px;justify-content:center;padding:10px 0 4px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+      <input type="checkbox" id="popup-ad-dont-show" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" />
+      Jangan tampilkan lagi
+    </label>
   </div>
 </div>
 
@@ -962,12 +966,18 @@ const DEFAULT_PAYMENT_METHODS = [
 
 function closePopupAd() {
   const el = document.getElementById("popup-ad-overlay");
+  const dontShow = document.getElementById("popup-ad-dont-show").checked;
+  if (dontShow) {
+    localStorage.setItem("doominiks-hide-popup-ad", "1");
+  }
   el.classList.add("hide");
   setTimeout(() => el.style.display = "none", 250);
 }
 
 async function loadPopupAd() {
   try {
+    // Kalau user sudah pilih "jangan tampilkan lagi", skip
+    if (localStorage.getItem("doominiks-hide-popup-ad") === "1") return;
     const snap = await db.collection("settings").doc("store").get();
     if (!snap.exists) return;
     const data = snap.data();
@@ -977,7 +987,7 @@ async function loadPopupAd() {
     if (data.popupAdLink) {
       document.getElementById("popup-ad-box").style.cursor = "pointer";
       document.getElementById("popup-ad-box").onclick = (e) => {
-        if (e.target.id === "popup-ad-close") return;
+        if (e.target.id === "popup-ad-close" || e.target.id === "popup-ad-dont-show" || e.target.tagName === "LABEL") return;
         window.open(data.popupAdLink, "_blank");
       };
     }
