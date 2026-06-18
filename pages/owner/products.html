@@ -528,6 +528,7 @@ function openAddProduct() {
   addItemRow();
   // Reset banner
   document.getElementById("f-banner-url").value = "";
+  document.getElementById("banner-preview").src = "";
   document.getElementById("banner-preview-container").style.display = "none";
   document.getElementById("banner-placeholder").style.display = "block";
   openModal("modal-product");
@@ -559,6 +560,18 @@ function openEditProduct(id) {
   document.getElementById("f-color2-text").value = p.color2 || "#0D1018";
   document.getElementById("f-color1").value = p.color1 || "#1E2535";
   document.getElementById("f-color2").value = p.color2 || "#0D1018";
+  // Load existing banner (atau reset kalau produk ini tidak punya banner)
+  document.getElementById("f-banner-url").value = p.bannerUrl || "";
+  document.getElementById("f-banner-file").value = "";
+  if (p.bannerUrl) {
+    document.getElementById("banner-preview").src = p.bannerUrl;
+    document.getElementById("banner-preview-container").style.display = "flex";
+    document.getElementById("banner-placeholder").style.display = "none";
+  } else {
+    document.getElementById("banner-preview").src = "";
+    document.getElementById("banner-preview-container").style.display = "none";
+    document.getElementById("banner-placeholder").style.display = "block";
+  }
   document.getElementById("f-sort").value = p.sortOrder ?? 99;
   document.getElementById("f-roblox-check").checked = !!p.robloxCheck;
   document.getElementById("f-instructions").value = p.instructions || "";
