@@ -216,7 +216,7 @@
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
+    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
     <div class="nav-links">
       <a href="../index.html">Beranda</a>
       <a href="catalog.html" class="active">Katalog</a>
@@ -622,9 +622,8 @@ function startCheckout() {
   document.getElementById("co-s-name").textContent = `${productData.name} — ${selectedItem.name}`;
   document.getElementById("co-s-price").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-s-total").textContent = formatIDR(selectedItem.price);
-  const isRoblox = !!productData.robloxCheck;
   document.getElementById("co-fields").innerHTML = fields.map(f => {
-    const isUsernameField = isRoblox && (f.id === "userId" || f.id === "username" || f.label?.toLowerCase().includes("username"));
+    const isUsernameField = !!f.robloxCheck;
     if (isUsernameField) {
       return `
       <div class="form-group">
@@ -670,19 +669,19 @@ async function goToPayment() {
   const allFields = productData.fields || [{ id: "userId", required: true }, { id: "serverId", required: false }];
   const fields = allFields.filter(f => !f.typeId || f.typeId === selectedTopupType);
   gameFields = {};
-  const isRoblox = !!productData.robloxCheck;
+  const hasRobloxCheckField = fields.some(f => f.robloxCheck);
   for (const f of fields) {
     const val = document.getElementById(`field-${f.id}`)?.value?.trim() || "";
     if (f.required && !val) { toast(`${f.label} wajib diisi`, "error"); return; }
     gameFields[f.id] = val;
   }
-  // Validasi Roblox username
-  if (isRoblox && !window._robloxVerified) {
+  // Validasi Roblox username (hanya kalau ada field dengan robloxCheck aktif pada tipe ini)
+  if (hasRobloxCheckField && !window._robloxVerified) {
     toast("Verifikasi username Roblox terlebih dahulu", "error");
     return;
   }
   // Simpan data Roblox ke gameFields
-  if (isRoblox && window._robloxUserId) {
+  if (hasRobloxCheckField && window._robloxUserId) {
     gameFields["Roblox User ID"] = String(window._robloxUserId);
     gameFields["Roblox Display Name"] = window._robloxDisplayName || "";
   }
