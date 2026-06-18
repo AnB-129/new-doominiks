@@ -216,7 +216,7 @@
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo"><div class="logo-mark">D</div>DOOMINIKS <span>STORE</span></a>
+    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
     <div class="nav-links">
       <a href="../index.html">Beranda</a>
       <a href="catalog.html" class="active">Katalog</a>
@@ -525,6 +525,14 @@ function renderBuySection() {
 // ---- ROBLOX USERNAME CHECKER ----
 let _robloxDebounce = null;
 
+function retryRobloxCheck() {
+  const input = document.querySelector("[oninput*='debounceRobloxCheck']");
+  if (!input || !input.value.trim()) return;
+  const errCard = document.getElementById("roblox-error-card");
+  if (errCard) errCard.style.display = "none";
+  checkRobloxUsername(input.value.trim());
+}
+
 function debounceRobloxCheck(username) {
   clearTimeout(_robloxDebounce);
   window._robloxVerified = false;
@@ -548,42 +556,68 @@ async function checkRobloxUsername(username) {
   const card = document.getElementById("roblox-profile-card");
   const errCard = document.getElementById("roblox-error-card");
   if (!icon) return;
-  try {
-    // Roblox API via Cloudflare Worker proxy milik sendiri (reliable)
-    const WORKER_PROXY = "https://quiet-moon-d034roblox-proxy.niksstoree.workers.dev/?url=";
 
-    // Step 1: username → userId via POST (endpoint resmi Roblox yang masih aktif)
-    const res1 = await fetch(WORKER_PROXY + encodeURIComponent("https://users.roblox.com/v1/usernames/users"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res1.ok) throw new Error("Proxy gagal, status " + res1.status);
+  const WORKER_PROXY = "https://quiet-moon-d034roblox-proxy.niksstoree.workers.dev/?url=";
+  const TIMEOUT = 12000;
+
+  // Fungsi fetch dengan retry otomatis (max 3x)
+  const fetchWithRetry = async (url, options = {}, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), TIMEOUT);
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) return res;
+        if (i === retries - 1) throw new Error("Status " + res.status);
+      } catch(e) {
+        if (i === retries - 1) throw e;
+        await new Promise(r => setTimeout(r, 800)); // tunggu 800ms sebelum retry
+      }
+    }
+  };
+
+  try {
+    icon.textContent = "⏳";
+    icon.style.color = "var(--text-muted)";
+    if (card) card.style.display = "none";
+    if (errCard) errCard.style.display = "none";
+
+    // Step 1: username → userId
+    const res1 = await fetchWithRetry(
+      WORKER_PROXY + encodeURIComponent("https://users.roblox.com/v1/usernames/users"),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
+      }
+    );
     const data1 = await res1.json();
+
     if (!data1.data || !data1.data.length) {
       icon.textContent = "✕";
       icon.style.color = "#ef4444";
       if (card) card.style.display = "none";
-      if (errCard) { errCard.style.display = "block"; errCard.textContent = "Username tidak ditemukan. Pastikan ejaan benar."; }
+      if (errCard) { errCard.style.display = "block"; document.getElementById("roblox-error-msg").textContent = "Username tidak ditemukan. Pastikan ejaan benar."; document.getElementById("roblox-retry-btn").style.display = "none"; }
       window._robloxVerified = false;
       return;
     }
+
     const user = data1.data[0];
     const userId = user.id;
     const displayName = user.displayName || user.name;
 
-    // Step 2: Avatar via thumbnails API (lewat worker proxy)
+    // Step 2: Avatar thumbnail dengan retry
     let avatarUrl = "";
     try {
-      const res2 = await fetch(WORKER_PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`), {
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res2.ok) {
-        const data2 = await res2.json();
-        avatarUrl = data2.data?.[0]?.imageUrl || "";
-      }
-    } catch(e) { /* avatar opsional, lanjut tanpa avatar kalau gagal */ }
+      const res2 = await fetchWithRetry(
+        WORKER_PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`)
+      );
+      const data2 = await res2.json();
+      avatarUrl = data2.data?.[0]?.imageUrl || "";
+    } catch(e) {
+      // Avatar opsional, lanjut tanpa foto
+    }
 
     // Tampilkan card
     icon.textContent = "✓";
@@ -592,8 +626,17 @@ async function checkRobloxUsername(username) {
     if (card) {
       card.style.display = "flex";
       const avatarEl = document.getElementById("roblox-avatar");
-      avatarEl.style.display = "block";
-      avatarEl.src = avatarUrl;
+      if (avatarUrl) {
+        avatarEl.style.display = "block";
+        avatarEl.src = avatarUrl;
+        // Retry load foto kalau gagal pertama kali
+        avatarEl.onerror = () => {
+          setTimeout(() => { avatarEl.src = avatarUrl + "?retry=1"; }, 1500);
+          avatarEl.onerror = () => { avatarEl.style.display = "none"; };
+        };
+      } else {
+        avatarEl.style.display = "none";
+      }
       document.getElementById("roblox-displayname").textContent = displayName;
       document.getElementById("roblox-username-display").textContent = "@" + (user.requestedUsername || user.name);
       document.getElementById("roblox-userid").textContent = "User ID: " + userId;
@@ -601,11 +644,16 @@ async function checkRobloxUsername(username) {
     window._robloxVerified = true;
     window._robloxUserId = userId;
     window._robloxDisplayName = displayName;
+
   } catch(e) {
     icon.textContent = "⚠";
     icon.style.color = "#f97316";
     if (card) card.style.display = "none";
-    if (errCard) { errCard.style.display = "block"; errCard.textContent = "Gagal cek username. Coba lagi."; }
+    if (errCard) {
+      errCard.style.display = "block";
+      document.getElementById("roblox-error-msg").textContent = "Koneksi lambat atau server sibuk.";
+      document.getElementById("roblox-retry-btn").style.display = "inline-block";
+    }
     window._robloxVerified = false;
   }
 }
@@ -647,7 +695,10 @@ function startCheckout() {
             <span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;">✓ Terverifikasi</span>
           </div>
         </div>
-        <div id="roblox-error-card" style="display:none;margin-top:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:#ef4444;"></div>
+        <div id="roblox-error-card" style="display:none;margin-top:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius);padding:10px 14px;">
+          <div style="font-size:13px;color:#ef4444;" id="roblox-error-msg"></div>
+          <button id="roblox-retry-btn" onclick="retryRobloxCheck()" style="display:none;margin-top:8px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#ef4444;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">↺ Coba Lagi</button>
+        </div>
       </div>`;
     }
     return `
