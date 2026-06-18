@@ -464,6 +464,13 @@ function addFieldRow(field) {
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;" title="Field ini akan otomatis cek &amp; tampilkan profil Roblox">
+      <label style="font-size:12px;color:var(--gold);">🎮 Cek RBX</label>
+      <label class="toggle" style="width:36px;height:20px;">
+        <input type="checkbox" class="fld-robloxcheck" ${field && field.robloxCheck ? 'checked' : ''} />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
     <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.field-row').remove()">✕</button>
   `;
   document.getElementById("fields-list").appendChild(el);
@@ -476,10 +483,12 @@ function getFields() {
     const label = row.querySelector(".fld-label")?.value?.trim();
     const placeholder = row.querySelector(".fld-ph")?.value?.trim();
     const required = row.querySelector(".fld-req")?.checked;
+    const robloxCheck = row.querySelector(".fld-robloxcheck")?.checked || false;
     const typeId = row.querySelector(".fld-typeid")?.value?.trim() || null;
     if (!id || !label) return null;
     const obj = { id, label, placeholder: placeholder || "", required: !!required };
     if (typeId) obj.typeId = typeId;
+    if (robloxCheck) obj.robloxCheck = true;
     return obj;
   }).filter(Boolean);
 }
