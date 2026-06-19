@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780995921/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_e3xfup.png">
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Kelola Pesanan &mdash; DOOMINIKS STORE Owner</title>
   <link rel="stylesheet" href="../../css/style.css" />
@@ -213,12 +213,37 @@ async function changeStatus(orderId, newStatus) {
   const labels = { success: "Setujui", processing: "Set ke Diproses", failed: "Tolak" };
   if (!confirm(`${labels[newStatus]||"Ubah status"} pesanan ${orderId}?`)) return;
   try {
+    const order = allOrders.find(o => o.orderId === orderId);
+    const oldStatus = order?.status;
+
     const updateData = {
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentUser.uid
     };
     await db.collection("orders").doc(orderId).update(updateData);
+
+    // Update leaderboard HANYA berdasarkan transisi status:
+    // - Saat order BARU disetujui (status lain -> success): tambahkan ke leaderboard
+    // - Saat order yang SUDAH success dibatalkan (success -> failed/processing): kurangi dari leaderboard
+    if (order && order.userId) {
+      const lbRef = db.collection("leaderboard").doc(order.userId);
+      if (oldStatus !== "success" && newStatus === "success") {
+        await lbRef.set({
+          displayName: order.userDisplayName || null,
+          photoURL: order.userPhotoURL || null,
+          totalSpent: firebase.firestore.FieldValue.increment(order.total || 0),
+          orderCount: firebase.firestore.FieldValue.increment(1),
+          lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      } else if (oldStatus === "success" && newStatus !== "success") {
+        await lbRef.set({
+          totalSpent: firebase.firestore.FieldValue.increment(-(order.total || 0)),
+          orderCount: firebase.firestore.FieldValue.increment(-1),
+        }, { merge: true });
+      }
+    }
+
     // Update local
     const idx = allOrders.findIndex(o => o.orderId === orderId);
     if (idx !== -1) allOrders[idx].status = newStatus;
