@@ -891,6 +891,7 @@ async function placeOrder() {
       userId: currentUser.uid,
       userEmail: currentUser.email,
       userDisplayName: currentUser.displayName,
+      userPhotoURL: currentUser.photoURL || null,
       productId: productData.id,
       productName: productData.name,
       itemName: selectedItem.name,
@@ -905,16 +906,7 @@ async function placeOrder() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     await db.collection("orders").doc(orderId).set(orderData);
-    // Update user leaderboard
-    const lbRef = db.collection("leaderboard").doc(currentUser.uid);
-    await lbRef.set({
-      displayName: currentUser.displayName,
-      photoURL: currentUser.photoURL || null,
-      totalSpent: firebase.firestore.FieldValue.increment(total),
-      orderCount: firebase.firestore.FieldValue.increment(1),
-      lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-    // Update global stats
+    // Update global stats (jumlah order, bukan leaderboard - leaderboard hanya update saat order disetujui owner)
     await db.collection("stats").doc("global").set({
       orders: firebase.firestore.FieldValue.increment(1),
     }, { merge: true });
