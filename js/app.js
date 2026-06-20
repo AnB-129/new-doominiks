@@ -98,7 +98,7 @@ function renderMaintenanceScreen(customMessage) {
   document.body.innerHTML = `
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg-void,#0a0c10);">
       <div style="max-width:440px;text-align:center;">
-        <div style="font-size:64px;margin-bottom:20px;">🛠️</div>
+        <div style="font-size:64px;margin-bottom:20px;">🛠</div>
         <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;margin-bottom:12px;">Sedang Dalam Perbaikan</div>
         <p style="font-size:15px;color:#9aa3b2;line-height:1.6;margin-bottom:8px;">
           ${customMessage || "DOOMINIKS STORE sedang melakukan pembaruan untuk memberikan pengalaman yang lebih baik. Kami akan segera kembali."}
@@ -116,7 +116,7 @@ function showMaintenanceOwnerBadge(customMessage) {
   const badge = document.createElement("div");
   badge.id = "maintenance-owner-badge";
   badge.style.cssText = "position:fixed;bottom:16px;left:16px;z-index:99998;background:#7c2d12;color:#fed7aa;border:1px solid #ea580c;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;max-width:260px;box-shadow:0 4px 16px rgba(0,0,0,0.4);";
-  badge.innerHTML = `🛠️ Mode Maintenance AKTIF<br><span style="font-weight:400;opacity:0.85;">Pengunjung lain melihat halaman perbaikan. Matikan di Pengaturan saat selesai update.</span>`;
+  badge.innerHTML = `🛠 Mode Maintenance AKTIF<br><span style="font-weight:400;opacity:0.85;">Pengunjung lain melihat halaman perbaikan. Matikan di Pengaturan saat selesai update.</span>`;
   document.body.appendChild(badge);
 }
 
