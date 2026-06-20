@@ -204,6 +204,17 @@
           <input class="form-input" id="s-pm-fee-bank_jago" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Maybank</div>
+          <div class="sr-desc">Nomor rekening Maybank.</div>
+        </div>
+        <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="form-input" id="s-pm-num-maybank" placeholder="Nomor rekening" />
+          <input class="form-input" id="s-pm-name-maybank" placeholder="Nama pemilik rekening" />
+          <input class="form-input" id="s-pm-fee-maybank" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
+        </div>
+      </div>
       <!-- E-Wallet -->
       <div class="settings-row">
         <div class="settings-row-info">
@@ -308,6 +319,7 @@
           <div class="upload-progress" id="qris-progress"><div class="upload-progress-bar" id="qris-progress-bar"></div></div>
           <div id="qris-status" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
           <input type="hidden" id="s-qris-url" value="" />
+          <input class="form-input" id="s-qris-fee" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 0.7" style="font-size:13px;margin-top:10px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -536,7 +548,7 @@ async function loadSettings() {
       }
       // Load per-payment-method account numbers & names
       const pm = s.paymentMethods || {};
-      const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
+      const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","maybank","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
       PM_IDS.forEach(id => {
         const numEl = document.getElementById(`s-pm-num-${id}`);
         const nameEl = document.getElementById(`s-pm-name-${id}`);
@@ -551,6 +563,7 @@ async function loadSettings() {
         document.getElementById("qris-preview-wrap").style.display = "block";
         document.getElementById("qris-placeholder").style.display = "none";
       }
+      document.getElementById("s-qris-fee").value = s.qrisFeePercent ?? "";
       document.getElementById("s-manual-approval").checked = !!s.manualApproval;
     }
     const statsSnap = await db.collection("stats").doc("global").get();
@@ -597,7 +610,7 @@ async function saveStoreSettings() {
 
 async function savePaymentSettings() {
   try {
-    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
+    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","maybank","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
     const paymentMethods = {};
     PM_IDS.forEach(id => {
       const num = document.getElementById(`s-pm-num-${id}`)?.value.trim() || "";
@@ -615,6 +628,11 @@ async function savePaymentSettings() {
     await db.collection("settings").doc("store").set({
       paymentMethods,
       qrisImageUrl: document.getElementById("s-qris-url").value.trim() || null,
+      qrisFeePercent: (() => {
+        const v = document.getElementById("s-qris-fee").value;
+        const f = v !== "" ? parseFloat(v) : 0;
+        return isNaN(f) ? 0 : f;
+      })(),
       manualApproval: document.getElementById("s-manual-approval").checked,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -808,6 +826,7 @@ const PM_LIST = [
   { id: "bank_transfer_mandiri", name: "Mandiri Virtual Account" },
   { id: "bank_transfer_bri",     name: "BRI Virtual Account" },
   { id: "bank_jago",             name: "Bank Jago" },
+  { id: "maybank",               name: "Maybank" },
   { id: "gopay",                 name: "GoPay" },
   { id: "ovo",                   name: "OVO" },
   { id: "dana",                  name: "DANA" },
@@ -882,7 +901,7 @@ async function savePmImages() {
     // Merge imageUrl into paymentMethods per id
     const snap = await db.collection("settings").doc("store").get();
     const existing = snap.exists ? (snap.data().paymentMethods || {}) : {};
-    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
+    const PM_IDS = ["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","maybank","gopay","ovo","dana","shopeepay","paypal","indomaret","alfamart"];
     const paymentMethods = {};
     PM_IDS.forEach(id => {
       paymentMethods[id] = {
@@ -1036,4 +1055,4 @@ async function savePopupSettings() {
 }
 </script>
 </body>
-</html>
+  </html>
