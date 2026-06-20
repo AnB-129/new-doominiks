@@ -220,6 +220,24 @@ async function changeStatus(orderId, newStatus) {
       updatedBy: currentUser.uid
     };
     await db.collection("orders").doc(orderId).update(updateData);
+
+    // Kalau order disetujui (success), tulis record publik yang aman ditampilkan
+    // ke pengunjung lain (untuk fitur notifikasi "baru saja membeli") — tanpa data sensitif.
+    if (newStatus === "success") {
+      const o = allOrders.find(x => x.orderId === orderId);
+      if (o) {
+        await db.collection("publicPurchases").add({
+          orderId,
+          userDisplayName: o.userDisplayName || "Pelanggan",
+          userPhotoURL: o.userPhotoURL || null,
+          itemName: o.itemName || "",
+          productName: o.productName || "",
+          productId: o.productId || null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
     // Update local
     const idx = allOrders.findIndex(o => o.orderId === orderId);
     if (idx !== -1) allOrders[idx].status = newStatus;
@@ -279,4 +297,4 @@ function onAuthReady(user) {
 }
 </script>
 </body>
- </html>
+</html>
