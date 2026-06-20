@@ -139,16 +139,15 @@
       <div>
         <div class="card" style="margin-bottom:20px;">
           <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:14px;">👁 Preview Embed Discord</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Discord webhook tidak mendukung tombol asli — link akan tampil sebagai judul yang bisa diklik &amp; teks link di bawah deskripsi.</div>
           <div class="ann-preview-box" id="ann-preview-box">
             <div class="ann-preview-inner">
               <div class="ann-preview-category" id="prev-category">KATEGORI GAME</div>
-              <div class="ann-preview-title" id="prev-title">Judul pengumuman akan tampil di sini</div>
+              <div class="ann-preview-title" id="prev-title" style="color:#00a8fc;text-decoration:underline;cursor:pointer;">Judul pengumuman akan tampil di sini</div>
               <div class="ann-preview-desc" id="prev-desc">Deskripsi pengumuman akan tampil di sini...</div>
+              <div class="ann-preview-desc" id="prev-link-line" style="margin-top:8px;color:#00a8fc;font-weight:700;"></div>
             </div>
             <img class="ann-preview-img" id="prev-img" style="display:none;" />
-            <div class="ann-preview-footer">
-              <a class="ann-preview-btn" id="prev-btn" href="#" onclick="return false;">🛒 Lihat di Website</a>
-            </div>
           </div>
         </div>
 
@@ -170,7 +169,7 @@
 // KONFIGURASI WEBHOOK DISCORD — GANTI DENGAN URL WEBHOOK KAMU
 // Cara dapat: Server Discord > Edit Channel > Integrations > Webhooks > New Webhook > Copy URL
 // ============================================================
-const DISCORD_WEBHOOK_URL = "https://canary.discord.com/api/webhooks/1517822457577341029/LQjhncuwRzv-WWyMK6fsvqct2bIK23ushpaFLCfeQaWO4dMbcqyA8yi0i9wOLtjoMlel";
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/GANTI_DENGAN_WEBHOOK_ID/GANTI_DENGAN_WEBHOOK_TOKEN";
 
 const CLOUDINARY_CLOUD_NAME = "dnpvgpqka";
 const CLOUDINARY_UPLOAD_PRESET = "vaultstore";
@@ -189,11 +188,12 @@ function updatePreview() {
   const title = document.getElementById("ann-title").value.trim() || "Judul pengumuman akan tampil di sini";
   const desc = document.getElementById("ann-desc").value.trim() || "Deskripsi pengumuman akan tampil di sini...";
   const btnLabel = document.getElementById("ann-btn-label").value.trim() || "🛒 Lihat di Website";
+  const link = document.getElementById("ann-link").value.trim();
 
   document.getElementById("prev-category").textContent = category.toUpperCase();
   document.getElementById("prev-title").textContent = title;
   document.getElementById("prev-desc").textContent = desc;
-  document.getElementById("prev-btn").textContent = btnLabel;
+  document.getElementById("prev-link-line").textContent = link ? btnLabel : "";
 }
 
 function handleAnnImageSelect(event) {
@@ -295,26 +295,14 @@ async function sendAnnouncement(event) {
       {
         author: { name: category.toUpperCase() },
         title: title,
-        description: desc,
+        url: link || undefined, // Membuat title menjadi link yang bisa diklik
+        description: desc + (link ? `\n\n[**${btnLabel}**](${link})` : ""),
         color: 16766720, // gold
         image: imageUrl ? { url: imageUrl } : undefined,
         footer: { text: "DOOMINIKS STORE" },
         timestamp: new Date().toISOString(),
       }
     ],
-    components: link ? [
-      {
-        type: 1,
-        components: [
-          {
-            type: 2,
-            style: 5, // Link button
-            label: btnLabel,
-            url: link,
-          }
-        ]
-      }
-    ] : undefined,
   };
 
   try {
