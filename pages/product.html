@@ -111,6 +111,7 @@
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Scan QR Code untuk Bayar</div>
           <img id="co-qris-img" src="" alt="QRIS" />
           <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-qris-amount"></div>
+          <button type="button" class="btn btn-secondary btn-sm" id="co-qris-download-btn" style="margin-top:10px;" onclick="downloadQrisImage()">⭳ Download Gambar QRIS</button>
         </div>
         <!-- E-Wallet Account Number -->
         <div id="co-ewallet-display" class="qris-display" style="display:none;">
@@ -118,9 +119,13 @@
           <div id="co-ewallet-logo-wrap" style="margin-bottom:10px;display:none;">
             <img id="co-ewallet-logo" src="" alt="" style="height:48px;object-fit:contain;border-radius:8px;" />
           </div>
-          <div style="font-size:22px;font-weight:700;color:var(--gold);letter-spacing:1px;font-family:var(--font-body);" id="co-ewallet-number">-</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+            <div style="font-size:22px;font-weight:700;color:var(--gold);letter-spacing:1px;font-family:var(--font-body);" id="co-ewallet-number">-</div>
+            <button type="button" id="co-ewallet-copy-btn" onclick="copyPaymentText('co-ewallet-number')" title="Salin" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);flex-shrink:0;">⎘</button>
+          </div>
           <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;" id="co-ewallet-name"></div>
           <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-ewallet-amount"></div>
+          <button type="button" class="btn btn-primary btn-sm" id="co-paypal-open-btn" style="display:none;margin-top:10px;" onclick="openPaypalApp()">↗ Buka PayPal &amp; Bayar Sekarang</button>
         </div>
         <!-- Bank Transfer Account Number -->
         <div id="co-bank-display" class="qris-display" style="display:none;">
@@ -128,7 +133,10 @@
           <div id="co-bank-logo-wrap" style="margin-bottom:10px;display:none;">
             <img id="co-bank-logo" src="" alt="" style="height:48px;object-fit:contain;border-radius:8px;" />
           </div>
-          <div style="font-size:22px;font-weight:700;color:var(--gold);letter-spacing:1px;font-family:var(--font-body);" id="co-bank-number">-</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+            <div style="font-size:22px;font-weight:700;color:var(--gold);letter-spacing:1px;font-family:var(--font-body);" id="co-bank-number">-</div>
+            <button type="button" id="co-bank-copy-btn" onclick="copyPaymentText('co-bank-number')" title="Salin" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);flex-shrink:0;">⎘</button>
+          </div>
           <div style="font-size:13px;color:var(--text-secondary);margin-top:6px;" id="co-bank-name"></div>
           <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;" id="co-bank-amount"></div>
         </div>
@@ -478,7 +486,7 @@ function renderBuySection() {
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Yang dipilih</div>
         <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedItem.name}</div>
-        <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price + (selectedPayment ? selectedPayment.fee || 0 : 0))}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price + (selectedPayment ? (selectedPayment.calculatedFee ?? selectedPayment.fee ?? 0) : 0))}</div>
         ${hasBadges ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${stockBadge}${countdownBadge}</div>` : ""}
       </div>
       ${imgUrl ? `<img src="${imgUrl}" alt="${selectedItem.name}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;background:var(--bg-panel);padding:4px;">` : ""}
@@ -774,14 +782,17 @@ async function goToPayment() {
       const logoHtml = logoUrl
         ? `<img src="${logoUrl}" alt="${pm.name}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`
         : pm.icon;
+      // Hitung fee: pakai persentase dari Firestore jika diset, fallback ke nominal default
+      const feePercent = pmSettings[pm.id]?.feePercent || 0;
+      const displayFee = feePercent > 0 ? Math.round(selectedItem.price * feePercent / 100) : pm.fee;
       return `
       <div class="pm-row" id="pm-${pm.id}" onclick="selectPayment('${pm.id}')">
         <div class="pm-logo">${logoHtml}</div>
         <div class="pm-info">
           <div class="pm-title">${pm.name}</div>
-          <div class="pm-desc">${pm.fee > 0 ? `Biaya layanan ${formatIDR(pm.fee)}` : "Tanpa biaya layanan"}</div>
+          <div class="pm-desc">${displayFee > 0 ? `Biaya layanan ${formatIDR(displayFee)}` : "Tanpa biaya layanan"}</div>
         </div>
-        <div class="pm-fee">${pm.fee > 0 ? `+${formatIDR(pm.fee)}` : "Gratis"}</div>
+        <div class="pm-fee">${displayFee > 0 ? `+${formatIDR(displayFee)}` : "Gratis"}</div>
       </div>`;
     }).join("")}
   `).join("");
@@ -796,30 +807,82 @@ function backToStep1() {
   document.getElementById("co-step-2").style.display = "none";
 }
 
+function copyPaymentText(elId) {
+  const text = document.getElementById(elId)?.textContent?.trim();
+  if (!text || text === "-") return;
+  navigator.clipboard.writeText(text).then(() => {
+    toast("Disalin ke clipboard!", "success");
+  }).catch(() => {
+    toast("Gagal menyalin.", "error");
+  });
+}
+
+async function downloadQrisImage() {
+  const img = document.getElementById("co-qris-img");
+  const url = img?.src;
+  if (!url) return;
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = "QRIS-DOOMINIKS-STORE.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+    toast("Gambar QRIS berhasil didownload!", "success");
+  } catch(e) {
+    // Fallback: buka gambar di tab baru kalau fetch gagal (CORS)
+    window.open(url, "_blank");
+    toast("Gambar dibuka di tab baru, simpan manual.", "info");
+  }
+}
+
+let _paypalAccount = null;
+function openPaypalApp() {
+  if (!_paypalAccount) return;
+  // Coba buka app PayPal native (deep link), fallback ke web paypal.me
+  const isEmail = _paypalAccount.includes("@");
+  const webUrl = isEmail
+    ? `https://www.paypal.com/myaccount/transfer/homepage/pay`
+    : `https://paypal.me/${_paypalAccount.replace(/^@/, "")}`;
+  window.open(webUrl, "_blank");
+}
+
 async function selectPayment(id) {
   document.querySelectorAll(".pm-row").forEach(r => r.classList.remove("selected"));
   document.getElementById(`pm-${id}`).classList.add("selected");
   selectedPayment = PAYMENT_METHODS.find(p => p.id === id);
-  const total = selectedItem.price + (selectedPayment?.fee || 0);
-  document.getElementById("co-p-fee").textContent = formatIDR(selectedPayment?.fee || 0);
-  document.getElementById("co-p-total").textContent = formatIDR(total);
 
   // Hide all payment info displays first
   const infoWrap = document.getElementById("co-payment-info-display");
   document.getElementById("co-qris-display").style.display = "none";
   document.getElementById("co-ewallet-display").style.display = "none";
   document.getElementById("co-bank-display").style.display = "none";
+  document.getElementById("co-paypal-open-btn").style.display = "none";
   infoWrap.style.display = "none";
 
   try {
     const snap = await db.collection("settings").doc("store").get();
     const settings = snap.exists ? snap.data() : {};
-    // paymentMethods is an object keyed by payment id, each has: accountNumber, accountName, imageUrl
+    // paymentMethods is an object keyed by payment id, each has: accountNumber, accountName, imageUrl, feePercent
     const pmSettings = settings.paymentMethods || {};
     const pmLegacyImages = settings.paymentMethodImages || {};
     const pmData = pmSettings[id] || {};
     // imageUrl: prefer paymentMethods[id].imageUrl, fallback to paymentMethodImages[id]
     if (!pmData.imageUrl && pmLegacyImages[id]) pmData.imageUrl = pmLegacyImages[id];
+
+    // Hitung biaya layanan: pakai feePercent dari Firestore jika ada, fallback ke nominal fee default
+    const feePercent = pmData.feePercent || 0;
+    const calculatedFee = feePercent > 0
+      ? Math.round(selectedItem.price * feePercent / 100)
+      : (selectedPayment?.fee || 0);
+    const total = selectedItem.price + calculatedFee;
+    document.getElementById("co-p-fee").textContent = formatIDR(calculatedFee);
+    document.getElementById("co-p-total").textContent = formatIDR(total);
+    selectedPayment.calculatedFee = calculatedFee;
 
     if (id === "qris") {
       // QRIS: always use dedicated qrisImageUrl (the actual QR code), NOT pmData.imageUrl (that's just the logo)
@@ -846,6 +909,13 @@ async function selectPayment(id) {
           document.getElementById("co-ewallet-logo-wrap").style.display = "block";
         } else {
           document.getElementById("co-ewallet-logo-wrap").style.display = "none";
+        }
+        // Tombol khusus PayPal — buka app/web PayPal langsung
+        if (id === "paypal") {
+          _paypalAccount = number;
+          document.getElementById("co-paypal-open-btn").style.display = "block";
+        } else {
+          _paypalAccount = null;
         }
         document.getElementById("co-ewallet-display").style.display = "block";
         infoWrap.style.display = "block";
@@ -885,7 +955,8 @@ async function placeOrder() {
   btn.disabled = true; btn.textContent = "Memproses...";
   try {
     const orderId = generateOrderId();
-    const total = selectedItem.price + (selectedPayment.fee || 0);
+    const actualFee = selectedPayment.calculatedFee ?? selectedPayment.fee ?? 0;
+    const total = selectedItem.price + actualFee;
     const orderData = {
       orderId,
       userId: currentUser.uid,
@@ -896,7 +967,7 @@ async function placeOrder() {
       productName: productData.name,
       itemName: selectedItem.name,
       itemPrice: selectedItem.price,
-      fee: selectedPayment.fee || 0,
+      fee: actualFee,
       total,
       paymentMethod: selectedPayment.id,
       paymentMethodName: selectedPayment.name,
