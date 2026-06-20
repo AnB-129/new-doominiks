@@ -157,6 +157,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-bank_transfer_bca" placeholder="Nomor rekening / VA" />
           <input class="form-input" id="s-pm-name-bank_transfer_bca" placeholder="Nama pemilik rekening" />
+          <input class="form-input" id="s-pm-fee-bank_transfer_bca" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -167,6 +168,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-bank_transfer_bni" placeholder="Nomor rekening / VA" />
           <input class="form-input" id="s-pm-name-bank_transfer_bni" placeholder="Nama pemilik rekening" />
+          <input class="form-input" id="s-pm-fee-bank_transfer_bni" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -177,6 +179,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-bank_transfer_mandiri" placeholder="Nomor rekening / VA" />
           <input class="form-input" id="s-pm-name-bank_transfer_mandiri" placeholder="Nama pemilik rekening" />
+          <input class="form-input" id="s-pm-fee-bank_transfer_mandiri" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -187,6 +190,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-bank_transfer_bri" placeholder="Nomor rekening / VA" />
           <input class="form-input" id="s-pm-name-bank_transfer_bri" placeholder="Nama pemilik rekening" />
+          <input class="form-input" id="s-pm-fee-bank_transfer_bri" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -197,6 +201,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-bank_jago" placeholder="Nomor rekening" />
           <input class="form-input" id="s-pm-name-bank_jago" placeholder="Nama pemilik rekening" />
+          <input class="form-input" id="s-pm-fee-bank_jago" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <!-- E-Wallet -->
@@ -208,6 +213,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-gopay" placeholder="0812xxxxxxxx" />
           <input class="form-input" id="s-pm-name-gopay" placeholder="Nama pemilik" />
+          <input class="form-input" id="s-pm-fee-gopay" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -218,6 +224,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-ovo" placeholder="0812xxxxxxxx" />
           <input class="form-input" id="s-pm-name-ovo" placeholder="Nama pemilik" />
+          <input class="form-input" id="s-pm-fee-ovo" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -228,6 +235,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-dana" placeholder="0812xxxxxxxx" />
           <input class="form-input" id="s-pm-name-dana" placeholder="Nama pemilik" />
+          <input class="form-input" id="s-pm-fee-dana" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -238,6 +246,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-shopeepay" placeholder="0812xxxxxxxx" />
           <input class="form-input" id="s-pm-name-shopeepay" placeholder="Nama pemilik" />
+          <input class="form-input" id="s-pm-fee-shopeepay" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <!-- PayPal -->
@@ -249,6 +258,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-paypal" placeholder="Email PayPal (contoh: nama@email.com)" />
           <input class="form-input" id="s-pm-name-paypal" placeholder="Nama pemilik akun PayPal" />
+          <input class="form-input" id="s-pm-fee-paypal" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <!-- Indomaret / Alfamart -->
@@ -260,6 +270,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-indomaret" placeholder="Kode / nomor (opsional)" />
           <input class="form-input" id="s-pm-name-indomaret" placeholder="Info tambahan (opsional)" />
+          <input class="form-input" id="s-pm-fee-indomaret" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -270,6 +281,7 @@
         <div class="settings-row-control" style="display:flex;flex-direction:column;gap:6px;">
           <input class="form-input" id="s-pm-num-alfamart" placeholder="Kode / nomor (opsional)" />
           <input class="form-input" id="s-pm-name-alfamart" placeholder="Info tambahan (opsional)" />
+          <input class="form-input" id="s-pm-fee-alfamart" type="number" min="0" step="0.1" placeholder="Biaya layanan (%) — contoh: 1.5" style="font-size:13px;" />
         </div>
       </div>
       <div class="settings-row">
@@ -528,8 +540,10 @@ async function loadSettings() {
       PM_IDS.forEach(id => {
         const numEl = document.getElementById(`s-pm-num-${id}`);
         const nameEl = document.getElementById(`s-pm-name-${id}`);
+        const feeEl = document.getElementById(`s-pm-fee-${id}`);
         if (numEl) numEl.value = pm[id]?.accountNumber || "";
         if (nameEl) nameEl.value = pm[id]?.accountName || "";
+        if (feeEl) feeEl.value = pm[id]?.feePercent ?? "";
       });
       if (s.qrisImageUrl) {
         document.getElementById("s-qris-url").value = s.qrisImageUrl;
@@ -588,10 +602,13 @@ async function savePaymentSettings() {
     PM_IDS.forEach(id => {
       const num = document.getElementById(`s-pm-num-${id}`)?.value.trim() || "";
       const name = document.getElementById(`s-pm-name-${id}`)?.value.trim() || "";
+      const feeRaw = document.getElementById(`s-pm-fee-${id}`)?.value;
+      const feePercent = feeRaw !== "" && feeRaw !== undefined ? parseFloat(feeRaw) : 0;
       // Preserve existing imageUrl if already in pmImages
       paymentMethods[id] = {
         accountNumber: num,
         accountName: name,
+        feePercent: isNaN(feePercent) ? 0 : feePercent,
         imageUrl: pmImages[id] || null,
       };
     });
@@ -786,16 +803,18 @@ async function loadCategoryImages() {
 }
 
 const PM_LIST = [
-  { id: "bank_transfer", name: "Bank Transfer" },
-  { id: "bank_jago",     name: "Bank Jago" },
-  { id: "qris",          name: "QRIS" },
-  { id: "gopay",         name: "GoPay" },
-  { id: "ovo",           name: "OVO" },
-  { id: "dana",          name: "DANA" },
-  { id: "shopeepay",     name: "ShopeePay" },
-  { id: "paypal",        name: "PayPal" },
-  { id: "indomaret",     name: "Indomaret" },
-  { id: "alfamart",      name: "Alfamart" },
+  { id: "bank_transfer_bca",     name: "BCA Virtual Account" },
+  { id: "bank_transfer_bni",     name: "BNI Virtual Account" },
+  { id: "bank_transfer_mandiri", name: "Mandiri Virtual Account" },
+  { id: "bank_transfer_bri",     name: "BRI Virtual Account" },
+  { id: "bank_jago",             name: "Bank Jago" },
+  { id: "gopay",                 name: "GoPay" },
+  { id: "ovo",                   name: "OVO" },
+  { id: "dana",                  name: "DANA" },
+  { id: "shopeepay",             name: "ShopeePay" },
+  { id: "paypal",                name: "PayPal" },
+  { id: "indomaret",             name: "Indomaret" },
+  { id: "alfamart",              name: "Alfamart" },
 ];
 
 let pmImages = {};
