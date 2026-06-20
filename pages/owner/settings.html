@@ -83,6 +83,33 @@
     <div class="admin-page-title">Pengaturan</div>
     <div class="admin-page-sub">Konfigurasi toko, notifikasi, dan sistem</div>
 
+    <!-- Maintenance Mode -->
+    <div class="card settings-section" id="maintenance-card" style="border-color:var(--border-bright);">
+      <div class="settings-section-title">🛠️ Mode Maintenance</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="sr-title">Aktifkan Mode Maintenance</div>
+          <div class="sr-desc">Jika aktif, semua pengunjung (selain owner) akan melihat halaman pemberitahuan perbaikan. Aktifkan saat sedang update besar di website.</div>
+        </div>
+        <div class="settings-row-control">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="s-maintenance-mode" onchange="updateMaintenanceWarning()" /><span class="toggle-slider"></span></label>
+            <span style="font-size:14px;font-weight:500;">Maintenance</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:14px;">
+        <label class="form-label">Pesan Khusus <span style="font-size:11px;color:var(--text-muted);font-weight:400;">— opsional, kosongkan untuk pakai pesan default</span></label>
+        <textarea class="form-input" id="s-maintenance-message" rows="3" placeholder="Contoh: Kami sedang menambahkan fitur baru, mohon tunggu 30 menit lagi ya!" style="resize:vertical;font-family:inherit;"></textarea>
+      </div>
+      <div id="maintenance-active-warning" style="display:none;background:rgba(234,88,12,0.12);border:1px solid rgba(234,88,12,0.35);border-radius:var(--radius);padding:12px 14px;font-size:13px;color:#fdba74;margin-top:12px;">
+        ⚠️ Mode maintenance sedang AKTIF. Pengunjung tidak bisa belanja sampai kamu matikan ini. Jangan lupa nonaktifkan setelah update selesai.
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="saveMaintenanceSettings()">Simpan Pengaturan Maintenance</button>
+      </div>
+    </div>
+
     <!-- Toko -->
     <div class="card settings-section">
       <div class="settings-section-title">▪ Informasi Toko</div>
@@ -566,6 +593,9 @@ async function loadSettings() {
       }
       document.getElementById("s-qris-fee").value = s.qrisFeePercent ?? "";
       document.getElementById("s-manual-approval").checked = !!s.manualApproval;
+      document.getElementById("s-maintenance-mode").checked = !!s.maintenanceMode;
+      document.getElementById("s-maintenance-message").value = s.maintenanceMessage || "";
+      updateMaintenanceWarning();
     }
     const statsSnap = await db.collection("stats").doc("global").get();
     if (statsSnap.exists) {
@@ -607,6 +637,26 @@ async function saveStoreSettings() {
     }, { merge: true });
     toast("Informasi toko disimpan!", "success");
   } catch(e) { toast("Gagal: " + e.message, "error"); }
+}
+
+function updateMaintenanceWarning() {
+  const isOn = document.getElementById("s-maintenance-mode").checked;
+  document.getElementById("maintenance-active-warning").style.display = isOn ? "block" : "none";
+}
+
+async function saveMaintenanceSettings() {
+  try {
+    const isOn = document.getElementById("s-maintenance-mode").checked;
+    const message = document.getElementById("s-maintenance-message").value.trim();
+    await db.collection("settings").doc("store").set({
+      maintenanceMode: isOn,
+      maintenanceMessage: message || null,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    toast(isOn ? "Mode maintenance diaktifkan!" : "Mode maintenance dimatikan!", isOn ? "info" : "success");
+  } catch(e) {
+    toast("Gagal simpan: " + e.message, "error");
+  }
 }
 
 async function savePaymentSettings() {
