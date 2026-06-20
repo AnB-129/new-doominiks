@@ -102,6 +102,14 @@
 
 <!-- Toast -->
 <div id="toast-container"></div>
+<a id="social-proof-toast" href="#" style="display:none;">
+  <div class="sp-avatar" id="sp-avatar">A</div>
+  <div class="sp-text">
+    <div class="sp-name" id="sp-name">Seseorang</div>
+    <div class="sp-detail">baru saja membeli <span class="sp-category" id="sp-item"></span> di <span id="sp-category"></span></div>
+  </div>
+  <div class="sp-icon">🎉</div>
+</a>
 
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="modal-login">
@@ -1099,6 +1107,59 @@ function onAuthReady(user) {
   if (loader) { loader.style.opacity = "0"; loader.style.pointerEvents = "none"; }
   loadPopupAd();
   loadBannerSlides();
+  initSocialProofNotifications();
+}
+
+// ---- Social Proof Notification (pembelian terbaru) ----
+let _spOrders = [];
+let _spIndex = 0;
+
+async function initSocialProofNotifications() {
+  try {
+    const snap = await db.collection("publicPurchases")
+      .orderBy("createdAt", "desc")
+      .limit(15)
+      .get();
+    _spOrders = snap.docs.map(d => d.data()).filter(o => o.userDisplayName && o.itemName);
+    if (!_spOrders.length) return;
+    // Mulai cycle setelah 10 detik halaman dibuka
+    setTimeout(showNextSocialProof, 10000);
+  } catch(e) {
+    console.error("Gagal load social proof:", e);
+  }
+}
+
+function showNextSocialProof() {
+  if (!_spOrders.length) return;
+  const order = _spOrders[_spIndex % _spOrders.length];
+  _spIndex++;
+
+  const toastEl = document.getElementById("social-proof-toast");
+  document.getElementById("sp-name").textContent = order.userDisplayName || "Pelanggan";
+  document.getElementById("sp-item").textContent = order.itemName || "";
+  document.getElementById("sp-category").textContent = order.productName || "";
+  const avatarEl = document.getElementById("sp-avatar");
+  if (order.userPhotoURL) {
+    avatarEl.innerHTML = `<img src="${order.userPhotoURL}" alt="">`;
+  } else {
+    avatarEl.textContent = (order.userDisplayName || "A")[0].toUpperCase();
+  }
+  toastEl.href = order.productId ? `pages/product.html?id=${order.productId}` : "#";
+
+  toastEl.style.display = "flex";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toastEl.classList.add("show"));
+  });
+
+  // Tampil selama 6 detik, lalu geser hilang
+  setTimeout(() => {
+    toastEl.classList.remove("show");
+    // Setelah animasi keluar selesai (0.5s), sembunyikan & jadwalkan notif berikutnya
+    setTimeout(() => {
+      toastEl.style.display = "none";
+      setTimeout(showNextSocialProof, 8000); // jeda 8 detik sebelum notif berikutnya
+    }, 500);
+  }, 6000);
 }
 
 async function loadReviews() {
