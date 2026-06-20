@@ -1131,8 +1131,7 @@ async function initSocialProofNotifications() {
 
 function showNextSocialProof() {
   if (!_spOrders.length) return;
-  const order = _spOrders[_spIndex % _spOrders.length];
-  _spIndex++;
+  const order = _spOrders[0]; // hanya ambil pembelian paling baru, tampil sekali saja
 
   const toastEl = document.getElementById("social-proof-toast");
   document.getElementById("sp-name").textContent = order.userDisplayName || "Pelanggan";
@@ -1151,14 +1150,10 @@ function showNextSocialProof() {
     requestAnimationFrame(() => toastEl.classList.add("show"));
   });
 
-  // Tampil selama 6 detik, lalu geser hilang
+  // Tampil selama 6 detik, lalu geser hilang — tidak loop lagi
   setTimeout(() => {
     toastEl.classList.remove("show");
-    // Setelah animasi keluar selesai (0.5s), sembunyikan & jadwalkan notif berikutnya
-    setTimeout(() => {
-      toastEl.style.display = "none";
-      setTimeout(showNextSocialProof, 8000); // jeda 8 detik sebelum notif berikutnya
-    }, 500);
+    setTimeout(() => { toastEl.style.display = "none"; }, 500);
   }, 6000);
 }
 
