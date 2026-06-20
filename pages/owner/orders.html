@@ -226,11 +226,24 @@ async function changeStatus(orderId, newStatus) {
     if (newStatus === "success") {
       const o = allOrders.find(x => x.orderId === orderId);
       if (o && o.userId && o.status !== "success") {
+        // Ambil nama & foto profil TERKINI dari collection users (bukan snapshot lama di order),
+        // supaya leaderboard selalu tampilkan data terbaru kalau user sudah ganti nama/foto.
+        let currentName = o.userDisplayName || "Pelanggan";
+        let currentPhoto = o.userPhotoURL || null;
+        try {
+          const userSnap = await db.collection("users").doc(o.userId).get();
+          if (userSnap.exists) {
+            const u = userSnap.data();
+            if (u.displayName) currentName = u.displayName;
+            if (u.photoURL) currentPhoto = u.photoURL;
+          }
+        } catch(e) { /* fallback ke data order kalau gagal ambil profil terkini */ }
+
         // Update leaderboard: tambah total belanja & jumlah order
         const lbRef = db.collection("leaderboard").doc(o.userId);
         await lbRef.set({
-          displayName: o.userDisplayName || "Pelanggan",
-          photoURL: o.userPhotoURL || null,
+          displayName: currentName,
+          photoURL: currentPhoto,
           totalSpent: firebase.firestore.FieldValue.increment(o.total || 0),
           orderCount: firebase.firestore.FieldValue.increment(1),
           lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
@@ -239,8 +252,8 @@ async function changeStatus(orderId, newStatus) {
         // Tulis record publik aman untuk notifikasi "baru saja membeli"
         await db.collection("publicPurchases").add({
           orderId,
-          userDisplayName: o.userDisplayName || "Pelanggan",
-          userPhotoURL: o.userPhotoURL || null,
+          userDisplayName: currentName,
+          userPhotoURL: currentPhoto,
           itemName: o.itemName || "",
           productName: o.productName || "",
           productId: o.productId || null,
