@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780962969/0fcf671c-95d4-4a90-8717-c2d518a0c665_zgjcd4.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1780962969/0fcf671c-95d4-4a90-8717-c2d518a0c665_zgjcd4.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pengumuman &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .upload-progress { height: 4px; background: var(--border); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+    .upload-progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-dim)); border-radius: 4px; transition: width 0.3s; width: 0%; }
+    .ann-img-upload-area {
+      width: 100%; aspect-ratio: 16/9; max-width: 320px;
+      border: 2px dashed var(--border-bright); border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative; overflow: hidden;
+      background: var(--bg-panel); transition: border-color 0.2s;
+    }
+    .ann-img-upload-area:hover { border-color: var(--gold-dim); }
+    .ann-img-upload-area img { width: 100%; height: 100%; object-fit: cover; }
+    .ann-img-remove {
+      position: absolute; top: 6px; right: 6px; width: 26px; height: 26px;
+      background: rgba(0,0,0,0.6); border: none; border-radius: 50%;
+      color: #fff; font-size: 14px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; z-index: 2;
+    }
+    .ann-preview-box {
+      background: #313338; border-radius: 8px; padding: 0; max-width: 420px;
+      overflow: hidden; border-left: 4px solid var(--gold);
+    }
+    .ann-preview-inner { padding: 14px 16px; }
+    .ann-preview-category {
+      font-size: 11px; font-weight: 700; color: #f0b232; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .ann-preview-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.3; }
+    .ann-preview-desc { font-size: 13px; color: #dbdee1; line-height: 1.5; white-space: pre-wrap; }
+    .ann-preview-img { width: 100%; display: block; max-height: 220px; object-fit: cover; }
+    .ann-preview-footer { padding: 10px 16px 14px; }
+    .ann-preview-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #4e5058; color: #fff; border-radius: 4px;
+      padding: 7px 14px; font-size: 13px; font-weight: 600; text-decoration: none;
+    }
+    .ann-history-item {
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="announcement.html" class="active"><span class="nav-icon">📢</span>Pengumuman</a>
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div class="admin-page-title">Pengumuman Discord</div>
+    <div class="admin-page-sub">Kirim info update produk/game langsung ke channel Discord kamu</div>
+
+    <div class="grid-2" style="gap:24px;align-items:start;margin-top:24px;">
+      <!-- FORM -->
+      <div class="card">
+        <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:18px;">✎ Buat Pengumuman</div>
+        <form id="ann-form" onsubmit="sendAnnouncement(event)">
+          <div class="form-group">
+            <label class="form-label">Kategori Game <span style="color:var(--red)">*</span></label>
+            <input class="form-input" id="ann-category" placeholder="Contoh: Roblox, Mobile Legends, PUBG Mobile" required oninput="updatePreview()" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Judul <span style="color:var(--red)">*</span></label>
+            <input class="form-input" id="ann-title" placeholder="Contoh: Update Harga Robux Terbaru!" required oninput="updatePreview()" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deskripsi <span style="color:var(--red)">*</span></label>
+            <textarea class="form-input" id="ann-desc" rows="5" placeholder="Tulis detail pengumuman di sini..." required oninput="updatePreview()" style="resize:vertical;font-family:inherit;"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gambar Produk <span style="font-size:11px;color:var(--text-muted);font-weight:400;">— PNG/JPG, opsional, maks 5MB</span></label>
+            <div class="ann-img-upload-area" id="ann-img-upload-area" onclick="document.getElementById('ann-img-file').click()">
+              <input type="file" id="ann-img-file" accept="image/png,image/jpeg" style="display:none;" onchange="handleAnnImageSelect(event)" />
+              <div id="ann-img-placeholder">
+                <div style="text-align:center;">
+                  <div style="font-size:28px;color:var(--text-muted);margin-bottom:6px;">🖼</div>
+                  <div style="font-size:13px;font-weight:600;">Upload gambar produk</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">PNG, JPG &bull; Maks 5MB</div>
+                </div>
+              </div>
+              <img id="ann-img-preview" style="display:none;" />
+              <button type="button" class="ann-img-remove" id="ann-img-remove-btn" style="display:none;" onclick="removeAnnImage(event)">✕</button>
+            </div>
+            <div class="upload-progress" id="ann-img-progress" style="display:none;margin-top:8px;"><div class="upload-progress-bar" id="ann-img-progress-bar"></div></div>
+            <input type="hidden" id="ann-img-url" value="" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tombol Link <span style="font-size:11px;color:var(--text-muted);font-weight:400;">— ke mana pembeli diarahkan saat klik tombol di Discord</span></label>
+            <input class="form-input" id="ann-link" placeholder="https://doominiksstore.xyz/pages/catalog.html" value="https://doominiksstore.xyz/pages/catalog.html" oninput="updatePreview()" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teks Tombol</label>
+            <input class="form-input" id="ann-btn-label" placeholder="Lihat di Website" value="🛒 Lihat di Website" oninput="updatePreview()" />
+          </div>
+          <button class="btn btn-primary btn-full btn-lg" type="submit" id="ann-submit-btn">📢 Kirim ke Discord</button>
+          <div id="ann-send-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center;"></div>
+        </form>
+      </div>
+
+      <!-- PREVIEW -->
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:14px;">👁 Preview Embed Discord</div>
+          <div class="ann-preview-box" id="ann-preview-box">
+            <div class="ann-preview-inner">
+              <div class="ann-preview-category" id="prev-category">KATEGORI GAME</div>
+              <div class="ann-preview-title" id="prev-title">Judul pengumuman akan tampil di sini</div>
+              <div class="ann-preview-desc" id="prev-desc">Deskripsi pengumuman akan tampil di sini...</div>
+            </div>
+            <img class="ann-preview-img" id="prev-img" style="display:none;" />
+            <div class="ann-preview-footer">
+              <a class="ann-preview-btn" id="prev-btn" href="#" onclick="return false;">🛒 Lihat di Website</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:between;margin-bottom:14px;">
+            <div style="font-family:var(--font-display);font-size:16px;font-weight:700;">🕘 Riwayat Pengumuman</div>
+          </div>
+          <div id="ann-history-list"><div style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px;">Belum ada riwayat.</div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+// ============================================================
+// KONFIGURASI WEBHOOK DISCORD — GANTI DENGAN URL WEBHOOK KAMU
+// Cara dapat: Server Discord > Edit Channel > Integrations > Webhooks > New Webhook > Copy URL
+// ============================================================
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/GANTI_DENGAN_WEBHOOK_ID/GANTI_DENGAN_WEBHOOK_TOKEN";
+
+const CLOUDINARY_CLOUD_NAME = "dnpvgpqka";
+const CLOUDINARY_UPLOAD_PRESET = "vaultstore";
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+function updatePreview() {
+  const category = document.getElementById("ann-category").value.trim() || "KATEGORI GAME";
+  const title = document.getElementById("ann-title").value.trim() || "Judul pengumuman akan tampil di sini";
+  const desc = document.getElementById("ann-desc").value.trim() || "Deskripsi pengumuman akan tampil di sini...";
+  const btnLabel = document.getElementById("ann-btn-label").value.trim() || "🛒 Lihat di Website";
+
+  document.getElementById("prev-category").textContent = category.toUpperCase();
+  document.getElementById("prev-title").textContent = title;
+  document.getElementById("prev-desc").textContent = desc;
+  document.getElementById("prev-btn").textContent = btnLabel;
+}
+
+function handleAnnImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!["image/png", "image/jpeg"].includes(file.type)) {
+    toast("Hanya format PNG atau JPG yang didukung.", "error");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    toast("Ukuran gambar maks 5MB.", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = document.getElementById("ann-img-preview");
+    preview.src = e.target.result;
+    preview.style.display = "block";
+    document.getElementById("ann-img-placeholder").style.display = "none";
+    document.getElementById("ann-img-remove-btn").style.display = "flex";
+    // Update preview embed juga
+    document.getElementById("prev-img").src = e.target.result;
+    document.getElementById("prev-img").style.display = "block";
+  };
+  reader.readAsDataURL(file);
+  uploadAnnImage(file);
+}
+
+function removeAnnImage(event) {
+  event.stopPropagation();
+  document.getElementById("ann-img-url").value = "";
+  document.getElementById("ann-img-preview").src = "";
+  document.getElementById("ann-img-preview").style.display = "none";
+  document.getElementById("ann-img-placeholder").style.display = "flex";
+  document.getElementById("ann-img-remove-btn").style.display = "none";
+  document.getElementById("ann-img-file").value = "";
+  document.getElementById("prev-img").style.display = "none";
+}
+
+async function uploadAnnImage(file) {
+  const progressWrap = document.getElementById("ann-img-progress");
+  const progressBar = document.getElementById("ann-img-progress-bar");
+  progressWrap.style.display = "block";
+  progressBar.style.width = "0%";
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "doominiks-store/announcements");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) progressBar.style.width = `${(e.loaded/e.total*100).toFixed(0)}%`; };
+    xhr.onload = () => {
+      progressWrap.style.display = "none";
+      if (xhr.status === 200) {
+        const url = JSON.parse(xhr.responseText).secure_url;
+        document.getElementById("ann-img-url").value = url;
+        toast("Gambar diupload!", "success");
+      } else {
+        toast("Gagal upload gambar.", "error");
+      }
+    };
+    xhr.onerror = () => { progressWrap.style.display = "none"; toast("Error upload.", "error"); };
+    xhr.send(formData);
+  } catch(e) {
+    progressWrap.style.display = "none";
+    toast("Error: " + e.message, "error");
+  }
+}
+
+async function sendAnnouncement(event) {
+  event.preventDefault();
+  const category = document.getElementById("ann-category").value.trim();
+  const title = document.getElementById("ann-title").value.trim();
+  const desc = document.getElementById("ann-desc").value.trim();
+  const imageUrl = document.getElementById("ann-img-url").value.trim();
+  const link = document.getElementById("ann-link").value.trim();
+  const btnLabel = document.getElementById("ann-btn-label").value.trim() || "🛒 Lihat di Website";
+
+  if (!category || !title || !desc) {
+    toast("Kategori, judul, dan deskripsi wajib diisi.", "error");
+    return;
+  }
+  if (DISCORD_WEBHOOK_URL.includes("GANTI_DENGAN")) {
+    toast("Webhook Discord belum diatur. Edit DISCORD_WEBHOOK_URL di kode.", "error");
+    return;
+  }
+
+  const btn = document.getElementById("ann-submit-btn");
+  const status = document.getElementById("ann-send-status");
+  btn.disabled = true;
+  btn.textContent = "Mengirim...";
+  status.textContent = "";
+
+  // Discord embed tidak support tombol link native lewat webhook biasa,
+  // jadi kita pakai "Components" via webhook (button link) yang didukung Discord.
+  const payload = {
+    embeds: [
+      {
+        author: { name: category.toUpperCase() },
+        title: title,
+        description: desc,
+        color: 16766720, // gold
+        image: imageUrl ? { url: imageUrl } : undefined,
+        footer: { text: "DOOMINIKS STORE" },
+        timestamp: new Date().toISOString(),
+      }
+    ],
+    components: link ? [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 5, // Link button
+            label: btnLabel,
+            url: link,
+          }
+        ]
+      }
+    ] : undefined,
+  };
+
+  try {
+    const res = await fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok || res.status === 204) {
+      // Simpan riwayat ke Firestore
+      await db.collection("announcements").add({
+        category, title, desc, imageUrl: imageUrl || null, link: link || null, btnLabel,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        sentBy: currentUser.uid,
+      });
+      status.innerHTML = `<span style="color:var(--green);">✓ Berhasil dikirim ke Discord!</span>`;
+      toast("Pengumuman berhasil dikirim!", "success");
+      document.getElementById("ann-form").reset();
+      removeAnnImage({ stopPropagation: () => {} });
+      document.getElementById("ann-link").value = "https://doominiksstore.xyz/pages/catalog.html";
+      document.getElementById("ann-btn-label").value = "🛒 Lihat di Website";
+      updatePreview();
+      loadAnnouncementHistory();
+    } else {
+      const errText = await res.text();
+      status.innerHTML = `<span style="color:var(--red);">Gagal: ${res.status} - cek webhook URL</span>`;
+      toast("Gagal kirim ke Discord. Cek webhook URL.", "error");
+      console.error("Discord webhook error:", errText);
+    }
+  } catch(e) {
+    status.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+    toast("Gagal kirim: " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "📢 Kirim ke Discord";
+  }
+}
+
+async function loadAnnouncementHistory() {
+  try {
+    const snap = await db.collection("announcements").orderBy("createdAt", "desc").limit(10).get();
+    const container = document.getElementById("ann-history-list");
+    if (snap.empty) {
+      container.innerHTML = `<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px;">Belum ada riwayat.</div>`;
+      return;
+    }
+    container.innerHTML = snap.docs.map(d => {
+      const a = d.data();
+      return `
+      <div class="ann-history-item">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${a.category}</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${a.title}</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${a.desc}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${formatDate(a.createdAt)}</div>
+      </div>`;
+    }).join("");
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  updatePreview();
+  loadAnnouncementHistory();
+}
+</script>
+</body>
+</html>
