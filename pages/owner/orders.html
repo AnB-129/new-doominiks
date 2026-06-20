@@ -221,11 +221,22 @@ async function changeStatus(orderId, newStatus) {
     };
     await db.collection("orders").doc(orderId).update(updateData);
 
-    // Kalau order disetujui (success), tulis record publik yang aman ditampilkan
-    // ke pengunjung lain (untuk fitur notifikasi "baru saja membeli") — tanpa data sensitif.
+    // Kalau order disetujui (success) DAN sebelumnya BUKAN success, update leaderboard + publicPurchases
+    // (guard ini mencegah double-count kalau owner klik approve berulang kali)
     if (newStatus === "success") {
       const o = allOrders.find(x => x.orderId === orderId);
-      if (o) {
+      if (o && o.userId && o.status !== "success") {
+        // Update leaderboard: tambah total belanja & jumlah order
+        const lbRef = db.collection("leaderboard").doc(o.userId);
+        await lbRef.set({
+          displayName: o.userDisplayName || "Pelanggan",
+          photoURL: o.userPhotoURL || null,
+          totalSpent: firebase.firestore.FieldValue.increment(o.total || 0),
+          orderCount: firebase.firestore.FieldValue.increment(1),
+          lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Tulis record publik aman untuk notifikasi "baru saja membeli"
         await db.collection("publicPurchases").add({
           orderId,
           userDisplayName: o.userDisplayName || "Pelanggan",
