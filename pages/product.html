@@ -295,6 +295,7 @@ const PAYMENT_METHODS = [
   { id: "bank_transfer_mandiri", group: "Transfer Bank", name: "Mandiri Virtual Account", icon: "▪", fee: 1100 },
   { id: "bank_transfer_bri", group: "Transfer Bank", name: "BRI Virtual Account", icon: "▪", fee: 1090 },
   { id: "bank_jago", group: "Transfer Bank", name: "Bank Jago", icon: "◆", fee: 890 },
+  { id: "maybank", group: "Transfer Bank", name: "Maybank", icon: "◆", fee: 1000 },
   { id: "qris", group: "QRIS / E-Wallet", name: "QRIS (Semua E-Wallet)", icon: "▪", fee: 990 },
   { id: "gopay", group: "QRIS / E-Wallet", name: "GoPay", icon: "▲", fee: 999 },
   { id: "ovo", group: "QRIS / E-Wallet", name: "OVO", icon: "▲", fee: 999 },
@@ -748,12 +749,14 @@ async function goToPayment() {
   let pmSettings = {};
   let pmLegacyImages = {};
   let qrisConfigured = false;
+  let qrisFeePercent = 0;
   try {
     const snap = await db.collection("settings").doc("store").get();
     if (snap.exists) {
       pmSettings = snap.data().paymentMethods || {};
       pmLegacyImages = snap.data().paymentMethodImages || {};
       qrisConfigured = !!(snap.data().qrisImageUrl);
+      qrisFeePercent = snap.data().qrisFeePercent || 0;
     }
   } catch(e) { console.error("Gagal load payment settings:", e); }
 
@@ -770,36 +773,71 @@ async function goToPayment() {
   }
 
   // Render only available methods
-  const groups = {};
-  availableMethods.forEach(pm => { if (!groups[pm.group]) groups[pm.group] = []; groups[pm.group].push(pm); });
-  document.getElementById("pm-list-render").innerHTML = Object.entries(groups).map(([g, pms]) => `
-    <div class="pm-group-title">${g}</div>
-    ${pms.map(pm => {
-      // For QRIS: use paymentMethodImages.qris as logo (not qrisImageUrl which is the actual QR code)
-      const logoUrl = pm.id === "qris"
-        ? (pmLegacyImages["qris"] || pmSettings["qris"]?.imageUrl || null)
-        : (pmSettings[pm.id]?.imageUrl || null);
-      const logoHtml = logoUrl
-        ? `<img src="${logoUrl}" alt="${pm.name}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`
-        : pm.icon;
-      // Hitung fee: pakai persentase dari Firestore jika diset, fallback ke nominal default
-      const feePercent = pmSettings[pm.id]?.feePercent || 0;
-      const displayFee = feePercent > 0 ? Math.round(selectedItem.price * feePercent / 100) : pm.fee;
-      return `
-      <div class="pm-row" id="pm-${pm.id}" onclick="selectPayment('${pm.id}')">
-        <div class="pm-logo">${logoHtml}</div>
-        <div class="pm-info">
-          <div class="pm-title">${pm.name}</div>
-          <div class="pm-desc">${displayFee > 0 ? `Biaya layanan ${formatIDR(displayFee)}` : "Tanpa biaya layanan"}</div>
-        </div>
-        <div class="pm-fee">${displayFee > 0 ? `+${formatIDR(displayFee)}` : "Gratis"}</div>
-      </div>`;
-    }).join("")}
-  `).join("");
+  // Default tampil: QRIS & PayPal saja. Sisanya disembunyikan di balik tombol "Lainnya"
+  const DEFAULT_VISIBLE_IDS = ["qris", "paypal"];
+  const defaultMethods = availableMethods.filter(pm => DEFAULT_VISIBLE_IDS.includes(pm.id));
+  const otherMethods = availableMethods.filter(pm => !DEFAULT_VISIBLE_IDS.includes(pm.id));
+
+  const renderRow = (pm) => {
+    // For QRIS: use paymentMethodImages.qris as logo (not qrisImageUrl which is the actual QR code)
+    const logoUrl = pm.id === "qris"
+      ? (pmLegacyImages["qris"] || pmSettings["qris"]?.imageUrl || null)
+      : (pmSettings[pm.id]?.imageUrl || null);
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="${pm.name}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`
+      : pm.icon;
+    // Hitung fee: pakai persentase dari Firestore jika diset, fallback ke nominal default
+    const feePercent = pm.id === "qris" ? qrisFeePercent : (pmSettings[pm.id]?.feePercent || 0);
+    const displayFee = feePercent > 0 ? Math.round(selectedItem.price * feePercent / 100) : pm.fee;
+    return `
+    <div class="pm-row" id="pm-${pm.id}" onclick="selectPayment('${pm.id}')">
+      <div class="pm-logo">${logoHtml}</div>
+      <div class="pm-info">
+        <div class="pm-title">${pm.name}</div>
+        <div class="pm-desc">${displayFee > 0 ? `Biaya layanan ${formatIDR(displayFee)}` : "Tanpa biaya layanan"}</div>
+      </div>
+      <div class="pm-fee">${displayFee > 0 ? `+${formatIDR(displayFee)}` : "Gratis"}</div>
+    </div>`;
+  };
+
+  let html = "";
+  if (defaultMethods.length) {
+    html += `<div class="pm-group-title">Rekomendasi</div>${defaultMethods.map(renderRow).join("")}`;
+  }
+  if (otherMethods.length) {
+    const otherGroups = {};
+    otherMethods.forEach(pm => { if (!otherGroups[pm.group]) otherGroups[pm.group] = []; otherGroups[pm.group].push(pm); });
+    html += `
+      <button type="button" id="pm-toggle-others-btn" onclick="togglePmOthers()" style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:11px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;margin:12px 0 4px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span id="pm-toggle-others-label">Lihat Metode Pembayaran Lainnya</span>
+        <span id="pm-toggle-others-arrow" style="transition:transform 0.2s;">▾</span>
+      </button>
+      <div id="pm-others-wrap" style="display:none;">
+        ${Object.entries(otherGroups).map(([g, pms]) => `
+          <div class="pm-group-title">${g}</div>
+          ${pms.map(renderRow).join("")}
+        `).join("")}
+      </div>
+    `;
+  }
+  if (!defaultMethods.length && !otherMethods.length) {
+    html = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Belum ada metode pembayaran aktif.</div>`;
+  }
+  document.getElementById("pm-list-render").innerHTML = html;
   document.getElementById("co-p-sub").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-p-total").textContent = formatIDR(selectedItem.price);
   document.getElementById("co-step-1").style.display = "none";
   document.getElementById("co-step-2").style.display = "block";
+}
+
+function togglePmOthers() {
+  const wrap = document.getElementById("pm-others-wrap");
+  const label = document.getElementById("pm-toggle-others-label");
+  const arrow = document.getElementById("pm-toggle-others-arrow");
+  const isOpen = wrap.style.display === "block";
+  wrap.style.display = isOpen ? "none" : "block";
+  label.textContent = isOpen ? "Lihat Metode Pembayaran Lainnya" : "Sembunyikan Metode Lainnya";
+  arrow.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
 }
 
 function backToStep1() {
@@ -875,7 +913,8 @@ async function selectPayment(id) {
     if (!pmData.imageUrl && pmLegacyImages[id]) pmData.imageUrl = pmLegacyImages[id];
 
     // Hitung biaya layanan: pakai feePercent dari Firestore jika ada, fallback ke nominal fee default
-    const feePercent = pmData.feePercent || 0;
+    // QRIS pakai field terpisah qrisFeePercent (bukan pmData.feePercent)
+    const feePercent = id === "qris" ? (settings.qrisFeePercent || 0) : (pmData.feePercent || 0);
     const calculatedFee = feePercent > 0
       ? Math.round(selectedItem.price * feePercent / 100)
       : (selectedPayment?.fee || 0);
@@ -920,7 +959,7 @@ async function selectPayment(id) {
         document.getElementById("co-ewallet-display").style.display = "block";
         infoWrap.style.display = "block";
       }
-    } else if (["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago"].includes(id)) {
+    } else if (["bank_transfer_bca","bank_transfer_bni","bank_transfer_mandiri","bank_transfer_bri","bank_jago","maybank"].includes(id)) {
       // Bank Transfer: show account number + optional logo
       const number = pmData.accountNumber || null;
       const name = pmData.accountName || selectedPayment.name;
