@@ -180,7 +180,7 @@
           <div class="user-dropdown-menu">
             <a href="pages/orders.html" class="dropdown-item">☰ Pesanan Saya</a>
             <a href="pages/profile.html" class="dropdown-item">✎ Profil</a>
-            <a href="pages/owner/dashboard.html" class="dropdown-item" id="nav-admin-link" style="display:none;color:var(--gold);">★ Panel Owner</a>
+            <a href="pages/owner/dashboard.html" class="dropdown-item" id="nav-admin-link" style="display:none;color:var(--gold);"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-right:5px;vertical-align:-2px;flex-shrink:0;"><path d="M5 16L3 6l5.5 4L12 4l3.5 6L21 6l-2 10H5zm0 2h14v2H5v-2z"></path></svg>Panel Owner</a>
             <div class="dropdown-divider"></div>
             <div class="dropdown-item danger" onclick="signOut()">→ Logout</div>
           </div>
@@ -199,7 +199,7 @@
     <div class="hero-grid">
       <div class="hero-content">
         <div class="hero-eyebrow">
-          ✦ Libur Kalo Udah Kaya!
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-right:5px;vertical-align:-2px;"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5L12 2z"></path></svg>Libur Kalo Udah Kaya!
         </div>
         <h1 class="hero-title">
           Top Up Game<br>
@@ -295,19 +295,19 @@
   <div class="container">
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;" id="stat-cards" class="stat-cards-grid">
       <div class="stat-card">
-        <div class="stat-icon gold">◈</div>
+        <div class="stat-icon gold"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
         <div><div class="stat-label">Total Transaksi</div><div class="stat-value" id="sc-orders">...</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon cyan">⬡</div>
+        <div class="stat-icon cyan"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="8" cy="12" r="2"></circle><path d="M14 10h4"></path><path d="M14 14h4"></path></svg></div>
         <div><div class="stat-label">Game Tersedia</div><div class="stat-value" id="sc-products">...</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">◎</div>
+        <div class="stat-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
         <div><div class="stat-label">Pelanggan Aktif</div><div class="stat-value" id="sc-users">...</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon red">◉</div>
+        <div class="stat-icon red"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
         <div><div class="stat-label">Rating</div><div class="stat-value">4.9/5</div><div class="stat-sub">dari 2.400+ ulasan</div></div>
       </div>
     </div>
@@ -323,17 +323,23 @@
     </div>
     <div class="grid-3">
       <div class="card" style="text-align:center;">
-        <div style="width:56px;height:56px;border-radius:16px;background:var(--gold-glow);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--gold);">◈</div>
+        <div style="width:56px;height:56px;border-radius:16px;background:var(--gold-glow);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 17h7"></path><path d="M17.5 14v6"></path></svg>
+        </div>
         <h4 style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:10px;">Pilih Game & Nominal</h4>
         <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">Cari game favoritmu dan pilih nominal top up yang sesuai budget kamu.</p>
       </div>
       <div class="card" style="text-align:center;">
-        <div style="width:56px;height:56px;border-radius:16px;background:var(--cyan-dim);border:1px solid rgba(78,205,196,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--cyan);">⬡</div>
+        <div style="width:56px;height:56px;border-radius:16px;background:var(--cyan-dim);border:1px solid rgba(78,205,196,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path><path d="M6 15h4"></path></svg>
+        </div>
         <h4 style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:10px;">Isi ID & Bayar</h4>
         <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">Masukkan ID game kamu, pilih metode pembayaran dan selesaikan transaksi.</p>
       </div>
       <div class="card" style="text-align:center;">
-        <div style="width:56px;height:56px;border-radius:16px;background:rgba(60,179,113,0.1);border:1px solid rgba(60,179,113,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--green);">✦</div>
+        <div style="width:56px;height:56px;border-radius:16px;background:rgba(60,179,113,0.1);border:1px solid rgba(60,179,113,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
         <h4 style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:10px;">Item Langsung Masuk</h4>
         <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">Diamond, UC, koin langsung masuk ke akun game kamu secara otomatis.</p>
       </div>
@@ -351,31 +357,8 @@
       </div>
       <a href="pages/leaderboard.html" class="btn btn-secondary btn-sm">Lihat Semua &rarr;</a>
     </div>
-    <div class="grid-2">
-      <div class="card" id="lb-preview">
-        <div class="loader-ring" style="margin:0 auto;"></div>
-      </div>
-      <div>
-        <div class="card" style="background:linear-gradient(135deg,var(--bg-card),var(--bg-card-hover));border-color:var(--gold-dim);">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:16px;">★ Program Reward</div>
-          <h3 style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:12px;">Belanja Lebih,<br>Dapat Lebih!</h3>
-          <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px;">Setiap transaksi menambah poin kamu di leaderboard. Top 3 pembeli mendapat hadiah eksklusif setiap bulan.</p>
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);">
-              <div style="font-size:20px;color:var(--gold);">△</div>
-              <div><div style="font-size:13px;font-weight:600;">Peringkat #1</div><div style="font-size:12px;color:var(--text-secondary);">Voucher game senilai Rp 500.000</div></div>
-            </div>
-            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);">
-              <div style="font-size:20px;color:#A8B2C8;">△</div>
-              <div><div style="font-size:13px;font-weight:600;">Peringkat #2</div><div style="font-size:12px;color:var(--text-secondary);">Voucher game senilai Rp 250.000</div></div>
-            </div>
-            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);">
-              <div style="font-size:20px;color:#CD7F32;">△</div>
-              <div><div style="font-size:13px;font-weight:600;">Peringkat #3</div><div style="font-size:12px;color:var(--text-secondary);">Voucher game senilai Rp 100.000</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="card" id="lb-preview" style="max-width:680px;margin:0 auto;">
+      <div class="loader-ring" style="margin:0 auto;"></div>
     </div>
   </div>
 </section>
@@ -442,7 +425,7 @@
         <div><div style="font-weight:700;margin-bottom:4px;">Upload Bukti & Selesai</div><div style="font-size:13px;color:var(--text-secondary);">Upload screenshot bukti pembayaran, lalu klik Bayar Sekarang. Item akan dikirim ke akunmu dalam hitungan menit setelah pembayaran dikonfirmasi.</div></div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;">
-        <div style="font-size:13px;color:var(--gold);font-weight:600;">✦ Tips: Login terlebih dahulu untuk melacak pesanan dan mendapatkan reward!</div>
+        <div style="font-size:13px;color:var(--gold);font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>Tips: Login terlebih dahulu untuk melacak pesanan dan mendapatkan reward!</div>
       </div>
     </div>
   </div>
@@ -484,7 +467,7 @@
         </div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--gold);">
-        ✦ Pembayaran dikonfirmasi dalam 1–15 menit setelah bukti transfer diterima.
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>Pembayaran dikonfirmasi dalam 1–15 menit setelah bukti transfer diterima.
       </div>
     </div>
   </div>
@@ -523,7 +506,7 @@
 <div class="modal-overlay" id="modal-tentang">
   <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <span class="modal-title">⬡ Tentang DOOMINIKS STORE</span>
+      <span class="modal-title">Tentang DOOMINIKS STORE</span>
       <button class="modal-close" onclick="closeModal('modal-tentang')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;">
@@ -552,7 +535,7 @@
         </div>
       </div>
       <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:14px;font-size:13px;color:var(--gold);text-align:center;font-weight:600;">
-        ✦ Dipercaya oleh ribuan gamer Indonesia sejak 2024
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>Dipercaya oleh ribuan gamer Indonesia sejak 2024
       </div>
     </div>
   </div>
@@ -571,7 +554,7 @@
       <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">3. Pengiriman Item</div><p>Item akan dikirim ke akun game yang sesuai dengan data yang diinput. DOOMINIKS STORE tidak bertanggung jawab atas kesalahan input data yang dilakukan oleh pembeli.</p></div>
       <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">4. Keamanan Akun</div><p>Pembeli bertanggung jawab penuh atas keamanan akun game mereka. DOOMINIKS STORE tidak meminta password atau data sensitif apapun selain User ID game.</p></div>
       <div><div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">5. Larangan</div><p>Dilarang melakukan penipuan, chargeback, atau penyalahgunaan layanan. Pelanggaran akan mengakibatkan pemblokiran akun secara permanen.</p></div>
-      <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:12px;color:var(--gold);">✦ Terakhir diperbarui: Juni 2025</div>
+      <div style="background:var(--gold-glow);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:12px;color:var(--gold);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>Terakhir diperbarui: Juni 2025</div>
     </div>
   </div>
 </div>
@@ -612,7 +595,7 @@
         <div style="font-size:13px;color:var(--text-secondary);">Semua produk kami sudah dibanderol dengan harga yang kompetitif tanpa perlu kode promo apapun.</div>
       </div>
       <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">✦ Keuntungan Berbelanja di Sini</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>Keuntungan Berbelanja di Sini</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
           <div>✓ Harga lebih murah dari toko resmi</div>
           <div>✓ Proses cepat 1–15 menit</div>
@@ -693,9 +676,9 @@
     <div class="footer-bottom">
       <span>&copy; 2025 DOOMINIKS STORE. Hak cipta dilindungi.</span>
       <div class="footer-trust">
-        <div class="trust-badge">✦ SSL Secured</div>
-        <div class="trust-badge">✦ 24/7 Support</div>
-        <div class="trust-badge">✦ Terpercaya</div>
+        <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>SSL Secured</div>
+        <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>24/7 Support</div>
+        <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px;"><path d="M20 6L9 17l-5-5"></path></svg>Terpercaya</div>
       </div>
     </div>
   </div>
@@ -960,16 +943,19 @@ async function handleGoogleLogin() {
 
 // Default payment methods with clean symbols
 const DEFAULT_PAYMENT_METHODS = [
-  { id: "bank_transfer", name: "Bank Transfer", sub: "BCA, BNI, Mandiri, BRI", symbol: "🏦" },
-  { id: "bank_jago",     name: "Bank Jago",     sub: "Transfer Virtual",      symbol: "💳" },
-  { id: "qris",          name: "QRIS",          sub: "Semua e-wallet",         symbol: "⬛" },
-  { id: "gopay",         name: "GoPay",         sub: "Dompet Digital",         symbol: "💚" },
-  { id: "ovo",           name: "OVO",           sub: "Dompet Digital",         symbol: "💜" },
-  { id: "dana",          name: "DANA",          sub: "Dompet Digital",         symbol: "🔵" },
-  { id: "shopeepay",     name: "ShopeePay",     sub: "Dompet Digital",         symbol: "🧡" },
-  { id: "paypal",        name: "PayPal",        sub: "Internasional",          symbol: "💙" },
-  { id: "indomaret",     name: "Indomaret",     sub: "Gerai Ritel",            symbol: "🏪" },
-  { id: "alfamart",      name: "Alfamart",      sub: "Gerai Ritel",            symbol: "🏪" },
+  { id: "bank_transfer_bca",     name: "BCA",          sub: "Virtual Account",  fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg" },
+  { id: "bank_transfer_bni",     name: "BNI",          sub: "Virtual Account",  fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/5/55/BNI_logo.svg" },
+  { id: "bank_transfer_mandiri", name: "Mandiri",      sub: "Virtual Account",  fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg" },
+  { id: "bank_transfer_bri",     name: "BRI",          sub: "Virtual Account",  fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_2020.svg" },
+  { id: "bank_jago",             name: "Bank Jago",    sub: "Transfer Virtual", fallbackLogo: null },
+  { id: "qris",                  name: "QRIS",         sub: "Semua e-wallet",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Logo_QRIS.svg" },
+  { id: "gopay",                 name: "GoPay",        sub: "Dompet Digital",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg" },
+  { id: "ovo",                   name: "OVO",          sub: "Dompet Digital",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg" },
+  { id: "dana",                  name: "DANA",         sub: "Dompet Digital",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Logo_dana_blue.svg" },
+  { id: "shopeepay",             name: "ShopeePay",    sub: "Dompet Digital",   fallbackLogo: null },
+  { id: "paypal",                name: "PayPal",       sub: "Internasional",    fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" },
+  { id: "indomaret",             name: "Indomaret",    sub: "Gerai Ritel",      fallbackLogo: null },
+  { id: "alfamart",              name: "Alfamart",     sub: "Gerai Ritel",      fallbackLogo: null },
 ];
 
 function closePopupAd() {
@@ -1063,25 +1049,25 @@ async function loadPaymentMethods() {
     const data = snap.exists ? snap.data() : {};
     const pmMethodsData = data.paymentMethods || {};
     const pmLegacy = data.paymentMethodImages || {};
-    // Gabung: prioritaskan paymentMethods[id].imageUrl, fallback ke legacy paymentMethodImages[id]
+    // Gabung: prioritaskan paymentMethods[id].imageUrl (upload owner), fallback ke legacy, fallback ke logo brand resmi
     const pmImages = {};
     DEFAULT_PAYMENT_METHODS.forEach(pm => {
-      pmImages[pm.id] = pmMethodsData[pm.id]?.imageUrl || pmLegacy[pm.id] || null;
+      pmImages[pm.id] = pmMethodsData[pm.id]?.imageUrl || pmLegacy[pm.id] || pm.fallbackLogo || null;
     });
     grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
       <div class="pm-card" style="cursor:default;min-width:110px;">
         ${pmImages[pm.id]
-          ? `<img src="${pmImages[pm.id]}" alt="${pm.name}" style="width:56px;height:40px;object-fit:contain;border-radius:6px;margin-bottom:2px;">`
-          : `<div class="pm-icon" style="font-size:28px;">${pm.symbol}</div>`}
+          ? `<img src="${pmImages[pm.id]}" alt="${pm.name}" style="width:56px;height:40px;object-fit:contain;border-radius:6px;margin-bottom:2px;background:#fff;padding:4px;">`
+          : `<div class="pm-icon" style="width:56px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);border-radius:6px;font-size:11px;font-weight:700;color:var(--text-muted);">${pm.name.slice(0,4).toUpperCase()}</div>`}
         <div class="pm-name">${pm.name}</div>
         <div class="pm-category">${pm.sub}</div>
       </div>
     `).join("");
   } catch(e) {
-    // fallback static
+    // fallback: tampilkan nama saja kalau Firestore gagal diakses
     grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
       <div class="pm-card" style="cursor:default;min-width:110px;">
-        <div class="pm-icon" style="font-size:28px;">${pm.symbol}</div>
+        <div class="pm-icon" style="width:56px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);border-radius:6px;font-size:11px;font-weight:700;color:var(--text-muted);">${pm.name.slice(0,4).toUpperCase()}</div>
         <div class="pm-name">${pm.name}</div>
         <div class="pm-category">${pm.sub}</div>
       </div>
