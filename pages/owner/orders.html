@@ -213,78 +213,58 @@ function renderOrdersTable() {
 async function changeStatus(orderId, newStatus) {
   const labels = { success: "Setujui", processing: "Set ke Diproses", failed: "Tolak" };
   if (!confirm(`${labels[newStatus]||"Ubah status"} pesanan ${orderId}?`)) return;
-  const debugLines = [];
   try {
+    // PENTING: ambil & simpan snapshot data order SEBELUM update() dipanggil.
+    // Kalau diambil SESUDAH update(), realtime onSnapshot listener bisa sudah
+    // merefresh allOrders duluan dengan status baru — menyebabkan guard anti-duplikat
+    // salah mendeteksi order ini sebagai "sudah success sebelumnya".
+    const orderBeforeUpdate = allOrders.find(x => x.orderId === orderId);
+    const previousStatus = orderBeforeUpdate?.status;
+
     const updateData = {
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentUser.uid
     };
     await db.collection("orders").doc(orderId).update(updateData);
-    debugLines.push("✓ Status order diupdate ke: " + newStatus);
 
-    if (newStatus === "success") {
-      const o = allOrders.find(x => x.orderId === orderId);
-      debugLines.push("userId: " + (o?.userId || "TIDAK ADA"));
-      debugLines.push("status sebelum approve: " + (o?.status || "TIDAK ADA"));
-      debugLines.push("total: " + (o?.total || 0));
-
-      if (o && o.userId && o.status !== "success") {
-        debugLines.push("→ Guard LOLOS, mencoba update leaderboard...");
-        let currentName = o.userDisplayName || "Pelanggan";
-        let currentPhoto = o.userPhotoURL || null;
-        try {
-          const userSnap = await db.collection("users").doc(o.userId).get();
-          if (userSnap.exists) {
-            const u = userSnap.data();
-            if (u.displayName) currentName = u.displayName;
-            if (u.photoURL) currentPhoto = u.photoURL;
-          }
-        } catch(e) { debugLines.push("⚠ Gagal ambil profil users: " + e.message); }
-
-        const lbRef = db.collection("leaderboard").doc(o.userId);
-        try {
-          await lbRef.set({
-            displayName: currentName,
-            photoURL: currentPhoto,
-            totalSpent: firebase.firestore.FieldValue.increment(o.total || 0),
-            orderCount: firebase.firestore.FieldValue.increment(1),
-            lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
-          debugLines.push("✓ LEADERBOARD BERHASIL diupdate!");
-        } catch(e) {
-          debugLines.push("✕ GAGAL update leaderboard: " + e.code + " - " + e.message);
+    // Kalau order disetujui (success) DAN sebelumnya BUKAN success, update leaderboard + publicPurchases
+    // (guard ini mencegah double-count kalau owner klik approve berulang kali)
+    if (newStatus === "success" && orderBeforeUpdate && orderBeforeUpdate.userId && previousStatus !== "success") {
+      const o = orderBeforeUpdate;
+      // Ambil nama & foto profil TERKINI dari collection users (bukan snapshot lama di order),
+      // supaya leaderboard selalu tampilkan data terbaru kalau user sudah ganti nama/foto.
+      let currentName = o.userDisplayName || "Pelanggan";
+      let currentPhoto = o.userPhotoURL || null;
+      try {
+        const userSnap = await db.collection("users").doc(o.userId).get();
+        if (userSnap.exists) {
+          const u = userSnap.data();
+          if (u.displayName) currentName = u.displayName;
+          if (u.photoURL) currentPhoto = u.photoURL;
         }
+      } catch(e) { /* fallback ke data order kalau gagal ambil profil terkini */ }
 
-        try {
-          await db.collection("publicPurchases").add({
-            orderId,
-            userDisplayName: currentName,
-            userPhotoURL: currentPhoto,
-            itemName: o.itemName || "",
-            productName: o.productName || "",
-            productId: o.productId || null,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          });
-          debugLines.push("✓ publicPurchases BERHASIL ditulis!");
-        } catch(e) {
-          debugLines.push("✕ GAGAL tulis publicPurchases: " + e.code + " - " + e.message);
-        }
-      } else {
-        debugLines.push("✕ Guard TIDAK LOLOS — leaderboard/publicPurchases TIDAK ditulis sama sekali.");
-        if (!o) debugLines.push("  Sebab: order tidak ditemukan di allOrders.");
-        else if (!o.userId) debugLines.push("  Sebab: order.userId kosong/tidak ada.");
-        else if (o.status === "success") debugLines.push("  Sebab: status order SUDAH success sebelumnya (dianggap duplikat).");
-      }
-      // Tampilkan hasil debug di kotak khusus di halaman (alert bisa diblokir browser mobile)
-      const debugBox = document.getElementById("debug-output-box") || (() => {
-        const box = document.createElement("div");
-        box.id = "debug-output-box";
-        box.style.cssText = "position:fixed;top:10px;left:10px;right:10px;z-index:99999;background:#1a1a1a;border:2px solid #f59e0b;border-radius:10px;padding:16px;font-family:monospace;font-size:12px;color:#fff;max-height:70vh;overflow-y:auto;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,0.6);";
-        document.body.prepend(box);
-        return box;
-      })();
-      debugBox.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:10px;"><b style="color:#f59e0b;">DEBUG INFO</b><button onclick="this.closest('#debug-output-box').remove()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;">Tutup</button></div>` + debugLines.join("<br>");
+      // Update leaderboard: tambah total belanja & jumlah order
+      const lbRef = db.collection("leaderboard").doc(o.userId);
+      await lbRef.set({
+        displayName: currentName,
+        photoURL: currentPhoto,
+        totalSpent: firebase.firestore.FieldValue.increment(o.total || 0),
+        orderCount: firebase.firestore.FieldValue.increment(1),
+        lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      // Tulis record publik aman untuk notifikasi "baru saja membeli"
+      await db.collection("publicPurchases").add({
+        orderId,
+        userDisplayName: currentName,
+        userPhotoURL: currentPhoto,
+        itemName: o.itemName || "",
+        productName: o.productName || "",
+        productId: o.productId || null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
     }
 
     // Update local
