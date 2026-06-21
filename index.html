@@ -948,6 +948,7 @@ const DEFAULT_PAYMENT_METHODS = [
   { id: "bank_transfer_mandiri", name: "Mandiri",      sub: "Virtual Account",  fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg" },
   { id: "bank_transfer_bri",     name: "BRI",          sub: "Virtual Account",  fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/2/2e/BRI_2020.svg" },
   { id: "bank_jago",             name: "Bank Jago",    sub: "Transfer Virtual", fallbackLogo: null },
+  { id: "maybank",               name: "Maybank",      sub: "Transfer Virtual", fallbackLogo: null },
   { id: "qris",                  name: "QRIS",         sub: "Semua e-wallet",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Logo_QRIS.svg" },
   { id: "gopay",                 name: "GoPay",        sub: "Dompet Digital",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg" },
   { id: "ovo",                   name: "OVO",          sub: "Dompet Digital",   fallbackLogo: "https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_ovo_purple.svg" },
@@ -1049,12 +1050,29 @@ async function loadPaymentMethods() {
     const data = snap.exists ? snap.data() : {};
     const pmMethodsData = data.paymentMethods || {};
     const pmLegacy = data.paymentMethodImages || {};
+    const qrisConfigured = !!data.qrisImageUrl;
+
+    // Hanya tampilkan metode yang SUDAH dikonfigurasi owner:
+    // - QRIS: harus sudah upload qrisImageUrl
+    // - Lainnya (bank/e-wallet/PayPal/gerai ritel): harus sudah isi accountNumber
+    const configuredMethods = DEFAULT_PAYMENT_METHODS.filter(pm => {
+      if (pm.id === "qris") return qrisConfigured;
+      return !!(pmMethodsData[pm.id]?.accountNumber);
+    });
+
+    if (!configuredMethods.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Belum ada metode pembayaran yang aktif.</div>`;
+      return;
+    }
+
     // Gabung: prioritaskan paymentMethods[id].imageUrl (upload owner), fallback ke legacy, fallback ke logo brand resmi
     const pmImages = {};
-    DEFAULT_PAYMENT_METHODS.forEach(pm => {
-      pmImages[pm.id] = pmMethodsData[pm.id]?.imageUrl || pmLegacy[pm.id] || pm.fallbackLogo || null;
+    configuredMethods.forEach(pm => {
+      pmImages[pm.id] = pm.id === "qris"
+        ? (pmLegacy["qris"] || pmMethodsData["qris"]?.imageUrl || pm.fallbackLogo || null)
+        : (pmMethodsData[pm.id]?.imageUrl || pmLegacy[pm.id] || pm.fallbackLogo || null);
     });
-    grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
+    grid.innerHTML = configuredMethods.map(pm => `
       <div class="pm-card" style="cursor:default;min-width:110px;">
         ${pmImages[pm.id]
           ? `<img src="${pmImages[pm.id]}" alt="${pm.name}" style="width:56px;height:40px;object-fit:contain;border-radius:6px;margin-bottom:2px;background:#fff;padding:4px;">`
@@ -1064,14 +1082,8 @@ async function loadPaymentMethods() {
       </div>
     `).join("");
   } catch(e) {
-    // fallback: tampilkan nama saja kalau Firestore gagal diakses
-    grid.innerHTML = DEFAULT_PAYMENT_METHODS.map(pm => `
-      <div class="pm-card" style="cursor:default;min-width:110px;">
-        <div class="pm-icon" style="width:56px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);border-radius:6px;font-size:11px;font-weight:700;color:var(--text-muted);">${pm.name.slice(0,4).toUpperCase()}</div>
-        <div class="pm-name">${pm.name}</div>
-        <div class="pm-category">${pm.sub}</div>
-      </div>
-    `).join("");
+    console.error("Gagal load payment methods:", e);
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Gagal memuat metode pembayaran.</div>`;
   }
 }
 
