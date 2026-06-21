@@ -3,338 +3,372 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Kelola Pesanan &mdash; DOOMINIKS STORE Owner</title>
-  <link rel="stylesheet" href="../../css/style.css" />
+  <title>Pesanan Saya &mdash; DOOMINIKS STORE</title>
+  <link rel="stylesheet" href="../css/style.css" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <style>
-    .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .detail-item { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
-    .detail-item .di-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); margin-bottom: 4px; }
-    .detail-item .di-value { font-size: 14px; font-weight: 500; word-break: break-all; }
-  </style>
 </head>
 <body>
 <div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
 <div id="toast-container"></div>
 
-<!-- ORDER DETAIL MODAL -->
-<div class="modal-overlay" id="modal-order-detail">
-  <div class="modal" style="max-width:640px;">
-    <div class="modal-header">
-      <span class="modal-title">Detail Pesanan</span>
-      <button class="modal-close" onclick="closeModal('modal-order-detail')">&times;</button>
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:20px;">
+    <button class="modal-close" onclick="closeModal('modal-login')" style="position:absolute;top:14px;right:14px;z-index:2;background:var(--bg-panel);border:1px solid var(--border);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted);">&times;</button>
+    <div style="padding:28px 28px 0;">
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;margin-bottom:24px;">
+        <span style="color:#22c55e;font-size:16px;flex-shrink:0;margin-top:1px;">🛡</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:2px;">Data kamu aman</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Login di sini cuma buat transaksi di DOOMINIKS STORE aja, nggak bakal ngaruh sama akun game kamu.</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:6px;">Masuk ke Akun</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Kamu bisa langsung masuk pakai Google</div>
+      </div>
+      <button class="btn btn-full btn-lg" onclick="handleGoogleLogin()" style="background:#fff;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:12px;font-weight:600;font-size:15px;gap:12px;margin-bottom:10px;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Masuk pakai Google
+      </button>
     </div>
-    <div id="order-detail-body"></div>
+    <div style="padding:16px 28px 24px;text-align:center;">
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Kalau lanjut, kamu setuju sama<br><a href="#" style="color:var(--gold);text-decoration:underline;">Syarat &amp; Ketentuan</a> dan <a href="#" style="color:var(--gold);text-decoration:underline;">Kebijakan Privasi</a>.</div>
+    </div>
   </div>
 </div>
 
-<div class="admin-layout">
-  <aside class="admin-sidebar" id="admin-sidebar">
-    <div class="sidebar-logo">
-      <div class="brand">DOOMINIKS <span>STORE</span></div>
-      <div class="role">★ Owner Panel</div>
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
+    <div class="nav-links">
+      <a href="../index.html">Beranda</a>
+      <a href="catalog.html">Katalog</a>
+      <a href="orders.html" class="active">Pesanan</a>
+      <a href="leaderboard.html">Leaderboard</a>
     </div>
-    <div class="sidebar-section-title">Menu Utama</div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
-      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
-      <a href="orders.html" class="active"><span class="nav-icon">◷</span>Pesanan</a>
-    </nav>
-    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
-    <nav class="sidebar-nav">
-      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
-      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
-    </nav>
-    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
-    <nav class="sidebar-nav">
-      <a href="announcement.html"><span class="nav-icon">📢</span>Pengumuman</a>
-      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
-      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
-    </nav>
-    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
-      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
-    </div>
-  </aside>
-
-  <main class="admin-content">
-    <div class="admin-page-title">Kelola Pesanan</div>
-    <div class="admin-page-sub">Approve, tolak, dan pantau semua transaksi</div>
-
-    <!-- Summary cards -->
-    <div class="grid-4" style="margin-bottom:28px;" id="order-summary">
-      <div class="stat-card"><div class="stat-icon gold">⊞</div><div><div class="stat-label">Total</div><div class="stat-value" id="os-total">-</div></div></div>
-      <div class="stat-card"><div class="stat-icon red">◆</div><div><div class="stat-label">Pending</div><div class="stat-value" id="os-pending">-</div></div></div>
-      <div class="stat-card"><div class="stat-icon green">✓</div><div><div class="stat-label">Berhasil</div><div class="stat-value" id="os-success">-</div></div></div>
-      <div class="stat-card"><div class="stat-icon cyan">▲</div><div><div class="stat-label">Revenue</div><div class="stat-value" id="os-revenue" style="font-size:18px;">-</div></div></div>
-    </div>
-
-    <!-- Filters -->
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-      <div class="tabs" style="margin-bottom:0;">
-        <button class="tab-btn active" onclick="setStatusFilter('all',this)">Semua</button>
-        <button class="tab-btn" onclick="setStatusFilter('pending',this)">Pending</button>
-        <button class="tab-btn" onclick="setStatusFilter('processing',this)">Diproses</button>
-        <button class="tab-btn" onclick="setStatusFilter('success',this)">Berhasil</button>
-        <button class="tab-btn" onclick="setStatusFilter('failed',this)">Gagal</button>
-      </div>
-      <div style="position:relative;flex:1;min-width:180px;">
-        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);">⌕</span>
-        <input class="form-input" id="order-search" placeholder="Cari order ID, nama, email..." oninput="renderOrdersTable()" style="padding-left:38px;" />
+    <div class="nav-actions">
+      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">Masuk</button>
+      <div class="nav-actions" id="user-menu" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;">
+          <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
+          <span id="nav-username" style="font-size:14px;"></span>
+          <a href="owner/dashboard.html" id="nav-admin-link" style="display:none;color:var(--gold);font-size:13px;">★</a>
+          <button onclick="signOut()" style="background:none;color:var(--text-muted);font-size:13px;">→</button>
+        </div>
       </div>
     </div>
+  </div>
+</nav>
 
+<div class="container" style="padding-top:48px;padding-bottom:80px;">
+  <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;margin-bottom:6px;">Pesanan <span style="color:var(--gold);">Saya</span></h1>
+  <p style="color:var(--text-secondary);margin-bottom:32px;">Riwayat semua transaksi kamu</p>
+
+  <div id="orders-require-login" style="display:none;">
+    <div class="empty-state">
+      <div class="empty-icon">▪</div>
+      <h4>Login Diperlukan</h4>
+      <p>Login untuk melihat riwayat pesanan kamu.</p>
+      <button class="btn btn-primary" onclick="openModal('modal-login')">Masuk Sekarang</button>
+    </div>
+  </div>
+
+  <div id="orders-content" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="filterOrders('all', this)">Semua</button>
+      <button class="tab-btn" onclick="filterOrders('pending', this)">Menunggu</button>
+      <button class="tab-btn" onclick="filterOrders('processing', this)">Diproses</button>
+      <button class="tab-btn" onclick="filterOrders('success', this)">Berhasil</button>
+      <button class="tab-btn" onclick="filterOrders('failed', this)">Gagal</button>
+    </div>
     <div class="card" style="padding:0;overflow:hidden;">
       <div class="table-wrap">
-        <table>
+        <table id="orders-table">
           <thead><tr>
             <th>Order ID</th>
-            <th>Pembeli</th>
             <th>Produk</th>
             <th>Total</th>
             <th>Metode</th>
             <th>Status</th>
-            <th>Bukti</th>
-            <th>Waktu</th>
-            <th>Aksi</th>
+            <th>Tanggal</th>
+            <th>Kode</th>
+            <th>Ulasan</th>
           </tr></thead>
-          <tbody id="orders-admin-tbody"></tbody>
+          <tbody id="orders-tbody"></tbody>
         </table>
       </div>
-      <div id="orders-load-more" style="text-align:center;padding:20px;display:none;">
-        <button class="btn btn-secondary" onclick="loadMoreOrders()">Muat Lebih Banyak</button>
-      </div>
     </div>
-  </main>
+  </div>
 </div>
 
-<script src="../../js/firebase-config.js"></script>
-<script src="../../js/app.js"></script>
+<footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
+  <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">&copy; 2025 DOOMINIKS STORE</div>
+</footer>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="modal-review">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">⭐ Beri Ulasan</span>
+      <button class="modal-close" onclick="closeModal('modal-review')">&times;</button>
+    </div>
+    <div id="review-order-info" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:16px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Rating</div>
+      <div id="review-stars" style="display:flex;gap:8px;font-size:32px;cursor:pointer;">
+        <span class="rev-star" data-v="1">☆</span>
+        <span class="rev-star" data-v="2">☆</span>
+        <span class="rev-star" data-v="3">☆</span>
+        <span class="rev-star" data-v="4">☆</span>
+        <span class="rev-star" data-v="5">☆</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ulasan <span style="color:var(--text-muted);font-weight:400;">(opsional)</span></label>
+      <textarea class="form-input" id="review-text" placeholder="Ceritakan pengalaman kamu..." style="resize:none;height:80px;font-size:13px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Foto <span style="color:var(--text-muted);font-weight:400;">(opsional)</span></label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="review-photo-preview" style="width:56px;height:56px;border-radius:var(--radius);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('review-photo-input').click()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        </div>
+        <div>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
+            Upload Foto
+            <input type="file" id="review-photo-input" accept="image/*" style="display:none;" onchange="previewReviewPhoto(this)" />
+          </label>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">JPG, PNG • Maks 3MB</div>
+          <div id="review-photo-status" style="font-size:11px;color:var(--text-secondary);margin-top:2px;"></div>
+        </div>
+      </div>
+      <input type="hidden" id="review-photo-url" />
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="submitReview()" id="btn-submit-review">Kirim Ulasan</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-review')">Lewati</button>
+    </div>
+    <div id="review-sent" style="display:none;color:var(--green);font-size:13px;margin-top:10px;">✓ Terima kasih atas ulasanmu!</div>
+  </div>
+</div>
+
+<script src="../js/firebase-config.js"></script>
+<script src="../js/app.js"></script>
 <script>
 let allOrders = [];
-let statusFilter = "all";
+let currentFilter = "all";
 let ordersUnsubscribe = null;
-const PAGE_SIZE = 30;
+const reviewedOrderIds = new Set(); // Persist reviewed state across onSnapshot refreshes
 
-function requireOwner(user) {
-  if (!user || !isOwner(user.uid)) {
-    toast("Akses ditolak.", "error");
-    setTimeout(() => window.location.href = "../../index.html", 1500);
-    return false;
-  }
-  return true;
-}
-
-function loadOrders() {
+async function loadOrders(user) {
+  // Cleanup previous listener
   if (ordersUnsubscribe) { ordersUnsubscribe(); ordersUnsubscribe = null; }
-  const q = db.collection("orders").orderBy("createdAt", "desc").limit(PAGE_SIZE);
-  ordersUnsubscribe = q.onSnapshot(snap => {
-    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    updateSummary();
-    renderOrdersTable();
-  }, e => {
-    toast("Gagal memuat pesanan: " + e.message, "error");
-  });
+  try {
+    const q = db.collection("orders").where("userId", "==", user.uid).limit(50);
+    ordersUnsubscribe = q.onSnapshot(snap => {
+      allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allOrders.sort((a, b) => {
+        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+      renderOrders();
+      // Notify user if status changed
+      snap.docChanges().forEach(change => {
+        if (change.type === "modified") {
+          const o = change.doc.data();
+          const lbl = { success:"✅ Berhasil", processing:"⏳ Sedang Diproses", failed:"❌ Ditolak" };
+          if (lbl[o.status]) toast(`Order ${o.orderId} — ${lbl[o.status]}`, o.status === "success" ? "success" : o.status === "failed" ? "error" : "info");
+        }
+      });
+    }, e => {
+      document.getElementById("orders-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Gagal memuat pesanan.</td></tr>`;
+    });
+  } catch (e) {
+    document.getElementById("orders-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Gagal memuat pesanan.</td></tr>`;
+  }
 }
 
-function updateSummary() {
-  const orders = allOrders;
-  document.getElementById("os-total").textContent = orders.length;
-  document.getElementById("os-pending").textContent = orders.filter(o => o.status === "pending").length;
-  document.getElementById("os-success").textContent = orders.filter(o => o.status === "success").length;
-  document.getElementById("os-revenue").textContent = formatIDR(orders.filter(o => o.status === "success").reduce((s, o) => s + (o.total||0), 0));
-}
-
-function setStatusFilter(status, btn) {
-  statusFilter = status;
+function filterOrders(status, btn) {
+  currentFilter = status;
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  renderOrdersTable();
+  renderOrders();
 }
 
-function renderOrdersTable() {
-  const q = document.getElementById("order-search").value.toLowerCase();
-  let filtered = allOrders.filter(o => {
-    const matchStatus = statusFilter === "all" || o.status === statusFilter;
-    const matchQ = !q || o.orderId?.toLowerCase().includes(q) || o.userDisplayName?.toLowerCase().includes(q) || o.userEmail?.toLowerCase().includes(q) || o.productName?.toLowerCase().includes(q);
-    return matchStatus && matchQ;
-  });
-  const tbody = document.getElementById("orders-admin-tbody");
+function renderOrders() {
+  const filtered = currentFilter === "all" ? allOrders : allOrders.filter(o => o.status === currentFilter);
+  const tbody = document.getElementById("orders-tbody");
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⊞</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">▪</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
     return;
   }
   const statusBadge = s => {
-    const map = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
-    const lbl = { pending:"Pending", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
-    return `<span class="badge ${map[s]||'badge-pending'}">${lbl[s]||s}</span>`;
+    const map = { pending: "badge-pending", processing: "badge-processing", success: "badge-success", failed: "badge-failed" };
+    const labels = { pending: "Menunggu", processing: "Diproses", success: "Berhasil", failed: "Gagal" };
+    return `<span class="badge ${map[s]||'badge-pending'}">${labels[s]||s}</span>`;
   };
   tbody.innerHTML = filtered.map(o => `
     <tr>
       <td style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--gold);">${o.orderId}</td>
       <td>
-        <div style="font-size:13px;font-weight:500;">${o.userDisplayName||"-"}</div>
-        <div style="font-size:11px;color:var(--text-muted);">${o.userEmail||""}</div>
+        <div style="font-weight:600;">${o.productName}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${o.itemName}</div>
       </td>
-      <td>
-        <div style="font-size:13px;font-weight:500;">${o.productName}</div>
-        <div style="font-size:11px;color:var(--text-secondary);">${o.itemName}</div>
-      </td>
-      <td style="font-weight:700;font-size:13px;">${formatIDR(o.total)}</td>
-      <td style="font-size:12px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod||"-"}</td>
+      <td style="font-weight:700;">${formatIDR(o.total)}</td>
+      <td style="font-size:13px;color:var(--text-secondary);">${o.paymentMethodName||o.paymentMethod}</td>
       <td>${statusBadge(o.status)}</td>
-      <td style="text-align:center;">
-        ${o.proofImageUrl
-          ? `<a href="${o.proofImageUrl}" target="_blank" title="Lihat bukti pembayaran" style="font-size:18px;text-decoration:none;">✅</a>`
-          : `<span title="Belum ada bukti" style="font-size:16px;color:var(--text-muted);">❌</span>`}
-      </td>
-      <td style="font-size:11px;color:var(--text-muted);">${formatDate(o.createdAt)}</td>
+      <td style="font-size:13px;color:var(--text-secondary);">${formatDate(o.createdAt)}</td>
       <td>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-sm" onclick="viewOrder('${o.orderId}')">☰</button>
-          ${o.status === "pending" ? `
-            <button class="btn btn-success btn-sm" onclick="changeStatus('${o.orderId}','success')">✓</button>
-            <button class="btn btn-secondary btn-sm" onclick="changeStatus('${o.orderId}','processing')" title="Set Proses">▶</button>
-            <button class="btn btn-danger btn-sm" onclick="changeStatus('${o.orderId}','failed')">✕</button>
-          ` : o.status === "processing" ? `
-            <button class="btn btn-success btn-sm" onclick="changeStatus('${o.orderId}','success')">✓</button>
-            <button class="btn btn-danger btn-sm" onclick="changeStatus('${o.orderId}','failed')">✕</button>
-          ` : ""}
-        </div>
+        ${o.redeemCode ? `
+          <div style="background:var(--bg-panel);border:1px solid var(--gold);border-radius:8px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;max-width:200px;">
+            <span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;word-break:break-all;">${o.redeemCode}</span>
+            <button onclick="navigator.clipboard.writeText('${o.redeemCode}').then(()=>toast('Kode disalin!','success'))" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;flex-shrink:0;" title="Salin kode">⎘</button>
+          </div>
+        ` : `<span style="font-size:12px;color:var(--text-muted);">-</span>`}
+      </td>
+      <td>
+        ${o.status === "success" && !o.reviewed && !reviewedOrderIds.has(o.id)
+          ? `<button class="btn btn-secondary btn-sm" onclick="openReviewModal('${o.id}','${o.orderId}','${o.productId}','${o.productName}','${o.itemName}')">⭐ Ulasan</button>`
+          : (o.reviewed || reviewedOrderIds.has(o.id)) ? `<span style="font-size:12px;color:var(--text-muted);">✓ Diulas</span>` : ""}
       </td>
     </tr>
   `).join("");
 }
 
-async function changeStatus(orderId, newStatus) {
-  const labels = { success: "Setujui", processing: "Set ke Diproses", failed: "Tolak" };
-  if (!confirm(`${labels[newStatus]||"Ubah status"} pesanan ${orderId}?`)) return;
-  const debugLines = [];
-  try {
-    const updateData = {
-      status: newStatus,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: currentUser.uid
+// ---- Review System ----
+const CLOUDINARY_CLOUD_NAME_R = "dnpvgpqka";
+const CLOUDINARY_UPLOAD_PRESET_R = "vaultstore";
+let reviewRating = 0;
+let reviewOrderData = {};
+
+function openReviewModal(docId, orderId, productId, productName, itemName) {
+  reviewOrderData = { docId, orderId, productId, productName, itemName };
+  reviewRating = 0;
+  document.getElementById("review-text").value = "";
+  document.getElementById("review-photo-url").value = "";
+  document.getElementById("review-photo-preview").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
+  document.getElementById("review-photo-status").textContent = "";
+  document.getElementById("review-sent").style.display = "none";
+  document.getElementById("btn-submit-review").style.display = "inline-flex";
+  document.getElementById("btn-submit-review").disabled = false;
+  document.getElementById("btn-submit-review").textContent = "Kirim Ulasan";
+  document.querySelectorAll(".rev-star").forEach(s => { s.textContent = "☆"; s.style.color = ""; });
+  document.getElementById("review-order-info").innerHTML = `
+    <div style="font-weight:600;margin-bottom:2px;">${productName}</div>
+    <div style="color:var(--text-secondary);">Nominal: <span style="color:var(--gold);">${itemName}</span> &bull; Order: <span style="font-family:var(--font-body);color:var(--gold);">${orderId}</span></div>
+  `;
+  // Star events
+  document.querySelectorAll(".rev-star").forEach(star => {
+    star.onclick = () => {
+      reviewRating = parseInt(star.dataset.v);
+      document.querySelectorAll(".rev-star").forEach((s,i) => { s.textContent = i < reviewRating ? "★" : "☆"; s.style.color = i < reviewRating ? "var(--gold)" : ""; });
     };
-    await db.collection("orders").doc(orderId).update(updateData);
-    debugLines.push("✓ Status order diupdate ke: " + newStatus);
+    star.onmouseover = () => {
+      const v = parseInt(star.dataset.v);
+      document.querySelectorAll(".rev-star").forEach((s,i) => { s.textContent = i < v ? "★" : "☆"; s.style.color = i < v ? "var(--gold)" : ""; });
+    };
+    star.onmouseout = () => {
+      document.querySelectorAll(".rev-star").forEach((s,i) => { s.textContent = i < reviewRating ? "★" : "☆"; s.style.color = i < reviewRating ? "var(--gold)" : ""; });
+    };
+  });
+  openModal("modal-review");
+}
 
-    if (newStatus === "success") {
-      const o = allOrders.find(x => x.orderId === orderId);
-      debugLines.push("userId: " + (o?.userId || "TIDAK ADA"));
-      debugLines.push("status sebelum approve: " + (o?.status || "TIDAK ADA"));
-      debugLines.push("total: " + (o?.total || 0));
+function previewReviewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { toast("Foto maks 3MB", "error"); input.value = ""; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById("review-photo-preview").innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+  uploadReviewPhoto(file);
+}
 
-      if (o && o.userId && o.status !== "success") {
-        debugLines.push("→ Guard LOLOS, mencoba update leaderboard...");
-        let currentName = o.userDisplayName || "Pelanggan";
-        let currentPhoto = o.userPhotoURL || null;
-        try {
-          const userSnap = await db.collection("users").doc(o.userId).get();
-          if (userSnap.exists) {
-            const u = userSnap.data();
-            if (u.displayName) currentName = u.displayName;
-            if (u.photoURL) currentPhoto = u.photoURL;
-          }
-        } catch(e) { debugLines.push("⚠ Gagal ambil profil users: " + e.message); }
-
-        const lbRef = db.collection("leaderboard").doc(o.userId);
-        try {
-          await lbRef.set({
-            displayName: currentName,
-            photoURL: currentPhoto,
-            totalSpent: firebase.firestore.FieldValue.increment(o.total || 0),
-            orderCount: firebase.firestore.FieldValue.increment(1),
-            lastOrder: firebase.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
-          debugLines.push("✓ LEADERBOARD BERHASIL diupdate!");
-        } catch(e) {
-          debugLines.push("✕ GAGAL update leaderboard: " + e.code + " - " + e.message);
-        }
-
-        try {
-          await db.collection("publicPurchases").add({
-            orderId,
-            userDisplayName: currentName,
-            userPhotoURL: currentPhoto,
-            itemName: o.itemName || "",
-            productName: o.productName || "",
-            productId: o.productId || null,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          });
-          debugLines.push("✓ publicPurchases BERHASIL ditulis!");
-        } catch(e) {
-          debugLines.push("✕ GAGAL tulis publicPurchases: " + e.code + " - " + e.message);
-        }
-      } else {
-        debugLines.push("✕ Guard TIDAK LOLOS — leaderboard/publicPurchases TIDAK ditulis sama sekali.");
-        if (!o) debugLines.push("  Sebab: order tidak ditemukan di allOrders.");
-        else if (!o.userId) debugLines.push("  Sebab: order.userId kosong/tidak ada.");
-        else if (o.status === "success") debugLines.push("  Sebab: status order SUDAH success sebelumnya (dianggap duplikat).");
-      }
-      alert("=== DEBUG INFO ===\n" + debugLines.join("\n"));
-    }
-
-    // Update local
-    const idx = allOrders.findIndex(o => o.orderId === orderId);
-    if (idx !== -1) allOrders[idx].status = newStatus;
-    updateSummary();
-    renderOrdersTable();
-    toast(`Pesanan ${orderId} — status diperbarui ke ${newStatus}.`, "success");
-  } catch (e) {
-    toast("Gagal update: " + e.message, "error");
+async function uploadReviewPhoto(file) {
+  document.getElementById("review-photo-status").textContent = "Mengupload...";
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_R);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_R}/image/upload`, { method: "POST", body: fd });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error();
+    document.getElementById("review-photo-url").value = data.secure_url;
+    document.getElementById("review-photo-status").innerHTML = `<span style="color:var(--green);">✓ Foto siap</span>`;
+  } catch(e) {
+    document.getElementById("review-photo-status").textContent = "Gagal upload.";
   }
 }
 
-function viewOrder(orderId) {
-  const o = allOrders.find(x => x.orderId === orderId);
-  if (!o) return;
-  const statusMap = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
-  const statusLbl = { pending:"Pending", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
-  const gameFields = o.gameFields || {};
-  document.getElementById("order-detail-body").innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div style="font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--gold);letter-spacing:-0.3px;">${o.orderId}</div>
-      <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
-    </div>
-    <div class="order-detail-grid">
-      <div class="detail-item"><div class="di-label">Pembeli</div><div class="di-value">${o.userDisplayName||"-"}</div></div>
-      <div class="detail-item"><div class="di-label">Email</div><div class="di-value">${o.userEmail||"-"}</div></div>
-      <div class="detail-item"><div class="di-label">Produk</div><div class="di-value">${o.productName}</div></div>
-      <div class="detail-item"><div class="di-label">Nominal</div><div class="di-value">${o.itemName}</div></div>
-      <div class="detail-item"><div class="di-label">Total Bayar</div><div class="di-value" style="color:var(--gold);font-weight:700;">${formatIDR(o.total)}</div></div>
-      <div class="detail-item"><div class="di-label">Metode Bayar</div><div class="di-value">${o.paymentMethodName||o.paymentMethod||"-"}</div></div>
-      ${Object.entries(gameFields).map(([k, v]) => v ? `<div class="detail-item"><div class="di-label">${k}</div><div class="di-value">${v}</div></div>` : "").join("")}
-      <div class="detail-item"><div class="di-label">Waktu Order</div><div class="di-value">${formatDate(o.createdAt)}</div></div>
-    </div>
-    ${o.proofImageUrl ? `
-    <div style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--gold);">▲ Bukti Pembayaran</div>
-      <a href="${o.proofImageUrl}" target="_blank">
-        <img src="${o.proofImageUrl}" alt="Bukti Bayar" style="max-width:100%;max-height:300px;border-radius:var(--radius);border:1px solid var(--border);display:block;" />
-      </a>
-      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">Klik gambar untuk lihat full size</div>
-    </div>` : `<div style="margin-bottom:16px;font-size:13px;color:var(--text-muted);">Tidak ada bukti pembayaran diupload.</div>`}
-    <div class="order-detail-grid" style="display:none;">
-    </div>
-    ${o.status === "pending" || o.status === "processing" ? `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${o.status === "pending" ? `<button class="btn btn-secondary btn-sm" onclick="changeStatus('${o.orderId}','processing');closeModal('modal-order-detail')">▶ Set Diproses</button>` : ""}
-      <button class="btn btn-success" onclick="changeStatus('${o.orderId}','success');closeModal('modal-order-detail')">✓ Setujui Pesanan</button>
-      <button class="btn btn-danger" onclick="changeStatus('${o.orderId}','failed');closeModal('modal-order-detail')">✕ Tolak Pesanan</button>
-    </div>` : ""}
-  `;
-  openModal("modal-order-detail");
+let isSubmittingReview = false;
+
+async function submitReview() {
+  if (isSubmittingReview) return;
+  if (!reviewRating) { toast("Pilih rating bintang dulu", "error"); return; }
+  if (document.getElementById("review-photo-status").textContent === "Mengupload...") {
+    toast("Tunggu foto selesai diupload", "info"); return;
+  }
+  isSubmittingReview = true;
+  const btn = document.getElementById("btn-submit-review");
+  btn.disabled = true; btn.textContent = "Mengirim...";
+  try {
+    const user = auth.currentUser;
+    await db.collection("reviews").add({
+      productId: reviewOrderData.productId || "",
+      productName: reviewOrderData.productName || "",
+      itemName: reviewOrderData.itemName || "",
+      orderId: reviewOrderData.orderId || "",
+      userId: user?.uid || "anonymous",
+      userName: user?.displayName || "Anonim",
+      userPhoto: user?.photoURL || null,
+      rating: reviewRating,
+      text: document.getElementById("review-text").value.trim(),
+      photoUrl: document.getElementById("review-photo-url").value || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    // Always update local state first - persists across onSnapshot
+    const idx = allOrders.findIndex(o => o.id === reviewOrderData.docId);
+    if (idx !== -1) allOrders[idx].reviewed = true;
+    reviewedOrderIds.add(reviewOrderData.docId); // Persists even if onSnapshot refreshes
+
+    // Mark order as reviewed in Firestore (separate try)
+    try {
+      await db.collection("orders").doc(reviewOrderData.docId).update({ reviewed: true });
+    } catch(e2) { console.warn("Could not mark order as reviewed:", e2); }
+
+    document.getElementById("review-sent").style.display = "block";
+    btn.style.display = "none";
+    toast("Ulasan berhasil dikirim!", "success");
+    renderOrders();
+    setTimeout(() => { closeModal("modal-review"); isSubmittingReview = false; }, 2000);
+  } catch(e) {
+    console.error("Review error:", e);
+    toast("Gagal kirim ulasan: " + e.message, "error");
+    btn.disabled = false; btn.textContent = "Kirim Ulasan";
+    isSubmittingReview = false;
+  }
+}
+
+async function handleGoogleLogin() {
+  try { await signInWithGoogle(); closeModal("modal-login"); } catch(e) {}
 }
 
 function onAuthReady(user) {
   hideLoader();
-  if (!requireOwner(user)) return;
-  loadOrders();
+  if (user) {
+    document.getElementById("orders-require-login").style.display = "none";
+    document.getElementById("orders-content").style.display = "block";
+    loadOrders(user);
+  } else {
+    document.getElementById("orders-require-login").style.display = "block";
+    document.getElementById("orders-content").style.display = "none";
+  }
 }
 </script>
 </body>
