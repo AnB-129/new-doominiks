@@ -23,6 +23,10 @@
     .item-card .item-price { font-size: 13px; font-weight: 700; color: var(--gold); font-family: var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; }
     .item-card .item-orig { font-size: 10px; color: var(--text-muted); text-decoration: line-through; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body); }
     .item-card .item-save { position: absolute; top: 0; right: 0; background: var(--red); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 0 var(--radius) 0 var(--radius); white-space: nowrap; }
+    .item-card .item-new { position: absolute; top: 0; left: 0; background: var(--green); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--radius) 0 var(--radius) 0; white-space: nowrap; z-index: 1; }
+    .item-card.expired { opacity: 0.5; cursor: not-allowed; }
+    .item-card.expired:hover { border-color: var(--border); }
+    .item-card .item-expired-tag { font-size: 10px; font-weight: 700; color: var(--red); margin-top: 2px; }
     .product-hero-icon { width: 100%; height: 220px; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 0; }
 
     .topup-type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px; }
@@ -415,6 +419,14 @@ function selectTopupType(typeId) {
   }
 }
 
+function getItemExpiredMs(expiredAt) {
+  if (!expiredAt) return NaN;
+  if (expiredAt.toDate) return expiredAt.toDate().getTime();
+  if (expiredAt.seconds) return expiredAt.seconds * 1000 + (expiredAt.nanoseconds||0) / 1e6;
+  const d = new Date(expiredAt);
+  return isNaN(d) ? NaN : d.getTime();
+}
+
 function renderItems(items) {
   const grid = document.getElementById("items-grid");
   if (!grid) return;
@@ -429,12 +441,16 @@ function renderItems(items) {
   window._currentItems = items;
   grid.innerHTML = items.map((item, i) => {
     const save = item.originalPrice ? Math.round((1 - item.price/item.originalPrice) * 100) : 0;
+    const itemExpiredMs = item.expiredAt ? getItemExpiredMs(item.expiredAt) : NaN;
+    const isExpired = !isNaN(itemExpiredMs) && itemExpiredMs <= Date.now();
     return `
-      <div class="item-card reveal" id="item-${i}" onclick="selectItemByIndex(${i})">
-        ${save > 0 ? `<div class="item-save">-${save}%</div>` : ""}
+      <div class="item-card reveal${isExpired ? ' expired' : ''}" id="item-${i}" onclick="${isExpired ? '' : `selectItemByIndex(${i})`}">
+        ${item.isNew && !isExpired ? `<div class="item-new">${item.badgeText ? item.badgeText : "🆕 Baru"}</div>` : ""}
+        ${save > 0 && !isExpired ? `<div class="item-save">-${save}%</div>` : ""}
         <div class="item-name">${item.name}</div>
         ${item.originalPrice ? `<div class="item-orig">${formatIDR(item.originalPrice)}</div>` : ""}
         <div class="item-price">${formatIDR(item.price)}</div>
+        ${isExpired ? `<div class="item-expired-tag">⏱ Kedaluwarsa</div>` : ""}
       </div>`;
   }).join("");
   if (window.refreshScrollReveal) window.refreshScrollReveal();
@@ -444,6 +460,8 @@ function renderItems(items) {
 function selectItemByIndex(i) {
   const item = (window._currentItems || [])[i];
   if (!item) return;
+  const expiredMs = item.expiredAt ? getItemExpiredMs(item.expiredAt) : NaN;
+  if (!isNaN(expiredMs) && expiredMs <= Date.now()) return; // produk kedaluwarsa, tidak bisa dipilih
   document.querySelectorAll(".item-card").forEach(c => c.classList.remove("selected"));
   const card = document.getElementById(`item-${i}`);
   if (card) card.classList.add("selected");
@@ -464,6 +482,8 @@ function renderBuySection() {
   const imgUrl = selectedItem.imageUrl || null;
   const stock = selectedItem.stock ?? null;
   const expiredAt = selectedItem.expiredAt || null;
+  const expiredMsNow = expiredAt ? getItemExpiredMs(expiredAt) : NaN;
+  const isExpiredNow = !isNaN(expiredMsNow) && expiredMsNow <= Date.now();
 
   // Badge stok
   let stockBadge = "";
@@ -492,8 +512,8 @@ function renderBuySection() {
       </div>
       ${imgUrl ? `<img src="${imgUrl}" alt="${selectedItem.name}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;background:var(--bg-panel);padding:4px;">` : ""}
     </div>
-    <button class="btn btn-primary btn-full btn-lg" onclick="startCheckout()" ${stock !== null && stock <= 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ""}>
-      Beli Sekarang &rarr;
+    <button id="buy-btn" class="btn btn-primary btn-full btn-lg" onclick="startCheckout()" ${(stock !== null && stock <= 0) || isExpiredNow ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ""}>
+      ${isExpiredNow ? "⏱ Item Kedaluwarsa" : ((stock !== null && stock <= 0) ? "✕ Stok Habis" : "Beli Sekarang &rarr;")}
     </button>`;
 
   // Start countdown real-time
@@ -516,6 +536,13 @@ function renderBuySection() {
         badge.textContent = "⏱ Kedaluwarsa";
         badge.style.color = "#ef4444";
         clearInterval(countdownInterval);
+        const buyBtn = document.getElementById("buy-btn");
+        if (buyBtn) {
+          buyBtn.disabled = true;
+          buyBtn.style.opacity = "0.5";
+          buyBtn.style.cursor = "not-allowed";
+          buyBtn.textContent = "⏱ Item Kedaluwarsa";
+        }
         return;
       }
       const d = Math.floor(diff / 86400000);
