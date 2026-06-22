@@ -405,6 +405,11 @@ function addItemRow(item) {
     <input class="form-input item-typeid" id="item-typeid-${i}" placeholder="ID Tipe (opsional, mis. robux_5hari)" value="${item ? (item.typeId||'') : ''}" style="flex:1 1 100%;font-size:12px;" />
     <input class="form-input" id="item-stock-${i}" type="number" min="0" placeholder="Stok (kosongkan = tidak terbatas)" value="${item && item.stock !== undefined && item.stock !== null ? item.stock : ''}" style="flex:1 1 40%;font-size:12px;" />
     <input class="form-input" id="item-expired-${i}" type="datetime-local" title="Countdown Expired (opsional)" value="${item && item.expiredAt ? (() => { try { const d = item.expiredAt.toDate ? item.expiredAt.toDate() : new Date(item.expiredAt); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16); } catch(e){ return ''; } })() : ''}" style="flex:1 1 55%;font-size:12px;" />
+    <label style="display:flex;align-items:center;gap:6px;flex:1 1 35%;font-size:12px;color:var(--text-secondary);cursor:pointer;">
+      <input type="checkbox" id="item-isnew-${i}" ${item && item.isNew ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--green);cursor:pointer;" />
+      🆕 Tandai sebagai Baru
+    </label>
+    <input class="form-input" id="item-badgetext-${i}" placeholder="Teks badge (kosongkan = 🆕 Baru)" value="${item ? (item.badgeText||'') : ''}" maxlength="14" style="flex:1 1 55%;font-size:12px;" />
     <div style="flex:1 1 100%;display:flex;align-items:center;gap:8px;">
       <div id="item-img-preview-${i}" style="width:48px;height:48px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
         ${item && item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;height:100%;object-fit:contain;">` : `<span style="font-size:18px;color:var(--text-muted);">🖼</span>`}
@@ -433,12 +438,16 @@ function getItems() {
     const stock = stockVal !== "" && stockVal !== undefined ? parseInt(stockVal) : null;
     const expiredVal = document.getElementById(`item-expired-${i}`)?.value;
     const expiredAt = expiredVal ? new Date(expiredVal) : null;
+    const isNew = document.getElementById(`item-isnew-${i}`)?.checked || false;
+    const badgeText = document.getElementById(`item-badgetext-${i}`)?.value?.trim() || null;
     const imageUrl = document.getElementById(`item-img-${i}`)?.value?.trim() || null;
     if (!name || !price) return null;
     const obj = { name, price, ...(orig ? { originalPrice: orig } : {}) };
     if (typeId) obj.typeId = typeId;
     if (stock !== null && !isNaN(stock)) obj.stock = stock;
     if (expiredAt) obj.expiredAt = expiredAt;
+    if (isNew) obj.isNew = true;
+    if (isNew && badgeText) obj.badgeText = badgeText;
     if (imageUrl) obj.imageUrl = imageUrl;
     return obj;
   }).filter(Boolean);
