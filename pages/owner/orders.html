@@ -33,6 +33,21 @@
   </div>
 </div>
 
+<!-- Chat / Customer Service Modal -->
+<div class="modal-overlay" id="modal-chat">
+  <div class="modal" style="max-width:480px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:600px;max-height:80vh;">
+    <div class="modal-header" style="padding:16px 20px;margin-bottom:0;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span class="modal-title" id="chat-modal-title" style="font-size:16px;">💬 Chat Pelanggan</span>
+      <button class="modal-close" onclick="closeChatModal()">&times;</button>
+    </div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-input-bar">
+      <input class="form-input" id="chat-input" placeholder="Balas pelanggan..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatMessage();}" />
+      <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">Kirim</button>
+    </div>
+  </div>
+</div>
+
 <div class="admin-layout">
   <aside class="admin-sidebar" id="admin-sidebar">
     <div class="sidebar-logo">
@@ -43,7 +58,7 @@
     <nav class="sidebar-nav">
       <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
       <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
-      <a href="orders.html" class="active"><span class="nav-icon">◷</span>Pesanan</a>
+      <a href="orders.html" class="active"><span class="nav-icon">◷</span>Pesanan<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
     </nav>
     <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
     <nav class="sidebar-nav">
@@ -100,6 +115,7 @@
             <th>Status</th>
             <th>Bukti</th>
             <th>Waktu</th>
+            <th>CS</th>
             <th>Aksi</th>
           </tr></thead>
           <tbody id="orders-admin-tbody"></tbody>
@@ -136,6 +152,7 @@ function loadOrders() {
     allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateSummary();
     renderOrdersTable();
+    updateChatSidebarBadge();
   }, e => {
     toast("Gagal memuat pesanan: " + e.message, "error");
   });
@@ -165,7 +182,7 @@ function renderOrdersTable() {
   });
   const tbody = document.getElementById("orders-admin-tbody");
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⊞</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⊞</div><h4>Tidak ada pesanan</h4></div></td></tr>`;
     return;
   }
   const statusBadge = s => {
@@ -193,6 +210,9 @@ function renderOrdersTable() {
           : `<span title="Belum ada bukti" style="font-size:16px;color:var(--text-muted);">❌</span>`}
       </td>
       <td style="font-size:11px;color:var(--text-muted);">${formatDate(o.createdAt)}</td>
+      <td style="text-align:center;">
+        <button class="btn btn-secondary btn-sm chat-btn" onclick="openChat('${o.orderId}')" title="Chat dengan pelanggan">💬${o.unreadByOwner ? `<span class="chat-unread-dot"></span>` : ""}</button>
+      </td>
       <td>
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="viewOrder('${o.orderId}')">☰</button>
@@ -285,9 +305,12 @@ function viewOrder(orderId) {
   const statusLbl = { pending:"Pending", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
   const gameFields = o.gameFields || {};
   document.getElementById("order-detail-body").innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div style="font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--gold);letter-spacing:-0.3px;">${o.orderId}</div>
-      <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--gold);letter-spacing:-0.3px;">${o.orderId}</div>
+        <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-order-detail');openChat('${o.orderId}')">💬 Chat Pelanggan</button>
     </div>
     <div class="order-detail-grid">
       <div class="detail-item"><div class="di-label">Pembeli</div><div class="di-value">${o.userDisplayName||"-"}</div></div>
@@ -317,6 +340,94 @@ function viewOrder(orderId) {
     </div>` : ""}
   `;
   openModal("modal-order-detail");
+}
+
+// ---- Customer Service Chat ----
+let chatUnsubscribe = null;
+let currentChatOrderId = null;
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
+function updateChatSidebarBadge() {
+  const total = allOrders.reduce((s, o) => s + (o.unreadByOwner || 0), 0);
+  const badge = document.getElementById("chat-sidebar-badge");
+  if (!badge) return;
+  if (total > 0) { badge.textContent = total > 99 ? "99+" : total; badge.style.display = "inline-block"; }
+  else { badge.style.display = "none"; }
+}
+
+function openChat(orderId) {
+  currentChatOrderId = orderId;
+  document.getElementById("chat-modal-title").textContent = `💬 Chat — ${orderId}`;
+  document.getElementById("chat-messages").innerHTML = `<div class="chat-empty">Memuat percakapan...</div>`;
+  document.getElementById("chat-input").value = "";
+  openModal("modal-chat");
+  listenChat(orderId);
+  // Reset unread counter buat owner begitu chat dibuka
+  db.collection("orders").doc(orderId).update({ unreadByOwner: 0 }).catch(() => {});
+  const idx = allOrders.findIndex(o => o.orderId === orderId);
+  if (idx !== -1) allOrders[idx].unreadByOwner = 0;
+  renderOrdersTable();
+  updateChatSidebarBadge();
+}
+
+function listenChat(orderId) {
+  if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
+  chatUnsubscribe = db.collection("orders").doc(orderId).collection("messages").orderBy("createdAt", "asc")
+    .onSnapshot(snap => {
+      renderChatMessages(snap.docs.map(d => d.data()));
+    }, () => {
+      document.getElementById("chat-messages").innerHTML = `<div class="chat-empty">Gagal memuat percakapan.</div>`;
+    });
+}
+
+function renderChatMessages(msgs) {
+  const box = document.getElementById("chat-messages");
+  if (!msgs.length) {
+    box.innerHTML = `<div class="chat-empty">Belum ada pesan dari pelanggan ini.</div>`;
+    return;
+  }
+  box.innerHTML = msgs.map(m => `
+    <div class="chat-bubble ${m.senderRole === "owner" ? "me" : "them"}">
+      ${m.senderRole !== "owner" ? `<div class="chat-sender">${escapeHtml(m.senderName || "Pelanggan")}</div>` : ""}
+      <div>${escapeHtml(m.text)}</div>
+      <div class="chat-meta">${formatDate(m.createdAt)}</div>
+    </div>
+  `).join("");
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text || !currentChatOrderId) return;
+  input.value = "";
+  try {
+    await db.collection("orders").doc(currentChatOrderId).collection("messages").add({
+      text,
+      senderId: currentUser.uid,
+      senderName: "Admin DOOMINIKS",
+      senderRole: "owner",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection("orders").doc(currentChatOrderId).update({
+      unreadByCustomer: firebase.firestore.FieldValue.increment(1),
+      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (e) {
+    toast("Gagal mengirim pesan: " + e.message, "error");
+    input.value = text;
+  }
+}
+
+function closeChatModal() {
+  closeModal("modal-chat");
+  if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
+  currentChatOrderId = null;
 }
 
 function onAuthReady(user) {
