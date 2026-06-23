@@ -177,6 +177,7 @@
 let allOrders = [];
 let currentFilter = "all";
 let ordersUnsubscribe = null;
+let lastKnownStatus = {}; // orderDocId -> status, dipake buat deteksi PERUBAHAN status asli (bukan tiap field berubah)
 const reviewedOrderIds = new Set(); // Persist reviewed state across onSnapshot refreshes
 
 async function loadOrders(user) {
@@ -185,6 +186,16 @@ async function loadOrders(user) {
   try {
     const q = db.collection("orders").where("userId", "==", user.uid).limit(50);
     ordersUnsubscribe = q.onSnapshot(snap => {
+      // Notify user HANYA kalau status order beneran berubah (bukan modifikasi field lain seperti unreadByCustomer/lastMessageAt dari chat)
+      snap.docChanges().forEach(change => {
+        const o = change.doc.data();
+        const prevStatus = lastKnownStatus[change.doc.id];
+        if (change.type === "modified" && prevStatus !== undefined && prevStatus !== o.status) {
+          const lbl = { success:"✅ Berhasil", processing:"⏳ Sedang Diproses", failed:"❌ Ditolak" };
+          if (lbl[o.status]) toast(`Order ${o.orderId} — ${lbl[o.status]}`, o.status === "success" ? "success" : o.status === "failed" ? "error" : "info");
+        }
+        lastKnownStatus[change.doc.id] = o.status;
+      });
       allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       allOrders.sort((a, b) => {
         const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
@@ -192,14 +203,6 @@ async function loadOrders(user) {
         return tb - ta;
       });
       renderOrders();
-      // Notify user if status changed
-      snap.docChanges().forEach(change => {
-        if (change.type === "modified") {
-          const o = change.doc.data();
-          const lbl = { success:"✅ Berhasil", processing:"⏳ Sedang Diproses", failed:"❌ Ditolak" };
-          if (lbl[o.status]) toast(`Order ${o.orderId} — ${lbl[o.status]}`, o.status === "success" ? "success" : o.status === "failed" ? "error" : "info");
-        }
-      });
     }, e => {
       document.getElementById("orders-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Gagal memuat pesanan.</td></tr>`;
     });
