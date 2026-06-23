@@ -33,21 +33,6 @@
   </div>
 </div>
 
-<!-- Chat / Customer Service Modal -->
-<div class="modal-overlay" id="modal-chat">
-  <div class="modal" style="max-width:480px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:600px;max-height:80vh;">
-    <div class="modal-header" style="padding:16px 20px;margin-bottom:0;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <span class="modal-title" id="chat-modal-title" style="font-size:16px;">💬 Chat Pelanggan</span>
-      <button class="modal-close" onclick="closeChatModal()">&times;</button>
-    </div>
-    <div id="chat-messages" class="chat-messages"></div>
-    <div class="chat-input-bar">
-      <input class="form-input" id="chat-input" placeholder="Balas pelanggan..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatMessage();}" />
-      <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">Kirim</button>
-    </div>
-  </div>
-</div>
-
 <div class="admin-layout">
   <aside class="admin-sidebar" id="admin-sidebar">
     <div class="sidebar-logo">
@@ -58,7 +43,8 @@
     <nav class="sidebar-nav">
       <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
       <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
-      <a href="orders.html" class="active"><span class="nav-icon">◷</span>Pesanan<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
+      <a href="orders.html" class="active"><span class="nav-icon">◷</span>Pesanan</a>
+      <a href="chat.html"><span class="nav-icon">💬</span>Chat CS<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
     </nav>
     <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
     <nav class="sidebar-nav">
@@ -152,7 +138,6 @@ function loadOrders() {
     allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateSummary();
     renderOrdersTable();
-    updateChatSidebarBadge();
   }, e => {
     toast("Gagal memuat pesanan: " + e.message, "error");
   });
@@ -211,7 +196,7 @@ function renderOrdersTable() {
       </td>
       <td style="font-size:11px;color:var(--text-muted);">${formatDate(o.createdAt)}</td>
       <td style="text-align:center;">
-        <button class="btn btn-secondary btn-sm chat-btn" onclick="openChat('${o.orderId}')" title="Chat dengan pelanggan">💬${o.unreadByOwner ? `<span class="chat-unread-dot"></span>` : ""}</button>
+        <a class="btn btn-secondary btn-sm" href="chat.html?uid=${o.userId}" title="Chat dengan pelanggan">💬</a>
       </td>
       <td>
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
@@ -310,7 +295,7 @@ function viewOrder(orderId) {
         <div style="font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--gold);letter-spacing:-0.3px;">${o.orderId}</div>
         <span class="badge ${statusMap[o.status]||'badge-pending'}">${statusLbl[o.status]||o.status}</span>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-order-detail');openChat('${o.orderId}')">💬 Chat Pelanggan</button>
+      <a class="btn btn-secondary btn-sm" href="chat.html?uid=${o.userId}">💬 Chat Pelanggan</a>
     </div>
     <div class="order-detail-grid">
       <div class="detail-item"><div class="di-label">Pembeli</div><div class="di-value">${o.userDisplayName||"-"}</div></div>
@@ -342,93 +327,7 @@ function viewOrder(orderId) {
   openModal("modal-order-detail");
 }
 
-// ---- Customer Service Chat ----
-let chatUnsubscribe = null;
-let currentChatOrderId = null;
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str == null ? "" : String(str);
-  return div.innerHTML;
-}
-
-function updateChatSidebarBadge() {
-  const total = allOrders.reduce((s, o) => s + (o.unreadByOwner || 0), 0);
-  const badge = document.getElementById("chat-sidebar-badge");
-  if (!badge) return;
-  if (total > 0) { badge.textContent = total > 99 ? "99+" : total; badge.style.display = "inline-block"; }
-  else { badge.style.display = "none"; }
-}
-
-function openChat(orderId) {
-  currentChatOrderId = orderId;
-  document.getElementById("chat-modal-title").textContent = `💬 Chat — ${orderId}`;
-  document.getElementById("chat-messages").innerHTML = `<div class="chat-empty">Memuat percakapan...</div>`;
-  document.getElementById("chat-input").value = "";
-  openModal("modal-chat");
-  listenChat(orderId);
-  // Reset unread counter buat owner begitu chat dibuka
-  db.collection("orders").doc(orderId).update({ unreadByOwner: 0 }).catch(() => {});
-  const idx = allOrders.findIndex(o => o.orderId === orderId);
-  if (idx !== -1) allOrders[idx].unreadByOwner = 0;
-  renderOrdersTable();
-  updateChatSidebarBadge();
-}
-
-function listenChat(orderId) {
-  if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
-  chatUnsubscribe = db.collection("orders").doc(orderId).collection("messages").orderBy("createdAt", "asc")
-    .onSnapshot(snap => {
-      renderChatMessages(snap.docs.map(d => d.data()));
-    }, () => {
-      document.getElementById("chat-messages").innerHTML = `<div class="chat-empty">Gagal memuat percakapan.</div>`;
-    });
-}
-
-function renderChatMessages(msgs) {
-  const box = document.getElementById("chat-messages");
-  if (!msgs.length) {
-    box.innerHTML = `<div class="chat-empty">Belum ada pesan dari pelanggan ini.</div>`;
-    return;
-  }
-  box.innerHTML = msgs.map(m => `
-    <div class="chat-bubble ${m.senderRole === "owner" ? "me" : "them"}">
-      ${m.senderRole !== "owner" ? `<div class="chat-sender">${escapeHtml(m.senderName || "Pelanggan")}</div>` : ""}
-      <div>${escapeHtml(m.text)}</div>
-      <div class="chat-meta">${formatDate(m.createdAt)}</div>
-    </div>
-  `).join("");
-  box.scrollTop = box.scrollHeight;
-}
-
-async function sendChatMessage() {
-  const input = document.getElementById("chat-input");
-  const text = input.value.trim();
-  if (!text || !currentChatOrderId) return;
-  input.value = "";
-  try {
-    await db.collection("orders").doc(currentChatOrderId).collection("messages").add({
-      text,
-      senderId: currentUser.uid,
-      senderName: "Admin DOOMINIKS",
-      senderRole: "owner",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    await db.collection("orders").doc(currentChatOrderId).update({
-      unreadByCustomer: firebase.firestore.FieldValue.increment(1),
-      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (e) {
-    toast("Gagal mengirim pesan: " + e.message, "error");
-    input.value = text;
-  }
-}
-
-function closeChatModal() {
-  closeModal("modal-chat");
-  if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
-  currentChatOrderId = null;
-}
+// ---- Customer Service Chat sekarang punya halaman sendiri: chat.html ----
 
 function onAuthReady(user) {
   hideLoader();
