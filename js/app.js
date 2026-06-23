@@ -122,6 +122,7 @@ function showMaintenanceOwnerBadge(customMessage) {
 
 // ---- Auth State ----
 let currentUser = null;
+let _ownerChatBadgeUnsub = null;
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   // Cek maintenance mode dulu sebelum render apapun lebih jauh
@@ -138,8 +139,24 @@ auth.onAuthStateChanged(async (user) => {
     document.body.style.pointerEvents = "";
   }, 500);
   updateNavAuth(user);
+  updateOwnerChatBadge(user);
   if (typeof onAuthReady === "function") onAuthReady(user);
 });
+
+// Badge jumlah chat CS belum dibalas di sidebar owner panel — terpusat di sini
+// biar tiap halaman /owner/*.html otomatis kebagian tanpa nulis ulang listener.
+function updateOwnerChatBadge(user) {
+  if (_ownerChatBadgeUnsub) { _ownerChatBadgeUnsub(); _ownerChatBadgeUnsub = null; }
+  if (!window.location.pathname.includes("/owner/")) return;
+  if (!user || typeof isOwner !== "function" || !isOwner(user.uid)) return;
+  _ownerChatBadgeUnsub = db.collection("chats").onSnapshot(snap => {
+    const total = snap.docs.reduce((s, d) => s + (d.data().unreadByOwner || 0), 0);
+    const badge = document.getElementById("chat-sidebar-badge");
+    if (!badge) return;
+    if (total > 0) { badge.textContent = total > 99 ? "99+" : total; badge.style.display = "inline-block"; }
+    else badge.style.display = "none";
+  }, () => {});
+}
 
 function updateNavAuth(user) {
   const loginBtn = document.getElementById("btn-login");
