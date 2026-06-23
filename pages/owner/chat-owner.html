@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chat CS &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+      <a href="chat.html" class="active"><span class="nav-icon">💬</span>Chat CS<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="announcement.html"><span class="nav-icon">📢</span>Pengumuman</a>
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div class="admin-page-title">Chat Customer Service</div>
+    <div class="admin-page-sub">Semua percakapan dengan pelanggan dalam satu tempat</div>
+
+    <div class="cs-inbox-layout">
+      <!-- Conversation list -->
+      <div class="cs-conv-list">
+        <div class="cs-conv-search">
+          <input class="form-input" id="conv-search" placeholder="Cari nama/email pelanggan..." oninput="renderConvList()" style="font-size:13px;" />
+        </div>
+        <div id="conv-list-body"></div>
+      </div>
+
+      <!-- Thread -->
+      <div class="cs-thread-panel" id="thread-panel">
+        <div class="cs-thread-empty" id="thread-empty">💬 Pilih percakapan di sebelah kiri buat mulai balas pelanggan.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+let allConvs = [];
+let convsUnsubscribe = null;
+let threadUnsubscribe = null;
+let activeUid = null;
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+function escapeHtmlCS(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
+function loadConvs() {
+  if (convsUnsubscribe) { convsUnsubscribe(); convsUnsubscribe = null; }
+  convsUnsubscribe = db.collection("chats").orderBy("lastMessageAt", "desc").limit(200).onSnapshot(snap => {
+    allConvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderConvList();
+    // Kalau ada deep-link ?uid=xxx dan belum dibuka, buka otomatis sekali
+    const urlUid = new URLSearchParams(window.location.search).get("uid");
+    if (urlUid && !activeUid && allConvs.find(c => c.id === urlUid)) {
+      openThread(urlUid);
+    }
+  }, e => {
+    document.getElementById("conv-list-body").innerHTML = `<div style="padding:20px;color:var(--text-muted);font-size:13px;">Gagal memuat chat.</div>`;
+  });
+}
+
+function renderConvList() {
+  const q = document.getElementById("conv-search").value.toLowerCase();
+  const filtered = allConvs.filter(c => {
+    if (!q) return true;
+    return (c.userName||"").toLowerCase().includes(q) || (c.userEmail||"").toLowerCase().includes(q);
+  });
+  const body = document.getElementById("conv-list-body");
+  if (!filtered.length) {
+    body.innerHTML = `<div style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:13px;">${allConvs.length ? "Tidak ada hasil." : "Belum ada percakapan."}</div>`;
+    return;
+  }
+  body.innerHTML = filtered.map(c => `
+    <div class="cs-conv-item ${c.id === activeUid ? "active" : ""}" onclick="openThread('${c.id}')">
+      <div class="cs-conv-avatar">${c.userPhoto ? `<img src="${c.userPhoto}" alt="">` : (c.userName||"U")[0].toUpperCase()}</div>
+      <div class="cs-conv-info">
+        <div class="cs-conv-name">${escapeHtmlCS(c.userName||"Pelanggan")}</div>
+        <div class="cs-conv-preview">${escapeHtmlCS(c.lastMessageText||"")}</div>
+      </div>
+      <div class="cs-conv-meta">
+        <div class="cs-conv-time">${formatChatTime(c.lastMessageAt)}</div>
+        ${c.unreadByOwner ? `<span class="cs-conv-unread">${c.unreadByOwner > 9 ? "9+" : c.unreadByOwner}</span>` : ""}
+      </div>
+    </div>
+  `).join("");
+}
+
+function formatChatTime(ts) {
+  if (!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  return sameDay
+    ? new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(d)
+    : new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" }).format(d);
+}
+
+function openThread(uid) {
+  activeUid = uid;
+  renderConvList();
+  const conv = allConvs.find(c => c.id === uid);
+  if (!conv) return;
+
+  // Reset unread buat owner
+  db.collection("chats").doc(uid).update({ unreadByOwner: 0 }).catch(() => {});
+  const idx = allConvs.findIndex(c => c.id === uid);
+  if (idx !== -1) allConvs[idx].unreadByOwner = 0;
+
+  const panel = document.getElementById("thread-panel");
+  panel.innerHTML = `
+    <div class="cs-thread-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="cs-conv-avatar" style="width:34px;height:34px;font-size:13px;">${conv.userPhoto ? `<img src="${conv.userPhoto}" alt="">` : (conv.userName||"U")[0].toUpperCase()}</div>
+        <div>
+          <div style="font-weight:700;font-size:14px;">${escapeHtmlCS(conv.userName||"Pelanggan")}</div>
+          <div style="font-size:12px;color:var(--text-muted);">${escapeHtmlCS(conv.userEmail||"")}</div>
+        </div>
+      </div>
+      <a href="users.html" class="btn btn-ghost btn-sm" title="Lihat profil pengguna">☰ Profil</a>
+    </div>
+    <div id="thread-messages" class="chat-messages"></div>
+    <div class="chat-input-bar">
+      <input class="form-input" id="thread-input" placeholder="Balas pelanggan..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendThreadMessage();}" />
+      <button class="btn btn-primary btn-sm" onclick="sendThreadMessage()">Kirim</button>
+    </div>
+  `;
+
+  if (threadUnsubscribe) { threadUnsubscribe(); threadUnsubscribe = null; }
+  threadUnsubscribe = db.collection("chats").doc(uid).collection("messages").orderBy("createdAt", "asc")
+    .onSnapshot(snap => {
+      renderThreadMessages(snap.docs.map(d => d.data()));
+    }, () => {
+      const box = document.getElementById("thread-messages");
+      if (box) box.innerHTML = `<div class="chat-empty">Gagal memuat percakapan.</div>`;
+    });
+}
+
+function renderThreadMessages(msgs) {
+  const box = document.getElementById("thread-messages");
+  if (!box) return;
+  if (!msgs.length) {
+    box.innerHTML = `<div class="chat-empty">Belum ada pesan di percakapan ini.</div>`;
+    return;
+  }
+  box.innerHTML = msgs.map(m => `
+    <div class="chat-bubble ${m.senderRole === "owner" ? "me" : "them"}">
+      ${m.senderRole !== "owner" ? `<div class="chat-sender">${escapeHtmlCS(m.senderName||"Pelanggan")}</div>` : ""}
+      ${m.attachedOrder ? renderOrderCard(m.attachedOrder) : ""}
+      ${m.text ? `<div>${escapeHtmlCS(m.text)}</div>` : ""}
+      <div class="chat-meta">${formatDate(m.createdAt)}</div>
+    </div>
+  `).join("");
+  box.scrollTop = box.scrollHeight;
+}
+
+function renderOrderCard(o) {
+  const statusLbl = { pending:"Menunggu", processing:"Diproses", success:"Berhasil", failed:"Gagal" };
+  const statusCls = { pending:"badge-pending", processing:"badge-processing", success:"badge-success", failed:"badge-failed" };
+  return `<div class="chat-order-card">
+    <div class="chat-order-card-top"><span>📦 ${escapeHtmlCS(o.orderId||"")}</span><span class="badge ${statusCls[o.status]||"badge-pending"}">${statusLbl[o.status]||o.status||""}</span></div>
+    <div class="chat-order-card-product">${escapeHtmlCS(o.productName||"")}${o.itemName ? " — " + escapeHtmlCS(o.itemName) : ""}</div>
+    ${o.total ? `<div class="chat-order-card-total">${formatIDR(o.total)}</div>` : ""}
+  </div>`;
+}
+
+async function sendThreadMessage() {
+  const input = document.getElementById("thread-input");
+  if (!input || !activeUid) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  try {
+    await db.collection("chats").doc(activeUid).collection("messages").add({
+      text,
+      senderId: currentUser.uid,
+      senderName: "Admin DOOMINIKS",
+      senderRole: "owner",
+      attachedOrder: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection("chats").doc(activeUid).update({
+      unreadByCustomer: firebase.firestore.FieldValue.increment(1),
+      lastMessageText: text,
+      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (e) {
+    toast("Gagal mengirim pesan: " + e.message, "error");
+    input.value = text;
+  }
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  loadConvs();
+}
+</script>
+</body>
+</html>
