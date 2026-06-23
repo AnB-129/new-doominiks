@@ -156,23 +156,9 @@
   </div>
 </div>
 
-<!-- Chat / Customer Service Modal -->
-<div class="modal-overlay" id="modal-chat">
-  <div class="modal" style="max-width:480px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:600px;max-height:80vh;">
-    <div class="modal-header" style="padding:16px 20px;margin-bottom:0;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <span class="modal-title" id="chat-modal-title" style="font-size:16px;">💬 Customer Service</span>
-      <button class="modal-close" onclick="closeChatModal()">&times;</button>
-    </div>
-    <div id="chat-messages" class="chat-messages"></div>
-    <div class="chat-input-bar">
-      <input class="form-input" id="chat-input" placeholder="Tulis pesan ke admin..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatMessage();}" />
-      <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">Kirim</button>
-    </div>
-  </div>
-</div>
-
 <script src="../js/firebase-config.js"></script>
 <script src="../js/app.js"></script>
+<script src="../js/chat-widget.js"></script>
 <script>
 let allOrders = [];
 let currentFilter = "all";
@@ -255,7 +241,7 @@ function renderOrders() {
           : (o.reviewed || reviewedOrderIds.has(o.id)) ? `<span style="font-size:12px;color:var(--text-muted);">✓ Diulas</span>` : ""}
       </td>
       <td>
-        <button class="btn btn-secondary btn-sm chat-btn" onclick="openChat('${o.id}','${o.orderId}')">💬 Chat${o.unreadByCustomer ? `<span class="chat-unread-dot"></span>` : ""}</button>
+        <button class="btn btn-secondary btn-sm" onclick="openCSChatWithOrder('${o.orderId}')">💬 Chat</button>
       </td>
     </tr>
   `).join("");
@@ -377,86 +363,7 @@ async function submitReview() {
   }
 }
 
-// ---- Customer Service Chat ----
-let chatUnsubscribe = null;
-let currentChatOrder = null; // { id, orderId }
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str == null ? "" : String(str);
-  return div.innerHTML;
-}
-
-function openChat(docId, orderId) {
-  currentChatOrder = { id: docId, orderId };
-  document.getElementById("chat-modal-title").textContent = `💬 Chat — ${orderId}`;
-  document.getElementById("chat-messages").innerHTML = `<div class="chat-empty">Memuat percakapan...</div>`;
-  document.getElementById("chat-input").value = "";
-  openModal("modal-chat");
-  listenChat(docId);
-  // Reset unread counter buat customer begitu chat dibuka
-  db.collection("orders").doc(docId).update({ unreadByCustomer: 0 }).catch(() => {});
-  const idx = allOrders.findIndex(o => o.id === docId);
-  if (idx !== -1) allOrders[idx].unreadByCustomer = 0;
-  renderOrders();
-}
-
-function listenChat(docId) {
-  if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
-  chatUnsubscribe = db.collection("orders").doc(docId).collection("messages").orderBy("createdAt", "asc")
-    .onSnapshot(snap => {
-      renderChatMessages(snap.docs.map(d => d.data()));
-    }, () => {
-      document.getElementById("chat-messages").innerHTML = `<div class="chat-empty">Gagal memuat percakapan.</div>`;
-    });
-}
-
-function renderChatMessages(msgs) {
-  const box = document.getElementById("chat-messages");
-  if (!msgs.length) {
-    box.innerHTML = `<div class="chat-empty">Belum ada percakapan.<br>Ada pertanyaan soal pesanan ini? Tulis aja di bawah 👇</div>`;
-    return;
-  }
-  box.innerHTML = msgs.map(m => `
-    <div class="chat-bubble ${m.senderRole === "customer" ? "me" : "them"}">
-      ${m.senderRole !== "customer" ? `<div class="chat-sender">★ Admin DOOMINIKS</div>` : ""}
-      <div>${escapeHtml(m.text)}</div>
-      <div class="chat-meta">${formatDate(m.createdAt)}</div>
-    </div>
-  `).join("");
-  box.scrollTop = box.scrollHeight;
-}
-
-async function sendChatMessage() {
-  const input = document.getElementById("chat-input");
-  const text = input.value.trim();
-  if (!text || !currentChatOrder) return;
-  const user = auth.currentUser;
-  if (!user) return;
-  input.value = "";
-  try {
-    await db.collection("orders").doc(currentChatOrder.id).collection("messages").add({
-      text,
-      senderId: user.uid,
-      senderName: user.displayName || "Pelanggan",
-      senderRole: "customer",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    await db.collection("orders").doc(currentChatOrder.id).update({
-      unreadByOwner: firebase.firestore.FieldValue.increment(1),
-      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (e) {
-    toast("Gagal mengirim pesan: " + e.message, "error");
-    input.value = text;
-  }
-}
-
-function closeChatModal() {
-  closeModal("modal-chat");
-  if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
-  currentChatOrder = null;
-}
+// ---- Customer Service Chat sekarang ditangani js/chat-widget.js (widget mengambang) ----
 
 async function handleGoogleLogin() {
   try { await signInWithGoogle(); closeModal("modal-login"); } catch(e) {}
