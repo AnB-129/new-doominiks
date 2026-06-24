@@ -26,7 +26,7 @@
       <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
       <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
       <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
-      <a href="chat.html" class="active"><span class="nav-icon">💬</span>Chat CS<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
+      <a href="chat.html" class="active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.08.93 3.97 2.45 5.4-.16 1.06-.58 2.4-1.45 3.6 1.62-.1 3.06-.62 4.2-1.32A10.6 10.6 0 0 0 12 19c4.97 0 9-3.58 9-8s-4.03-8-9-8Z"/></svg></span>Chat CS<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
     </nav>
     <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
     <nav class="sidebar-nav">
@@ -59,7 +59,7 @@
 
       <!-- Thread -->
       <div class="cs-thread-panel" id="thread-panel">
-        <div class="cs-thread-empty" id="thread-empty">💬 Pilih percakapan di sebelah kiri buat mulai balas pelanggan.</div>
+        <div class="cs-thread-empty" id="thread-empty"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" style="margin-bottom:10px;opacity:0.5;"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.08.93 3.97 2.45 5.4-.16 1.06-.58 2.4-1.45 3.6 1.62-.1 3.06-.62 4.2-1.32A10.6 10.6 0 0 0 12 19c4.97 0 9-3.58 9-8s-4.03-8-9-8Z" fill="currentColor"/></svg><br>Pilih percakapan di sebelah kiri buat mulai balas pelanggan.</div>
       </div>
     </div>
   </main>
@@ -72,6 +72,13 @@ let allConvs = [];
 let convsUnsubscribe = null;
 let threadUnsubscribe = null;
 let activeUid = null;
+let threadAttachedImage = null; // { url, previewUrl }
+let threadImageUploading = false;
+
+const CLOUDINARY_CLOUD_NAME_CS = "dnpvgpqka";
+const CLOUDINARY_UPLOAD_PRESET_CS = "vaultstore";
+const ICON_CAMERA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h2.5l1.2-1.8a1 1 0 0 1 .8-.4h6.9a1 1 0 0 1 .8.4L17.4 7H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.2"/></svg>`;
+const ICON_CLOSE_X = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>`;
 
 function requireOwner(user) {
   if (!user || !isOwner(user.uid)) {
@@ -141,6 +148,8 @@ function formatChatTime(ts) {
 
 function openThread(uid) {
   activeUid = uid;
+  threadAttachedImage = null;
+  threadImageUploading = false;
   renderConvList();
   const conv = allConvs.find(c => c.id === uid);
   if (!conv) return;
@@ -163,11 +172,23 @@ function openThread(uid) {
       <a href="users.html" class="btn btn-ghost btn-sm" title="Lihat profil pengguna">☰ Profil</a>
     </div>
     <div id="thread-messages" class="chat-messages"></div>
+    <div id="thread-attach-pills" class="cs-attach-pills"></div>
     <div class="chat-input-bar">
+      <button id="thread-image-btn" class="cs-attach-btn" type="button" title="Kirim gambar">${ICON_CAMERA}</button>
+      <input type="file" id="thread-image-input" accept="image/*" style="display:none;" />
       <input class="form-input" id="thread-input" placeholder="Balas pelanggan..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendThreadMessage();}" />
       <button class="btn btn-primary btn-sm" onclick="sendThreadMessage()">Kirim</button>
     </div>
   `;
+  document.getElementById("thread-image-btn").addEventListener("click", () => {
+    const inp = document.getElementById("thread-image-input");
+    if (inp) inp.click();
+  });
+  document.getElementById("thread-image-input").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) uploadThreadImage(file);
+    e.target.value = "";
+  });
 
   if (threadUnsubscribe) { threadUnsubscribe(); threadUnsubscribe = null; }
   threadUnsubscribe = db.collection("chats").doc(uid).collection("messages").orderBy("createdAt", "asc")
@@ -190,6 +211,7 @@ function renderThreadMessages(msgs) {
     <div class="chat-bubble ${m.senderRole === "owner" ? "me" : "them"}">
       ${m.senderRole !== "owner" ? `<div class="chat-sender">${escapeHtmlCS(m.senderName||"Pelanggan")}</div>` : ""}
       ${m.attachedOrder ? renderOrderCard(m.attachedOrder) : ""}
+      ${m.imageUrl ? `<img src="${escapeHtmlCS(m.imageUrl)}" alt="Gambar" class="chat-img" onclick="window.open('${escapeHtmlCS(m.imageUrl)}','_blank')" />` : ""}
       ${m.text ? `<div>${escapeHtmlCS(m.text)}</div>` : ""}
       <div class="chat-meta">${formatDate(m.createdAt)}</div>
     </div>
@@ -207,12 +229,60 @@ function renderOrderCard(o) {
   </div>`;
 }
 
+function renderThreadPills() {
+  const el = document.getElementById("thread-attach-pills");
+  if (!el) return;
+  if (!threadAttachedImage) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="cs-attach-pill ${threadImageUploading ? "uploading" : ""}">
+    <img src="${escapeHtmlCS(threadAttachedImage.previewUrl)}" alt="" />
+    <span style="font-size:12px;">${threadImageUploading ? "Mengupload..." : "Gambar siap dikirim"}</span>
+    ${threadImageUploading ? "" : `<button type="button" onclick="window._removeThreadImage()">${ICON_CLOSE_X}</button>`}
+  </div>`;
+}
+
+function uploadThreadImage(file) {
+  if (!file.type || file.type.indexOf("image/") !== 0) { toast("File harus berupa gambar", "error"); return; }
+  const previewUrl = URL.createObjectURL(file);
+  threadAttachedImage = { url: null, previewUrl };
+  threadImageUploading = true;
+  renderThreadPills();
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_CS);
+  formData.append("folder", "doominiks/chat");
+  fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_CS}/image/upload`, { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.secure_url) throw new Error("Upload gagal");
+      threadImageUploading = false;
+      if (threadAttachedImage) threadAttachedImage.url = data.secure_url;
+      renderThreadPills();
+    })
+    .catch(() => {
+      toast("Gagal mengupload gambar, coba lagi", "error");
+      threadAttachedImage = null;
+      threadImageUploading = false;
+      renderThreadPills();
+    });
+}
+
+window._removeThreadImage = function () {
+  threadAttachedImage = null;
+  threadImageUploading = false;
+  renderThreadPills();
+};
+
 async function sendThreadMessage() {
   const input = document.getElementById("thread-input");
   if (!input || !activeUid) return;
+  if (threadImageUploading) { toast("Tunggu gambar selesai diupload ya", "info"); return; }
   const text = input.value.trim();
-  if (!text) return;
+  const imageUrl = threadAttachedImage ? threadAttachedImage.url : null;
+  if (!text && !imageUrl) return;
   input.value = "";
+  threadAttachedImage = null;
+  renderThreadPills();
   try {
     await db.collection("chats").doc(activeUid).collection("messages").add({
       text,
@@ -220,16 +290,18 @@ async function sendThreadMessage() {
       senderName: "Admin DOOMINIKS",
       senderRole: "owner",
       attachedOrder: null,
+      imageUrl: imageUrl || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     await db.collection("chats").doc(activeUid).update({
       unreadByCustomer: firebase.firestore.FieldValue.increment(1),
-      lastMessageText: text,
+      lastMessageText: text || (imageUrl ? "📷 Gambar" : ""),
       lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (e) {
     toast("Gagal mengirim pesan: " + e.message, "error");
     input.value = text;
+    if (imageUrl) { threadAttachedImage = { url: imageUrl, previewUrl: imageUrl }; renderThreadPills(); }
   }
 }
 
