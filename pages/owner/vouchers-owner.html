@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Voucher &mdash; DOOMINIKS STORE Owner</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    .voucher-card-code { font-family: var(--font-display); font-weight: 800; letter-spacing: 1px; color: var(--gold); font-size: 14px; }
+    .voucher-progress-wrap { width: 100%; height: 6px; background: var(--bg-panel); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .voucher-progress-bar { height: 100%; background: var(--gold); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<!-- ADD/EDIT VOUCHER MODAL -->
+<div class="modal-overlay" id="modal-voucher">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title" id="voucher-modal-title">Tambah Voucher</span>
+      <button class="modal-close" onclick="closeModal('modal-voucher')">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kode Voucher</label>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" id="v-code" placeholder="MIS. DOOMINIKS10" style="text-transform:uppercase;flex:1;" maxlength="20" />
+        <button type="button" class="btn btn-secondary btn-sm" onclick="generateVoucherCode()">⚄ Generate</button>
+      </div>
+      <div id="v-code-edit-note" style="font-size:11px;color:var(--text-muted);margin-top:4px;display:none;">Kode tidak bisa diubah saat edit.</div>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Tipe Diskon</label>
+        <select class="form-select" id="v-type" onchange="onVoucherTypeChange()">
+          <option value="percent">Persentase (%)</option>
+          <option value="fixed">Potongan Tetap (Rp)</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label" id="v-value-label">Nilai Diskon (%)</label>
+        <input class="form-input" id="v-value" type="number" min="0" placeholder="10" />
+      </div>
+    </div>
+    <div class="form-group" id="v-maxdiscount-group">
+      <label class="form-label">Maks. Potongan (Rp) <span style="color:var(--text-muted);font-weight:400;">— opsional, buat batasi diskon persen</span></label>
+      <input class="form-input" id="v-maxdiscount" type="number" min="0" placeholder="Kosongkan = tanpa batas" />
+    </div>
+    <div style="display:flex;gap:12px;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Min. Belanja (Rp)</label>
+        <input class="form-input" id="v-minpurchase" type="number" min="0" placeholder="0 = tanpa minimum" />
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Berlaku Sampai</label>
+        <input class="form-input" id="v-expires" type="datetime-local" />
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Kuota Total Pemakaian</label>
+        <input class="form-input" id="v-limit" type="number" min="0" placeholder="0 = tanpa batas" />
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Limit per Pengguna</label>
+        <input class="form-input" id="v-perlimit" type="number" min="1" value="1" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catatan Internal <span style="color:var(--text-muted);font-weight:400;">(opsional, cuma buat referensi kamu)</span></label>
+      <input class="form-input" id="v-desc" placeholder="Mis. Promo bulan Ramadan" />
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer;margin-bottom:20px;">
+      <input type="checkbox" id="v-active" checked style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" />
+      Aktifkan voucher ini sekarang
+    </label>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-voucher')">Batal</button>
+      <button class="btn btn-primary btn-full" id="v-save-btn" onclick="saveVoucher()">Simpan Voucher</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">DOOMINIKS <span>STORE</span></div>
+      <div class="role">★ Owner Panel</div>
+    </div>
+    <div class="sidebar-section-title">Menu Utama</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><span class="nav-icon">⬡</span>Dashboard</a>
+      <a href="products.html"><span class="nav-icon">◈</span>Produk</a>
+      <a href="orders.html"><span class="nav-icon">◷</span>Pesanan</a>
+      <a href="chat.html"><span class="nav-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.08.93 3.97 2.45 5.4-.16 1.06-.58 2.4-1.45 3.6 1.62-.1 3.06-.62 4.2-1.32A10.6 10.6 0 0 0 12 19c4.97 0 9-3.58 9-8s-4.03-8-9-8Z"/></svg></span>Chat CS<span id="chat-sidebar-badge" class="sidebar-chat-badge" style="display:none;"></span></a>
+      <a href="vouchers.html" class="active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.2a1.8 1.8 0 0 0 0 3.6V14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.2a1.8 1.8 0 0 0 0-3.6V8Z"/></svg></span>Voucher</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Data</div>
+    <nav class="sidebar-nav">
+      <a href="users.html"><span class="nav-icon">◎</span>Pengguna</a>
+      <a href="leaderboard.html"><span class="nav-icon">◉</span>Leaderboard</a>
+    </nav>
+    <div class="sidebar-section-title" style="margin-top:8px;">Sistem</div>
+    <nav class="sidebar-nav">
+      <a href="announcement.html"><span class="nav-icon">📢</span>Pengumuman</a>
+      <a href="settings.html"><span class="nav-icon">⊙</span>Pengaturan</a>
+      <a href="../../index.html"><span class="nav-icon">◁</span>Ke Toko</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="signOut()" style="color:var(--red);">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="admin-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+      <div class="admin-page-title">Voucher Diskon</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddVoucher()">+ Buat Voucher</button>
+    </div>
+    <div class="admin-page-sub">Bikin kode promo buat menarik pelanggan baru atau bikin yang lama balik lagi</div>
+
+    <div class="grid-4" style="margin:28px 0;">
+      <div class="stat-card"><div class="stat-icon gold">◈</div><div><div class="stat-label">Total Voucher</div><div class="stat-value" id="vstat-total">-</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">▲</div><div><div class="stat-label">Sedang Aktif</div><div class="stat-value" id="vstat-active">-</div></div></div>
+      <div class="stat-card"><div class="stat-icon cyan">◆</div><div><div class="stat-label">Total Dipakai</div><div class="stat-value" id="vstat-used">-</div></div></div>
+      <div class="stat-card"><div class="stat-icon red">★</div><div><div class="stat-label">Kadaluwarsa/Nonaktif</div><div class="stat-value" id="vstat-inactive">-</div></div></div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Kode</th>
+            <th>Diskon</th>
+            <th>Min. Belanja</th>
+            <th>Kuota Pemakaian</th>
+            <th>Berlaku Sampai</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr></thead>
+          <tbody id="vouchers-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../../js/firebase-config.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+let allVouchers = [];
+let vouchersUnsubscribe = null;
+let editingCode = null;
+
+function requireOwner(user) {
+  if (!user || !isOwner(user.uid)) {
+    toast("Akses ditolak.", "error");
+    setTimeout(() => window.location.href = "../../index.html", 1500);
+    return false;
+  }
+  return true;
+}
+
+function loadVouchers() {
+  if (vouchersUnsubscribe) { vouchersUnsubscribe(); vouchersUnsubscribe = null; }
+  vouchersUnsubscribe = db.collection("vouchers").orderBy("createdAt", "desc").onSnapshot(snap => {
+    allVouchers = snap.docs.map(d => ({ code: d.id, ...d.data() }));
+    updateStats();
+    renderVouchersTable();
+  }, e => {
+    document.getElementById("vouchers-tbody").innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Gagal memuat voucher.</td></tr>`;
+  });
+}
+
+function getVoucherStatus(v) {
+  if (!v.active) return { key: "inactive", label: "Nonaktif", cls: "badge-pending" };
+  if (v.expiresAt) {
+    const exp = v.expiresAt.toDate ? v.expiresAt.toDate() : new Date(v.expiresAt);
+    if (exp.getTime() <= Date.now()) return { key: "expired", label: "Kadaluwarsa", cls: "badge-failed" };
+  }
+  if (v.usageLimit && (v.usageCount || 0) >= v.usageLimit) return { key: "exhausted", label: "Kuota Habis", cls: "badge-failed" };
+  return { key: "active", label: "Aktif", cls: "badge-success" };
+}
+
+function updateStats() {
+  const total = allVouchers.length;
+  let activeCount = 0, inactiveCount = 0, usedCount = 0;
+  allVouchers.forEach(v => {
+    const st = getVoucherStatus(v);
+    if (st.key === "active") activeCount++; else inactiveCount++;
+    usedCount += (v.usageCount || 0);
+  });
+  document.getElementById("vstat-total").textContent = total;
+  document.getElementById("vstat-active").textContent = activeCount;
+  document.getElementById("vstat-used").textContent = usedCount;
+  document.getElementById("vstat-inactive").textContent = inactiveCount;
+}
+
+function renderVouchersTable() {
+  const tbody = document.getElementById("vouchers-tbody");
+  if (!allVouchers.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">◈</div><h4>Belum ada voucher</h4><p>Klik "+ Buat Voucher" buat bikin promo pertamamu.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allVouchers.map(v => {
+    const st = getVoucherStatus(v);
+    const discountLabel = v.type === "percent"
+      ? `${v.value}%${v.maxDiscount ? ` (maks ${formatIDR(v.maxDiscount)})` : ""}`
+      : formatIDR(v.value || 0);
+    const usageCount = v.usageCount || 0;
+    const usagePct = v.usageLimit ? Math.min(100, Math.round(usageCount / v.usageLimit * 100)) : 0;
+    return `<tr>
+      <td><span class="voucher-card-code">${v.code}</span>${v.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${v.description}</div>` : ""}</td>
+      <td style="font-weight:700;color:var(--gold);">${discountLabel}</td>
+      <td style="font-size:13px;color:var(--text-secondary);">${v.minPurchase ? formatIDR(v.minPurchase) : "-"}</td>
+      <td style="min-width:120px;">
+        <div style="font-size:12px;">${usageCount}${v.usageLimit ? ` / ${v.usageLimit}` : " / ∞"}</div>
+        ${v.usageLimit ? `<div class="voucher-progress-wrap"><div class="voucher-progress-bar" style="width:${usagePct}%;"></div></div>` : ""}
+      </td>
+      <td style="font-size:12px;color:var(--text-muted);">${v.expiresAt ? formatDate(v.expiresAt) : "Tanpa batas"}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="openEditVoucher('${v.code}')" title="Edit">✎</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleVoucherActive('${v.code}', ${!v.active})" title="${v.active ? "Nonaktifkan" : "Aktifkan"}">${v.active ? "⏸" : "▶"}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVoucher('${v.code}')" title="Hapus">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function generateVoucherCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "DOOM-";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById("v-code").value = code;
+}
+
+function onVoucherTypeChange() {
+  const type = document.getElementById("v-type").value;
+  document.getElementById("v-value-label").textContent = type === "percent" ? "Nilai Diskon (%)" : "Nilai Diskon (Rp)";
+  document.getElementById("v-maxdiscount-group").style.display = type === "percent" ? "block" : "none";
+}
+
+function resetVoucherForm() {
+  document.getElementById("v-code").value = "";
+  document.getElementById("v-code").disabled = false;
+  document.getElementById("v-code-edit-note").style.display = "none";
+  document.getElementById("v-type").value = "percent";
+  document.getElementById("v-value").value = "";
+  document.getElementById("v-maxdiscount").value = "";
+  document.getElementById("v-minpurchase").value = "";
+  document.getElementById("v-expires").value = "";
+  document.getElementById("v-limit").value = "";
+  document.getElementById("v-perlimit").value = "1";
+  document.getElementById("v-desc").value = "";
+  document.getElementById("v-active").checked = true;
+  onVoucherTypeChange();
+}
+
+function openAddVoucher() {
+  editingCode = null;
+  resetVoucherForm();
+  document.getElementById("voucher-modal-title").textContent = "Tambah Voucher";
+  openModal("modal-voucher");
+}
+
+function openEditVoucher(code) {
+  const v = allVouchers.find(x => x.code === code);
+  if (!v) return;
+  editingCode = code;
+  resetVoucherForm();
+  document.getElementById("voucher-modal-title").textContent = `Edit Voucher — ${code}`;
+  document.getElementById("v-code").value = code;
+  document.getElementById("v-code").disabled = true;
+  document.getElementById("v-code-edit-note").style.display = "block";
+  document.getElementById("v-type").value = v.type || "percent";
+  document.getElementById("v-value").value = v.value || "";
+  document.getElementById("v-maxdiscount").value = v.maxDiscount || "";
+  document.getElementById("v-minpurchase").value = v.minPurchase || "";
+  if (v.expiresAt) {
+    const d = v.expiresAt.toDate ? v.expiresAt.toDate() : new Date(v.expiresAt);
+    document.getElementById("v-expires").value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+  document.getElementById("v-limit").value = v.usageLimit || "";
+  document.getElementById("v-perlimit").value = v.perUserLimit || 1;
+  document.getElementById("v-desc").value = v.description || "";
+  document.getElementById("v-active").checked = v.active !== false;
+  onVoucherTypeChange();
+  openModal("modal-voucher");
+}
+
+async function saveVoucher() {
+  const code = document.getElementById("v-code").value.trim().toUpperCase();
+  const type = document.getElementById("v-type").value;
+  const value = parseFloat(document.getElementById("v-value").value) || 0;
+  if (!code) { toast("Kode voucher wajib diisi", "error"); return; }
+  if (!/^[A-Z0-9-]+$/.test(code)) { toast("Kode cuma boleh huruf, angka, dan tanda -", "error"); return; }
+  if (value <= 0) { toast("Nilai diskon harus lebih dari 0", "error"); return; }
+  if (type === "percent" && value > 100) { toast("Persentase diskon maksimal 100%", "error"); return; }
+
+  const expiresVal = document.getElementById("v-expires").value;
+  const maxDiscount = parseFloat(document.getElementById("v-maxdiscount").value) || 0;
+  const minPurchase = parseFloat(document.getElementById("v-minpurchase").value) || 0;
+  const usageLimit = parseInt(document.getElementById("v-limit").value) || 0;
+  const perUserLimit = parseInt(document.getElementById("v-perlimit").value) || 1;
+  const description = document.getElementById("v-desc").value.trim();
+  const active = document.getElementById("v-active").checked;
+
+  const btn = document.getElementById("v-save-btn");
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    if (!editingCode) {
+      const existing = await db.collection("vouchers").doc(code).get();
+      if (existing.exists) { toast("Kode voucher ini sudah dipakai, pilih kode lain", "error"); return; }
+    }
+    const data = {
+      code, type, value,
+      maxDiscount: type === "percent" && maxDiscount > 0 ? maxDiscount : null,
+      minPurchase: minPurchase > 0 ? minPurchase : null,
+      usageLimit: usageLimit > 0 ? usageLimit : null,
+      perUserLimit,
+      description: description || null,
+      active,
+      expiresAt: expiresVal ? new Date(expiresVal) : null,
+    };
+    if (!editingCode) {
+      data.usageCount = 0;
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    await db.collection("vouchers").doc(code).set(data, { merge: true });
+    toast(editingCode ? "Voucher berhasil diperbarui!" : "Voucher berhasil dibuat!", "success");
+    closeModal("modal-voucher");
+  } catch (e) {
+    toast("Gagal menyimpan voucher: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Simpan Voucher";
+  }
+}
+
+async function toggleVoucherActive(code, newActive) {
+  try {
+    await db.collection("vouchers").doc(code).update({ active: newActive });
+    toast(`Voucher ${code} ${newActive ? "diaktifkan" : "dinonaktifkan"}.`, "info");
+  } catch (e) { toast("Gagal: " + e.message, "error"); }
+}
+
+async function deleteVoucher(code) {
+  if (!confirm(`Hapus voucher ${code}? Aksi ini tidak dapat dibatalkan.`)) return;
+  try {
+    await db.collection("vouchers").doc(code).delete();
+    toast(`Voucher ${code} dihapus.`, "info");
+  } catch (e) { toast("Gagal menghapus: " + e.message, "error"); }
+}
+
+function onAuthReady(user) {
+  hideLoader();
+  if (!requireOwner(user)) return;
+  loadVouchers();
+}
+</script>
+</body>
+</html>
