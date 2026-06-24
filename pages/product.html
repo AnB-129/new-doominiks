@@ -54,6 +54,13 @@
     .checkout-summary { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 20px; }
     .checkout-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--border); }
     .checkout-row:last-child { border-bottom: none; font-weight: 700; font-size: 16px; }
+    .voucher-box { margin: 16px 0; }
+    .voucher-input-row { display: flex; gap: 8px; }
+    .voucher-input-row .form-input { flex: 1; }
+    .voucher-applied-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(60,179,113,0.1); border: 1px solid rgba(60,179,113,0.3); border-radius: var(--radius); padding: 10px 14px; }
+    .voucher-applied-badge { font-size: 13px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 5px; }
+    .voucher-remove-btn { background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; text-decoration: underline; flex-shrink: 0; }
+    .voucher-remove-btn:hover { color: var(--red); }
     .pm-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
     .pm-row {
       display: flex; align-items: center; gap: 12px;
@@ -91,9 +98,20 @@
         <div class="step"><div class="step-num">3</div><span>Konfirmasi</span></div>
       </div>
       <div id="co-fields"></div>
+      <div class="voucher-box">
+        <div class="voucher-input-row" id="voucher-input-row">
+          <input class="form-input" id="voucher-code-input" placeholder="Punya kode voucher?" style="text-transform:uppercase;" maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault();applyVoucherCode();}" />
+          <button type="button" class="btn btn-secondary btn-sm" onclick="applyVoucherCode()" id="voucher-apply-btn">Pakai</button>
+        </div>
+        <div class="voucher-applied-row" id="voucher-applied-row" style="display:none;">
+          <span class="voucher-applied-badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px;"><path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.2a1.8 1.8 0 0 0 0 3.6V14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.2a1.8 1.8 0 0 0 0-3.6V8Z"/></svg> <span id="voucher-applied-code"></span> &mdash; <span id="voucher-applied-savings"></span></span>
+          <button type="button" class="voucher-remove-btn" onclick="removeVoucherCode()">Hapus</button>
+        </div>
+      </div>
       <div class="checkout-summary">
         <div class="checkout-row"><span>Produk</span><span id="co-s-name">-</span></div>
         <div class="checkout-row"><span>Harga</span><span id="co-s-price">-</span></div>
+        <div class="checkout-row" id="co-s-discount-row" style="display:none;color:var(--green);"><span>Diskon Voucher</span><span id="co-s-discount">-</span></div>
         <div class="checkout-row"><span>Total</span><span id="co-s-total" style="color:var(--gold);">-</span></div>
       </div>
       <button class="btn btn-primary btn-full btn-lg" style="margin-top:16px;" onclick="goToPayment()">Lanjut ke Pembayaran &rarr;</button>
@@ -147,6 +165,7 @@
       </div>
       <div class="checkout-summary">
         <div class="checkout-row"><span>Subtotal</span><span id="co-p-sub">-</span></div>
+        <div class="checkout-row" id="co-p-discount-row" style="display:none;color:var(--green);"><span>Diskon Voucher</span><span id="co-p-discount">-</span></div>
         <div class="checkout-row"><span>Biaya Layanan</span><span id="co-p-fee">Rp 0</span></div>
         <div class="checkout-row"><span>Total Bayar</span><span id="co-p-total" style="color:var(--gold);">-</span></div>
       </div>
@@ -314,6 +333,7 @@ let productData = null;
 let selectedItem = null;
 let selectedPayment = null;
 let gameFields = {};
+let appliedVoucher = null; // { code, type, value, discountAmount }
 
 const params = new URLSearchParams(window.location.search);
 const productId = params.get("id");
@@ -697,6 +717,12 @@ async function checkRobloxUsername(username) {
 function startCheckout() {
   if (!currentUser) { openModal("modal-login"); return; }
   if (!selectedItem) { toast("Pilih nominal terlebih dahulu", "error"); return; }
+  // Reset voucher tiap kali mulai checkout baru
+  appliedVoucher = null;
+  document.getElementById("voucher-input-row").style.display = "flex";
+  document.getElementById("voucher-applied-row").style.display = "none";
+  document.getElementById("voucher-code-input").value = "";
+  document.getElementById("co-s-discount-row").style.display = "none";
   // Filter fields: show only fields that match selectedTopupType (or fields with no typeId = global)
   const allFields = productData.fields || [
     { id: "userId", label: "User ID / ID Game", placeholder: "Masukkan User ID kamu", required: true },
@@ -750,6 +776,70 @@ function startCheckout() {
   document.getElementById("co-step-2").style.display = "none";
   document.getElementById("co-step-3").style.display = "none";
   openModal("modal-checkout");
+}
+
+// ---- Voucher ----
+function getBasePrice() {
+  if (!selectedItem) return 0;
+  return Math.max(0, selectedItem.price - (appliedVoucher ? appliedVoucher.discountAmount : 0));
+}
+
+async function applyVoucherCode() {
+  const input = document.getElementById("voucher-code-input");
+  const code = input.value.trim().toUpperCase();
+  if (!code) { toast("Masukkan kode voucher dulu", "error"); return; }
+  if (!currentUser) { openModal("modal-login"); return; }
+  const btn = document.getElementById("voucher-apply-btn");
+  btn.disabled = true; btn.textContent = "Mengecek...";
+  try {
+    const doc = await db.collection("vouchers").doc(code).get();
+    if (!doc.exists) { toast("Kode voucher tidak ditemukan", "error"); return; }
+    const v = doc.data();
+    if (!v.active) { toast("Voucher ini sudah tidak aktif", "error"); return; }
+    if (v.expiresAt) {
+      const exp = v.expiresAt.toDate ? v.expiresAt.toDate() : new Date(v.expiresAt);
+      if (exp.getTime() <= Date.now()) { toast("Voucher ini sudah kedaluwarsa", "error"); return; }
+    }
+    if (v.usageLimit && (v.usageCount || 0) >= v.usageLimit) { toast("Kuota voucher ini sudah habis", "error"); return; }
+    if (v.minPurchase && selectedItem.price < v.minPurchase) {
+      toast(`Minimal belanja ${formatIDR(v.minPurchase)} buat pakai voucher ini`, "error");
+      return;
+    }
+    // Cek limit pemakaian per-user
+    const perUserLimit = v.perUserLimit || 1;
+    const usedDoc = await db.collection("vouchers").doc(code).collection("usedBy").doc(currentUser.uid).get();
+    const usedCount = usedDoc.exists ? (usedDoc.data().count || 0) : 0;
+    if (usedCount >= perUserLimit) { toast("Kamu sudah pernah pakai voucher ini", "error"); return; }
+
+    let discountAmount = v.type === "percent"
+      ? Math.round(selectedItem.price * (v.value || 0) / 100)
+      : (v.value || 0);
+    if (v.type === "percent" && v.maxDiscount) discountAmount = Math.min(discountAmount, v.maxDiscount);
+    discountAmount = Math.min(discountAmount, selectedItem.price);
+
+    appliedVoucher = { code, type: v.type, value: v.value, discountAmount };
+    document.getElementById("voucher-input-row").style.display = "none";
+    document.getElementById("voucher-applied-row").style.display = "flex";
+    document.getElementById("voucher-applied-code").textContent = appliedVoucher.code;
+    document.getElementById("voucher-applied-savings").textContent = `Hemat ${formatIDR(discountAmount)}`;
+    document.getElementById("co-s-discount-row").style.display = "flex";
+    document.getElementById("co-s-discount").textContent = `-${formatIDR(discountAmount)}`;
+    document.getElementById("co-s-total").textContent = formatIDR(getBasePrice());
+    toast(`Voucher ${code} berhasil dipakai! Hemat ${formatIDR(discountAmount)}`, "success");
+  } catch (e) {
+    toast("Gagal mengecek voucher: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Pakai";
+  }
+}
+
+function removeVoucherCode() {
+  appliedVoucher = null;
+  document.getElementById("voucher-input-row").style.display = "flex";
+  document.getElementById("voucher-applied-row").style.display = "none";
+  document.getElementById("voucher-code-input").value = "";
+  document.getElementById("co-s-discount-row").style.display = "none";
+  document.getElementById("co-s-total").textContent = formatIDR(getBasePrice());
 }
 
 async function goToPayment() {
@@ -851,8 +941,14 @@ async function goToPayment() {
     html = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Belum ada metode pembayaran aktif.</div>`;
   }
   document.getElementById("pm-list-render").innerHTML = html;
-  document.getElementById("co-p-sub").textContent = formatIDR(selectedItem.price);
-  document.getElementById("co-p-total").textContent = formatIDR(selectedItem.price);
+  document.getElementById("co-p-sub").textContent = formatIDR(getBasePrice());
+  document.getElementById("co-p-total").textContent = formatIDR(getBasePrice());
+  if (appliedVoucher) {
+    document.getElementById("co-p-discount-row").style.display = "flex";
+    document.getElementById("co-p-discount").textContent = `-${formatIDR(appliedVoucher.discountAmount)}`;
+  } else {
+    document.getElementById("co-p-discount-row").style.display = "none";
+  }
   document.getElementById("co-step-1").style.display = "none";
   document.getElementById("co-step-2").style.display = "block";
 }
@@ -942,10 +1038,11 @@ async function selectPayment(id) {
     // Hitung biaya layanan: pakai feePercent dari Firestore jika ada, fallback ke nominal fee default
     // QRIS pakai field terpisah qrisFeePercent (bukan pmData.feePercent)
     const feePercent = id === "qris" ? (settings.qrisFeePercent || 0) : (pmData.feePercent || 0);
+    const basePrice = getBasePrice();
     const calculatedFee = feePercent > 0
-      ? Math.round(selectedItem.price * feePercent / 100)
+      ? Math.round(basePrice * feePercent / 100)
       : (selectedPayment?.fee || 0);
-    const total = selectedItem.price + calculatedFee;
+    const total = basePrice + calculatedFee;
     document.getElementById("co-p-fee").textContent = formatIDR(calculatedFee);
     document.getElementById("co-p-total").textContent = formatIDR(total);
     selectedPayment.calculatedFee = calculatedFee;
@@ -1022,7 +1119,8 @@ async function placeOrder() {
   try {
     const orderId = generateOrderId();
     const actualFee = selectedPayment.calculatedFee ?? selectedPayment.fee ?? 0;
-    const total = selectedItem.price + actualFee;
+    const basePrice = getBasePrice();
+    const total = basePrice + actualFee;
     const orderData = {
       orderId,
       userId: currentUser.uid,
@@ -1035,6 +1133,8 @@ async function placeOrder() {
       itemPrice: selectedItem.price,
       fee: actualFee,
       total,
+      voucherCode: appliedVoucher ? appliedVoucher.code : null,
+      voucherDiscount: appliedVoucher ? appliedVoucher.discountAmount : 0,
       paymentMethod: selectedPayment.id,
       paymentMethodName: selectedPayment.name,
       gameFields,
@@ -1047,6 +1147,20 @@ async function placeOrder() {
     await db.collection("stats").doc("global").set({
       orders: firebase.firestore.FieldValue.increment(1),
     }, { merge: true });
+    // Catat pemakaian voucher (kuota total + kuota per-user)
+    if (appliedVoucher) {
+      try {
+        await db.collection("vouchers").doc(appliedVoucher.code).update({
+          usageCount: firebase.firestore.FieldValue.increment(1)
+        });
+        await db.collection("vouchers").doc(appliedVoucher.code).collection("usedBy").doc(currentUser.uid).set({
+          count: firebase.firestore.FieldValue.increment(1),
+          lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.error("Gagal mencatat pemakaian voucher:", e);
+      }
+    }
     // Show confirmation
     document.getElementById("co-order-id").textContent = orderId;
     document.getElementById("co-payment-instructions").innerHTML = `
