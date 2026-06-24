@@ -17,7 +17,20 @@
   let csMyOrders = [];
   let csOrdersFetchedFor = null;
   let csAttachedOrder = null;
+  let csAttachedImage = null; // { url, previewUrl }
+  let csImageUploading = false;
   let csPanelOpen = false;
+
+  // ---- Cloudinary config (samain dengan upload lain di proyek ini) ----
+  const CLOUDINARY_CLOUD_NAME_CS = "dnpvgpqka";
+  const CLOUDINARY_UPLOAD_PRESET_CS = "vaultstore";
+
+  // ---- Icon SVG (ganti emoji biar konsisten & tajam di semua device) ----
+  const ICON_CHAT_DOTS = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.08.93 3.97 2.45 5.4-.16 1.06-.58 2.4-1.45 3.6 1.62-.1 3.06-.62 4.2-1.32A10.6 10.6 0 0 0 12 19c4.97 0 9-3.58 9-8s-4.03-8-9-8Z" fill="currentColor"/><circle cx="8.2" cy="11" r="1.15" fill="#fff" opacity="0.92"/><circle cx="12" cy="11" r="1.15" fill="#fff" opacity="0.92"/><circle cx="15.8" cy="11" r="1.15" fill="#fff" opacity="0.92"/></svg>`;
+  const ICON_CHAT_HEADER = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.08.93 3.97 2.45 5.4-.16 1.06-.58 2.4-1.45 3.6 1.62-.1 3.06-.62 4.2-1.32A10.6 10.6 0 0 0 12 19c4.97 0 9-3.58 9-8s-4.03-8-9-8Z" fill="var(--gold)"/><circle cx="8.2" cy="11" r="1.05" fill="#fff" opacity="0.92"/><circle cx="12" cy="11" r="1.05" fill="#fff" opacity="0.92"/><circle cx="15.8" cy="11" r="1.05" fill="#fff" opacity="0.92"/></svg>`;
+  const ICON_PAPERCLIP = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
+  const ICON_CAMERA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h2.5l1.2-1.8a1 1 0 0 1 .8-.4h6.9a1 1 0 0 1 .8.4L17.4 7H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.2"/></svg>`;
+  const ICON_CLOSE_X = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>`;
 
   function escapeHtmlCS(str) {
     const div = document.createElement("div");
@@ -32,12 +45,12 @@
     root.id = "cs-widget-root";
     root.innerHTML = `
       <button id="cs-widget-btn" class="cs-widget-btn" aria-label="Customer Service" type="button">
-        💬<span id="cs-widget-badge" class="cs-widget-badge"></span>
+        ${ICON_CHAT_DOTS}<span id="cs-widget-badge" class="cs-widget-badge"></span>
       </button>
       <div id="cs-widget-panel" class="cs-widget-panel">
         <div class="cs-widget-header">
           <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:20px;">💬</span>
+            <span class="cs-widget-header-icon">${ICON_CHAT_HEADER}</span>
             <div>
               <div style="font-weight:700;font-size:14px;">Customer Service</div>
               <div style="font-size:11px;color:var(--text-muted);">Biasanya balas dalam &lt; 1 jam</div>
@@ -47,9 +60,11 @@
         </div>
         <div id="cs-widget-messages" class="chat-messages cs-widget-messages"></div>
         <div id="cs-order-picker" class="cs-order-picker"></div>
-        <div id="cs-attached-preview" class="cs-attached-preview" style="display:none;"></div>
+        <div id="cs-attach-pills" class="cs-attach-pills"></div>
         <div class="chat-input-bar cs-widget-input-bar">
-          <button id="cs-attach-btn" class="cs-attach-btn" type="button" style="display:none;" title="Lampirkan pesanan">📎</button>
+          <button id="cs-attach-btn" class="cs-attach-btn" type="button" style="display:none;" title="Lampirkan pesanan">${ICON_PAPERCLIP}</button>
+          <button id="cs-image-btn" class="cs-attach-btn" type="button" title="Kirim gambar">${ICON_CAMERA}</button>
+          <input type="file" id="cs-image-input" accept="image/*" style="display:none;" />
           <input class="form-input" id="cs-widget-input" placeholder="Tulis pesan..." maxlength="500" />
           <button class="btn btn-primary btn-sm" id="cs-widget-send-btn" type="button">Kirim</button>
         </div>
@@ -59,6 +74,15 @@
     document.getElementById("cs-widget-btn").addEventListener("click", toggleWidget);
     document.getElementById("cs-widget-close-btn").addEventListener("click", closeWidget);
     document.getElementById("cs-attach-btn").addEventListener("click", toggleOrderPicker);
+    document.getElementById("cs-image-btn").addEventListener("click", function () {
+      const inp = document.getElementById("cs-image-input");
+      if (inp) inp.click();
+    });
+    document.getElementById("cs-image-input").addEventListener("change", function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) uploadChatImage(file);
+      e.target.value = "";
+    });
     document.getElementById("cs-widget-send-btn").addEventListener("click", sendMessage);
     document.getElementById("cs-widget-input").addEventListener("keydown", function (e) {
       if (e.key === "Enter") { e.preventDefault(); sendMessage(); }
@@ -137,6 +161,7 @@
       return `<div class="chat-bubble ${mine ? "me" : "them"}">` +
         (!mine ? `<div class="chat-sender">★ Admin DOOMINIKS</div>` : "") +
         (m.attachedOrder ? renderOrderCard(m.attachedOrder) : "") +
+        (m.imageUrl ? `<img src="${escapeHtmlCS(m.imageUrl)}" alt="Gambar" class="chat-img" onclick="window.open('${escapeHtmlCS(m.imageUrl)}','_blank')" />` : "") +
         (m.text ? `<div>${escapeHtmlCS(m.text)}</div>` : "") +
         `<div class="chat-meta">${typeof formatDate === "function" ? formatDate(m.createdAt) : ""}</div>` +
       `</div>`;
@@ -197,22 +222,75 @@
     const o = csMyOrders.find(function (x) { return x.id === orderDocId; });
     if (!o) return;
     csAttachedOrder = { orderId: o.orderId, productName: o.productName || "", itemName: o.itemName || "", total: o.total || 0, status: o.status || "pending" };
-    renderAttachedPreview();
+    renderAttachPills();
     hideOrderPicker();
   }
 
-  function renderAttachedPreview() {
-    const el = document.getElementById("cs-attached-preview");
+  function renderAttachPills() {
+    const el = document.getElementById("cs-attach-pills");
     if (!el) return;
-    if (!csAttachedOrder) { el.style.display = "none"; el.innerHTML = ""; return; }
-    el.style.display = "flex";
-    el.innerHTML = `<span style="font-size:12px;">📎 ${escapeHtmlCS(csAttachedOrder.orderId)} — ${escapeHtmlCS(csAttachedOrder.productName)}</span>
-      <button type="button" onclick="window._csRemoveAttachedOrder()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;">&times;</button>`;
+    let html = "";
+    if (csAttachedOrder) {
+      html += `<div class="cs-attach-pill">
+        <span style="font-size:12px;">${ICON_PAPERCLIP} ${escapeHtmlCS(csAttachedOrder.orderId)} — ${escapeHtmlCS(csAttachedOrder.productName)}</span>
+        <button type="button" onclick="window._csRemoveAttachedOrder()">${ICON_CLOSE_X}</button>
+      </div>`;
+    }
+    if (csAttachedImage) {
+      html += `<div class="cs-attach-pill ${csImageUploading ? "uploading" : ""}">
+        <img src="${escapeHtmlCS(csAttachedImage.previewUrl)}" alt="" />
+        <span style="font-size:12px;">${csImageUploading ? "Mengupload..." : "Gambar siap dikirim"}</span>
+        ${csImageUploading ? "" : `<button type="button" onclick="window._csRemoveAttachedImage()">${ICON_CLOSE_X}</button>`}
+      </div>`;
+    }
+    el.innerHTML = html;
   }
 
   function removeAttachedOrder() {
     csAttachedOrder = null;
-    renderAttachedPreview();
+    renderAttachPills();
+  }
+
+  function removeAttachedImage() {
+    csAttachedImage = null;
+    csImageUploading = false;
+    renderAttachPills();
+  }
+
+  // ---- Upload gambar ke Cloudinary ----
+  function uploadChatImage(file) {
+    if (!file.type || file.type.indexOf("image/") !== 0) {
+      toast("File harus berupa gambar", "error");
+      return;
+    }
+    if (!auth.currentUser) {
+      toast("Login dulu yuk buat chat sama admin", "info");
+      if (document.getElementById("modal-login")) openModal("modal-login");
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    csAttachedImage = { url: null, previewUrl: previewUrl };
+    csImageUploading = true;
+    renderAttachPills();
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_CS);
+    formData.append("folder", "doominiks/chat");
+    fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_CS}/image/upload`, { method: "POST", body: formData })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.secure_url) throw new Error("Upload gagal");
+        csImageUploading = false;
+        if (csAttachedImage) csAttachedImage.url = data.secure_url;
+        renderAttachPills();
+      })
+      .catch(function () {
+        toast("Gagal mengupload gambar, coba lagi", "error");
+        csAttachedImage = null;
+        csImageUploading = false;
+        renderAttachPills();
+      });
   }
 
   // ---- Kirim pesan ----
@@ -229,40 +307,46 @@
   function sendMessage() {
     const input = document.getElementById("cs-widget-input");
     if (!input) return;
+    if (csImageUploading) { toast("Tunggu gambar selesai diupload ya", "info"); return; }
     const text = input.value.trim();
-    if (!text && !csAttachedOrder) return;
+    if (!text && !csAttachedOrder && !csAttachedImage) return;
     const user = auth.currentUser;
     if (!user) return;
     input.value = "";
-    const attached = csAttachedOrder;
+    const attachedOrder = csAttachedOrder;
+    const attachedImage = csAttachedImage ? csAttachedImage.url : null;
     csAttachedOrder = null;
-    renderAttachedPreview();
+    csAttachedImage = null;
+    renderAttachPills();
     ensureChatDoc(user.uid, user).then(function () {
       return db.collection("chats").doc(user.uid).collection("messages").add({
         text: text,
         senderId: user.uid,
         senderName: user.displayName || "Pelanggan",
         senderRole: "customer",
-        attachedOrder: attached || null,
+        attachedOrder: attachedOrder || null,
+        imageUrl: attachedImage || null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }).then(function () {
       return db.collection("chats").doc(user.uid).update({
         unreadByOwner: firebase.firestore.FieldValue.increment(1),
-        lastMessageText: text || "📎 Lampiran pesanan",
+        lastMessageText: text || (attachedImage ? "📷 Gambar" : "📎 Lampiran pesanan"),
         lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }).catch(function (e) {
       toast("Gagal mengirim pesan: " + e.message, "error");
       input.value = text;
-      csAttachedOrder = attached;
-      renderAttachedPreview();
+      csAttachedOrder = attachedOrder;
+      if (attachedImage) csAttachedImage = { url: attachedImage, previewUrl: attachedImage };
+      renderAttachPills();
     });
   }
 
   // ---- Entry point global (dipake dari halaman lain, mis. tombol Chat di orders.html) ----
   window._csSelectOrder = selectOrder;
   window._csRemoveAttachedOrder = removeAttachedOrder;
+  window._csRemoveAttachedImage = removeAttachedImage;
 
   window.openCSChat = function () { openWidget(); };
 
@@ -277,7 +361,7 @@
       if (!doc.exists) return;
       const o = doc.data();
       csAttachedOrder = { orderId: o.orderId || orderId, productName: o.productName || "", itemName: o.itemName || "", total: o.total || 0, status: o.status || "pending" };
-      renderAttachedPreview();
+      renderAttachPills();
       const input = document.getElementById("cs-widget-input");
       if (input) input.focus();
     }).catch(function () {});
@@ -290,6 +374,8 @@
     csOrdersFetchedFor = null;
     csMyOrders = [];
     csAttachedOrder = null;
+    csAttachedImage = null;
+    csImageUploading = false;
     closeWidget();
     if (user) {
       listenBadge(user.uid);
