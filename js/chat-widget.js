@@ -20,6 +20,7 @@
   let csAttachedImage = null; // { url, previewUrl }
   let csImageUploading = false;
   let csPanelOpen = false;
+  let csPrevUnreadByCustomer = undefined; // dipake buat deteksi pesan BARU masuk (bukan cuma badge nempel)
 
   // ---- Cloudinary config (samain dengan upload lain di proyek ini) ----
   const CLOUDINARY_CLOUD_NAME_CS = "dnpvgpqka";
@@ -127,12 +128,21 @@
   // ---- Unread badge (real-time, jalan walau panel ketutup) ----
   function listenBadge(uid) {
     if (csUnsubBadge) { csUnsubBadge(); csUnsubBadge = null; }
+    csPrevUnreadByCustomer = undefined;
     csUnsubBadge = db.collection("chats").doc(uid).onSnapshot(function (doc) {
       const badge = document.getElementById("cs-widget-badge");
-      if (!badge) return;
       const n = (doc.exists && doc.data().unreadByCustomer) || 0;
-      if (n > 0 && !csPanelOpen) { badge.textContent = n > 9 ? "9+" : n; badge.style.display = "flex"; }
-      else { badge.style.display = "none"; }
+      if (badge) {
+        if (n > 0 && !csPanelOpen) { badge.textContent = n > 9 ? "9+" : n; badge.style.display = "flex"; }
+        else { badge.style.display = "none"; }
+      }
+      // Toast pop-up pas admin balas, tapi cuma kalau panel-nya lagi ketutup
+      // (kalau lagi kebuka, pesan udah langsung kelihatan live di dalam panel)
+      if (csPrevUnreadByCustomer !== undefined && n > csPrevUnreadByCustomer && !csPanelOpen) {
+        const lastText = (doc.data().lastMessageText || "").slice(0, 60);
+        toast(`💬 Admin membalas: ${lastText}`, "info", 5000);
+      }
+      csPrevUnreadByCustomer = n;
     }, function () {});
   }
 
