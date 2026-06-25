@@ -123,6 +123,9 @@ function showMaintenanceOwnerBadge(customMessage) {
 // ---- Auth State ----
 let currentUser = null;
 let _ownerChatBadgeUnsub = null;
+let _ownerOrdersUnsub = null;
+let _prevChatUnread = {}; // docId(uid) -> unreadByOwner terakhir, buat deteksi pesan BARU masuk (bukan cuma badge nempel)
+let _isFirstOwnerOrdersLoad = true;
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   // Cek maintenance mode dulu sebelum render apapun lebih jauh
@@ -140,21 +143,58 @@ auth.onAuthStateChanged(async (user) => {
   }, 500);
   updateNavAuth(user);
   updateOwnerChatBadge(user);
+  listenOwnerNewOrders(user);
   if (typeof onAuthReady === "function") onAuthReady(user);
 });
 
 // Badge jumlah chat CS belum dibalas di sidebar owner panel — terpusat di sini
 // biar tiap halaman /owner/*.html otomatis kebagian tanpa nulis ulang listener.
+// Sekalian toast kalau ada pesan BARU masuk (deteksi dari kenaikan unreadByOwner per percakapan).
 function updateOwnerChatBadge(user) {
   if (_ownerChatBadgeUnsub) { _ownerChatBadgeUnsub(); _ownerChatBadgeUnsub = null; }
+  _prevChatUnread = {};
   if (!window.location.pathname.includes("/owner/")) return;
   if (!user || typeof isOwner !== "function" || !isOwner(user.uid)) return;
+  const onChatPage = window.location.pathname.includes("/owner/chat.html");
   _ownerChatBadgeUnsub = db.collection("chats").onSnapshot(snap => {
     const total = snap.docs.reduce((s, d) => s + (d.data().unreadByOwner || 0), 0);
     const badge = document.getElementById("chat-sidebar-badge");
-    if (!badge) return;
-    if (total > 0) { badge.textContent = total > 99 ? "99+" : total; badge.style.display = "inline-block"; }
-    else badge.style.display = "none";
+    if (badge) {
+      if (total > 0) { badge.textContent = total > 99 ? "99+" : total; badge.style.display = "inline-block"; }
+      else badge.style.display = "none";
+    }
+    // Toast pesan baru — skip di halaman chat.html sendiri karena udah kelihatan langsung di inbox-nya
+    if (!onChatPage) {
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const prev = _prevChatUnread[d.id];
+        if (prev !== undefined && (data.unreadByOwner || 0) > prev) {
+          toast(`💬 Pesan baru dari ${data.userName || "pelanggan"}: ${(data.lastMessageText || "").slice(0, 60)}`, "info", 5000);
+        }
+        _prevChatUnread[d.id] = data.unreadByOwner || 0;
+      });
+    } else {
+      snap.docs.forEach(d => { _prevChatUnread[d.id] = d.data().unreadByOwner || 0; });
+    }
+  }, () => {});
+}
+
+// Toast "Order baru masuk" terpusat — muncul di semua halaman owner, bukan cuma Dashboard.
+function listenOwnerNewOrders(user) {
+  if (_ownerOrdersUnsub) { _ownerOrdersUnsub(); _ownerOrdersUnsub = null; }
+  _isFirstOwnerOrdersLoad = true;
+  if (!window.location.pathname.includes("/owner/")) return;
+  if (!user || typeof isOwner !== "function" || !isOwner(user.uid)) return;
+  _ownerOrdersUnsub = db.collection("orders").onSnapshot(snap => {
+    if (!_isFirstOwnerOrdersLoad) {
+      snap.docChanges().forEach(change => {
+        if (change.type === "added") {
+          const o = change.doc.data();
+          toast(`📦 Order baru masuk: ${o.orderId} — ${o.productName || ""}`, "info", 6000);
+        }
+      });
+    }
+    _isFirstOwnerOrdersLoad = false;
   }, () => {});
 }
 
