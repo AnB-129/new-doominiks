@@ -164,6 +164,7 @@ let allOrders = [];
 let currentFilter = "all";
 let ordersUnsubscribe = null;
 let lastKnownStatus = {}; // orderDocId -> status, dipake buat deteksi PERUBAHAN status asli (bukan tiap field berubah)
+let lastKnownRedeemCode = {}; // orderDocId -> redeemCode, dipake buat deteksi kode redeem yang BARU diisi owner
 const reviewedOrderIds = new Set(); // Persist reviewed state across onSnapshot refreshes
 
 async function loadOrders(user) {
@@ -181,6 +182,13 @@ async function loadOrders(user) {
           if (lbl[o.status]) toast(`Order ${o.orderId} — ${lbl[o.status]}`, o.status === "success" ? "success" : o.status === "failed" ? "error" : "info");
         }
         lastKnownStatus[change.doc.id] = o.status;
+
+        // Notify kalau kode redeem BARU diisi owner (transisi dari kosong -> ada isinya)
+        const prevRedeem = lastKnownRedeemCode[change.doc.id];
+        if (change.type === "modified" && !prevRedeem && o.redeemCode) {
+          toast(`🎁 Kode redeem untuk ${o.orderId} sudah siap! Cek di bawah ya.`, "success", 6000);
+        }
+        lastKnownRedeemCode[change.doc.id] = o.redeemCode || null;
       });
       allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       allOrders.sort((a, b) => {
