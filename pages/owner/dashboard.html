@@ -125,13 +125,10 @@ function loadDashboard() {
     document.getElementById("d-pending").textContent = pending.length;
     document.getElementById("d-revenue").textContent = formatIDR(revenue);
 
-    // Notify on new order (skip first load)
+    // Flash pending count kalau ada order baru masuk (toast-nya udah dihandle terpusat di app.js)
     if (!isFirstDashLoad) {
       ordersSnap.docChanges().forEach(change => {
         if (change.type === "added") {
-          const o = change.doc.data();
-          toast(`📦 Order baru masuk: ${o.orderId} — ${o.productName}`, "info", 6000);
-          // Flash pending count
           const el = document.getElementById("d-pending");
           el.style.color = "var(--red)";
           setTimeout(() => el.style.color = "", 2000);
