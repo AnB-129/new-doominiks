@@ -700,6 +700,7 @@ async function checkRobloxUsername(username) {
     window._robloxVerified = true;
     window._robloxUserId = userId;
     window._robloxDisplayName = displayName;
+    window._robloxAvatarUrl = avatarUrl || "";
 
   } catch(e) {
     icon.textContent = "⚠";
@@ -772,6 +773,8 @@ function startCheckout() {
   // Init Roblox checker state
   window._robloxVerified = false;
   window._robloxUserId = null;
+  window._robloxDisplayName = null;
+  window._robloxAvatarUrl = "";
   document.getElementById("co-step-1").style.display = "block";
   document.getElementById("co-step-2").style.display = "none";
   document.getElementById("co-step-3").style.display = "none";
@@ -1138,6 +1141,7 @@ async function placeOrder() {
       paymentMethod: selectedPayment.id,
       paymentMethodName: selectedPayment.name,
       gameFields,
+      robloxAvatarUrl: window._robloxAvatarUrl || null,
       status: "pending",
       proofImageUrl: document.getElementById("proof-url").value || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
