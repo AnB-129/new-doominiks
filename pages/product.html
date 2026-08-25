@@ -665,6 +665,7 @@ async function checkRobloxUsername(username) {
 
     // Step 2: Avatar thumbnail dengan retry
     let avatarUrl = "";
+    let avatarCloudinaryUrl = "";
     try {
       const res2 = await fetchWithRetry(
         WORKER_PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`)
@@ -675,6 +676,13 @@ async function checkRobloxUsername(username) {
       // Avatar opsional, lanjut tanpa foto
     }
 
+    // Pakai Cloudinary fetch/deliver — nge-proxy URL Roblox tanpa upload & tanpa makan storage.
+    // Cloudinary cuma cache sementara, URL Roblox di-serve ulang via CDN Cloudinary
+    // sehingga bisa di-embed di domain mana pun tanpa kena blokir referrer policy Roblox.
+    if (avatarUrl) {
+      avatarCloudinaryUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME_P}/image/fetch/w_150,h_150,c_fill,r_max,f_auto/${encodeURIComponent(avatarUrl)}`;
+    }
+
     // Tampilkan card
     icon.textContent = "✓";
     icon.style.color = "#22c55e";
@@ -682,14 +690,11 @@ async function checkRobloxUsername(username) {
     if (card) {
       card.style.display = "flex";
       const avatarEl = document.getElementById("roblox-avatar");
-      if (avatarUrl) {
+      const displaySrc = avatarCloudinaryUrl || avatarUrl;
+      if (displaySrc) {
         avatarEl.style.display = "block";
-        avatarEl.src = avatarUrl;
-        // Retry load foto kalau gagal pertama kali
-        avatarEl.onerror = () => {
-          setTimeout(() => { avatarEl.src = avatarUrl + "?retry=1"; }, 1500);
-          avatarEl.onerror = () => { avatarEl.style.display = "none"; };
-        };
+        avatarEl.src = displaySrc;
+        avatarEl.onerror = () => { avatarEl.style.display = "none"; };
       } else {
         avatarEl.style.display = "none";
       }
@@ -700,7 +705,7 @@ async function checkRobloxUsername(username) {
     window._robloxVerified = true;
     window._robloxUserId = userId;
     window._robloxDisplayName = displayName;
-    window._robloxAvatarUrl = avatarUrl || "";
+    window._robloxAvatarUrl = avatarCloudinaryUrl || avatarUrl || "";
 
   } catch(e) {
     icon.textContent = "⚠";
