@@ -334,6 +334,24 @@ function viewOrder(orderId) {
       ${Object.entries(gameFields).map(([k, v]) => v ? `<div class="detail-item"><div class="di-label">${k}</div><div class="di-value">${v}</div></div>` : "").join("")}
       <div class="detail-item"><div class="di-label">Waktu Order</div><div class="di-value">${formatDate(o.createdAt)}</div></div>
     </div>
+    ${(o.robloxAvatarUrl || gameFields["Roblox User ID"]) ? `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--gold);display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        Akun Roblox Terverifikasi
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        ${o.robloxAvatarUrl ? `<img src="${o.robloxAvatarUrl}" alt="Avatar" style="width:56px;height:56px;border-radius:50%;border:2px solid var(--gold);flex-shrink:0;object-fit:cover;" />` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--bg-card);border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:22px;">?</div>`}
+        <div style="min-width:0;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:2px;">${gameFields["Roblox Display Name"] || "-"}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">@${gameFields["Username"] || gameFields["username"] || "-"}</div>
+          <div style="font-size:11px;font-family:monospace;color:var(--text-muted);">User ID: ${gameFields["Roblox User ID"] || "-"}</div>
+        </div>
+        <div style="margin-left:auto;flex-shrink:0;">
+          <span class="badge badge-success" style="font-size:11px;">✓ Terverifikasi</span>
+        </div>
+      </div>
+    </div>` : ""}
     ${o.proofImageUrl ? `
     <div style="margin-bottom:20px;">
       <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--gold);">▲ Bukti Pembayaran</div>
