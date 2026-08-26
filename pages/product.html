@@ -665,7 +665,7 @@ async function checkRobloxUsername(username) {
 
     // Step 2: Avatar thumbnail dengan retry
     let avatarUrl = "";
-    let avatarCloudinaryUrl = "";
+    let avatarProxyUrl = "";
     try {
       const res2 = await fetchWithRetry(
         WORKER_PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`)
@@ -676,11 +676,10 @@ async function checkRobloxUsername(username) {
       // Avatar opsional, lanjut tanpa foto
     }
 
-    // Pakai Cloudinary fetch/deliver — nge-proxy URL Roblox tanpa upload & tanpa makan storage.
-    // Cloudinary cuma cache sementara, URL Roblox di-serve ulang via CDN Cloudinary
-    // sehingga bisa di-embed di domain mana pun tanpa kena blokir referrer policy Roblox.
+    // Serve avatar lewat Worker proxy biar gak kena blokir referrer policy Roblox
+    // saat di-load dari domain owner panel. Worker sudah ada dan aktif, tidak perlu setup tambahan.
     if (avatarUrl) {
-      avatarCloudinaryUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME_P}/image/fetch/w_150,h_150,c_fill,r_max,f_auto/${encodeURIComponent(avatarUrl)}`;
+      avatarProxyUrl = WORKER_PROXY + encodeURIComponent(avatarUrl);
     }
 
     // Tampilkan card
@@ -690,7 +689,7 @@ async function checkRobloxUsername(username) {
     if (card) {
       card.style.display = "flex";
       const avatarEl = document.getElementById("roblox-avatar");
-      const displaySrc = avatarCloudinaryUrl || avatarUrl;
+      const displaySrc = avatarProxyUrl || avatarUrl;
       if (displaySrc) {
         avatarEl.style.display = "block";
         avatarEl.src = displaySrc;
@@ -705,7 +704,7 @@ async function checkRobloxUsername(username) {
     window._robloxVerified = true;
     window._robloxUserId = userId;
     window._robloxDisplayName = displayName;
-    window._robloxAvatarUrl = avatarCloudinaryUrl || avatarUrl || "";
+    window._robloxAvatarUrl = avatarProxyUrl || avatarUrl || "";
 
   } catch(e) {
     icon.textContent = "⚠";
