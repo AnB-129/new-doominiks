@@ -4,7 +4,7 @@
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyCwBPPYAF6vuJkeH74GFDXNTtK1Cn_l6uI",
-  authDomain: "doominiks-gold.firebaseapp.com",
+  authDomain: "doominiksstore.xyz",
   projectId: "doominiks-gold",
   storageBucket: "doominiks-gold.firebasestorage.app",
   messagingSenderId: "455827305732",
