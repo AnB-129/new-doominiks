@@ -98,13 +98,20 @@ function escapeHtmlCS(str) {
 
 function loadConvs() {
   if (convsUnsubscribe) { convsUnsubscribe(); convsUnsubscribe = null; }
+  const params = new URLSearchParams(window.location.search);
+  const urlUid = params.get("uid");
+  const urlCustomerInfo = urlUid ? {
+    userName: params.get("name") || "Pelanggan",
+    userEmail: params.get("email") || null,
+    userPhoto: params.get("photo") || null
+  } : null;
+
   convsUnsubscribe = db.collection("chats").orderBy("lastMessageAt", "desc").limit(200).onSnapshot(snap => {
     allConvs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderConvList();
-    // Kalau ada deep-link ?uid=xxx dan belum dibuka, buka otomatis sekali
-    const urlUid = new URLSearchParams(window.location.search).get("uid");
-    if (urlUid && !activeUid && allConvs.find(c => c.id === urlUid)) {
-      openThread(urlUid);
+    // Auto-open thread dari deep-link ?uid=xxx — sekali aja, bahkan kalau chat belum pernah ada
+    if (urlUid && !activeUid) {
+      openThread(urlUid, urlCustomerInfo);
     }
   }, e => {
     document.getElementById("conv-list-body").innerHTML = `<div style="padding:20px;color:var(--text-muted);font-size:13px;">Gagal memuat chat.</div>`;
@@ -147,13 +154,47 @@ function formatChatTime(ts) {
     : new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" }).format(d);
 }
 
-function openThread(uid) {
+async function openThread(uid, customerInfo) {
   activeUid = uid;
   threadAttachedImage = null;
   threadImageUploading = false;
   renderConvList();
-  const conv = allConvs.find(c => c.id === uid);
-  if (!conv) return;
+
+  let conv = allConvs.find(c => c.id === uid);
+
+  // Kalau chat belum pernah ada (customer belum pernah chat duluan),
+  // buat dokumen chat-nya dulu pakai info customer dari order
+  if (!conv) {
+    if (!customerInfo) {
+      // Coba ambil dari Firestore users collection
+      try {
+        const userDoc = await db.collection("users").doc(uid).get();
+        if (userDoc.exists) {
+          const u = userDoc.data();
+          customerInfo = { userName: u.displayName || "Pelanggan", userPhoto: u.photoURL || null, userEmail: u.email || null };
+        }
+      } catch(e) {}
+    }
+    const info = customerInfo || { userName: "Pelanggan", userPhoto: null, userEmail: null };
+    try {
+      await db.collection("chats").doc(uid).set({
+        userId: uid,
+        userName: info.userName,
+        userPhoto: info.userPhoto || null,
+        userEmail: info.userEmail || null,
+        unreadByOwner: 0,
+        unreadByCustomer: 0,
+        lastMessageText: "",
+        lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } catch(e) {
+      toast("Gagal membuka chat: " + e.message, "error");
+      return;
+    }
+    // Buat conv sementara dari info yang ada biar thread bisa langsung dirender
+    conv = { id: uid, ...info };
+  }
 
   // Reset unread buat owner
   db.collection("chats").doc(uid).update({ unreadByOwner: 0 }).catch(() => {});
