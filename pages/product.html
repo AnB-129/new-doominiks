@@ -665,7 +665,6 @@ async function checkRobloxUsername(username) {
 
     // Step 2: Avatar thumbnail dengan retry
     let avatarUrl = "";
-    let avatarProxyUrl = "";
     try {
       const res2 = await fetchWithRetry(
         WORKER_PROXY + encodeURIComponent(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`)
@@ -676,11 +675,9 @@ async function checkRobloxUsername(username) {
       // Avatar opsional, lanjut tanpa foto
     }
 
-    // Serve avatar lewat Worker proxy biar gak kena blokir referrer policy Roblox
-    // saat di-load dari domain owner panel. Worker sudah ada dan aktif, tidak perlu setup tambahan.
-    if (avatarUrl) {
-      avatarProxyUrl = WORKER_PROXY + encodeURIComponent(avatarUrl);
-    }
+    // avatarUrl adalah URL langsung dari Roblox CDN (tr.rbxcdn.com)
+    // Tag <img src> bisa load URL cross-origin tanpa masalah CORS, jadi langsung pakai aja.
+    // Worker proxy TIDAK cocok di sini karena Worker dirancang buat fetch JSON, bukan binary image.
 
     // Tampilkan card
     icon.textContent = "✓";
@@ -689,11 +686,14 @@ async function checkRobloxUsername(username) {
     if (card) {
       card.style.display = "flex";
       const avatarEl = document.getElementById("roblox-avatar");
-      const displaySrc = avatarProxyUrl || avatarUrl;
+      const displaySrc = avatarUrl;
       if (displaySrc) {
         avatarEl.style.display = "block";
         avatarEl.src = displaySrc;
-        avatarEl.onerror = () => { avatarEl.style.display = "none"; };
+        avatarEl.onerror = () => {
+          setTimeout(() => { avatarEl.src = displaySrc + "?r=1"; }, 1500);
+          avatarEl.onerror = () => { avatarEl.style.display = "none"; };
+        };
       } else {
         avatarEl.style.display = "none";
       }
@@ -704,7 +704,7 @@ async function checkRobloxUsername(username) {
     window._robloxVerified = true;
     window._robloxUserId = userId;
     window._robloxDisplayName = displayName;
-    window._robloxAvatarUrl = avatarProxyUrl || avatarUrl || "";
+    window._robloxAvatarUrl = avatarUrl || "";
 
   } catch(e) {
     icon.textContent = "⚠";
