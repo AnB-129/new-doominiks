@@ -120,6 +120,85 @@ function showMaintenanceOwnerBadge(customMessage) {
   document.body.appendChild(badge);
 }
 
+// ============================================================
+// CLOUDINARY UPLOAD TERPUSAT — deduplikasi + limit 15MB
+// Semua halaman pakai fungsi ini, jangan upload langsung.
+// ============================================================
+const CLOUDINARY_CACHE_PREFIX = "doom_img_";
+const CLOUDINARY_MAX_SIZE = 15 * 1024 * 1024; // 15MB
+
+async function hashFile(file) {
+  const buf = await file.arrayBuffer();
+  const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// uploadToCloudinary(file, cloudName, preset, folder)
+// → resolve dengan secure_url (string)
+// Kalau file identik pernah diupload (hash sama), langsung pakai URL cache — zero upload.
+async function uploadToCloudinary(file, cloudName, preset, folder) {
+  if (!file) throw new Error("File tidak ditemukan");
+  if (file.size > CLOUDINARY_MAX_SIZE) throw new Error("Ukuran file maksimal 15MB");
+  if (!file.type.startsWith("image/")) throw new Error("File harus berupa gambar");
+
+  // Cek cache by hash
+  const hash = await hashFile(file);
+  const cacheKey = CLOUDINARY_CACHE_PREFIX + hash;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return cached; // file identik sudah pernah diupload, pakai URL lama
+  } catch(e) {}
+
+  // Upload ke Cloudinary
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", preset);
+  if (folder) formData.append("folder", folder);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: formData });
+  if (!res.ok) throw new Error("Upload gagal (HTTP " + res.status + ")");
+  const data = await res.json();
+  if (!data.secure_url) throw new Error("Upload gagal, coba lagi");
+
+  // Simpan ke cache
+  try { localStorage.setItem(cacheKey, data.secure_url); } catch(e) {}
+  return data.secure_url;
+}
+
+// uploadWithProgress(file, cloudName, preset, folder, onProgress)
+// → versi XHR dengan callback progress(0-100), untuk upload bukti bayar dll
+// Juga cek hash cache duluan sebelum XHR.
+async function uploadWithProgress(file, cloudName, preset, folder, onProgress) {
+  if (!file) throw new Error("File tidak ditemukan");
+  if (file.size > CLOUDINARY_MAX_SIZE) throw new Error("Ukuran file maksimal 15MB");
+  if (!file.type.startsWith("image/")) throw new Error("File harus berupa gambar");
+
+  const hash = await hashFile(file);
+  const cacheKey = CLOUDINARY_CACHE_PREFIX + hash;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) { if (onProgress) onProgress(100); return cached; }
+  } catch(e) {}
+
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", preset);
+    if (folder) formData.append("folder", folder);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+    if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100)); };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const url = JSON.parse(xhr.responseText).secure_url;
+        try { localStorage.setItem(cacheKey, url); } catch(e) {}
+        resolve(url);
+      } else { reject(new Error("Upload gagal (HTTP " + xhr.status + ")")); }
+    };
+    xhr.onerror = () => reject(new Error("Upload gagal, cek koneksi"));
+    xhr.send(formData);
+  });
+}
+
 // ---- Auth State ----
 let currentUser = null;
 let _ownerChatBadgeUnsub = null;

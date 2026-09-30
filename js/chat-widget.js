@@ -273,6 +273,10 @@
       toast("File harus berupa gambar", "error");
       return;
     }
+    if (file.size > CLOUDINARY_MAX_SIZE) {
+      toast("Ukuran file maksimal 15MB", "error");
+      return;
+    }
     if (!auth.currentUser) {
       toast("Login dulu yuk buat chat sama admin", "info");
       if (document.getElementById("modal-login")) openModal("modal-login");
@@ -283,20 +287,14 @@
     csImageUploading = true;
     renderAttachPills();
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_CS);
-    formData.append("folder", "doominiks/chat");
-    fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_CS}/image/upload`, { method: "POST", body: formData })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (!data.secure_url) throw new Error("Upload gagal");
+    uploadToCloudinary(file, CLOUDINARY_CLOUD_NAME_CS, CLOUDINARY_UPLOAD_PRESET_CS, "doominiks/chat")
+      .then(function (url) {
         csImageUploading = false;
-        if (csAttachedImage) csAttachedImage.url = data.secure_url;
+        if (csAttachedImage) csAttachedImage.url = url;
         renderAttachPills();
       })
-      .catch(function () {
-        toast("Gagal mengupload gambar, coba lagi", "error");
+      .catch(function (e) {
+        toast(e.message || "Gagal mengupload gambar, coba lagi", "error");
         csAttachedImage = null;
         csImageUploading = false;
         renderAttachPills();
