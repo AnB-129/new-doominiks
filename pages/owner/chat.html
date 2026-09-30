@@ -284,25 +284,20 @@ function renderThreadPills() {
 
 function uploadThreadImage(file) {
   if (!file.type || file.type.indexOf("image/") !== 0) { toast("File harus berupa gambar", "error"); return; }
+  if (file.size > CLOUDINARY_MAX_SIZE) { toast("Ukuran file maksimal 15MB", "error"); return; }
   const previewUrl = URL.createObjectURL(file);
   threadAttachedImage = { url: null, previewUrl };
   threadImageUploading = true;
   renderThreadPills();
 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_CS);
-  formData.append("folder", "doominiks/chat");
-  fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_CS}/image/upload`, { method: "POST", body: formData })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.secure_url) throw new Error("Upload gagal");
+  uploadToCloudinary(file, CLOUDINARY_CLOUD_NAME_CS, CLOUDINARY_UPLOAD_PRESET_CS, "doominiks/chat")
+    .then(url => {
       threadImageUploading = false;
-      if (threadAttachedImage) threadAttachedImage.url = data.secure_url;
+      if (threadAttachedImage) threadAttachedImage.url = url;
       renderThreadPills();
     })
-    .catch(() => {
-      toast("Gagal mengupload gambar, coba lagi", "error");
+    .catch(e => {
+      toast(e.message || "Gagal mengupload gambar, coba lagi", "error");
       threadAttachedImage = null;
       threadImageUploading = false;
       renderThreadPills();

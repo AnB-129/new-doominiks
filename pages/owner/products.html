@@ -360,22 +360,16 @@ function addTopupTypeRow(type) {
 async function uploadTopupTypeIcon(i, input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 1 * 1024 * 1024) { toast("Maks 1MB", "error"); return; }
   const preview = document.getElementById(`tt-icon-preview-${i}`);
   preview.innerHTML = `<div class="loader-ring" style="width:24px;height:24px;border-width:2px;"></div>`;
   try {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
-    const data = await res.json();
-    if (!data.secure_url) throw new Error("Gagal");
-    document.getElementById(`tt-icon-url-${i}`).value = data.secure_url;
-    preview.innerHTML = `<img src="${data.secure_url}" style="width:100%;height:100%;object-fit:cover;">`;
+    const url = await uploadToCloudinary(file, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, "doominiks-store/icons");
+    document.getElementById(`tt-icon-url-${i}`).value = url;
+    preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
     toast("Icon berhasil diupload", "success");
   } catch(e) {
     preview.innerHTML = `<span style="color:var(--text-muted);">+</span>`;
-    toast("Gagal upload icon", "error");
+    toast(e.message || "Gagal upload icon", "error");
   }
 }
 
@@ -719,84 +713,45 @@ async function uploadImageToStorage(file) {
   display.textContent = "Mengupload ke Cloudinary...";
 
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", "doominiks-store/products");
-
-    // Use XHR for progress tracking
-    await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 90);
-          bar.style.width = pct + "%";
-          display.textContent = `Mengupload... ${pct}%`;
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const res = JSON.parse(xhr.responseText);
-          const url = res.secure_url;
-          document.getElementById("f-img-url").value = url;
-          bar.style.width = "100%";
-          display.innerHTML = `<span style="color:var(--green);">✓ Upload berhasil!</span>`;
-          setTimeout(() => { progress.style.display = "none"; }, 1500);
-          toast("Gambar berhasil diupload!", "success");
-          resolve();
-        } else {
-          reject(new Error("Upload gagal: " + xhr.responseText));
-        }
-      };
-      xhr.onerror = () => reject(new Error("Network error"));
-      xhr.send(formData);
-    });
-
+    const url = await uploadWithProgress(file, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, "doominiks-store/products",
+      pct => { bar.style.width = pct + "%"; display.textContent = `Mengupload... ${pct}%`; }
+    );
+    document.getElementById("f-img-url").value = url;
+    bar.style.width = "100%";
+    display.innerHTML = `<span style="color:var(--green);">✓ Upload berhasil!</span>`;
+    setTimeout(() => { progress.style.display = "none"; }, 1500);
+    toast("Gambar berhasil diupload!", "success");
   } catch (e) {
     progress.style.display = "none";
     display.textContent = "";
-    console.error(e);
-    toast("Upload gagal: " + e.message + ". Pastikan CLOUDINARY_CLOUD_NAME dan UPLOAD_PRESET sudah diisi.", "error");
+    toast(e.message + ". Pastikan CLOUDINARY_CLOUD_NAME dan UPLOAD_PRESET sudah diisi.", "error");
   }
 }
 
 async function uploadItemImage(i, input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB", "error"); return; }
   const status = document.getElementById(`item-img-status-${i}`);
   const label = document.getElementById(`item-img-label-${i}`);
   const preview = document.getElementById(`item-img-preview-${i}`);
   status.textContent = "Mengupload...";
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", "doominiks-store/items");
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const url = JSON.parse(xhr.responseText).secure_url;
-        document.getElementById(`item-img-${i}`).value = url;
-        preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;">`;
-        label.childNodes[0].textContent = "✎ Ganti Gambar";
-        status.innerHTML = `<span style="color:var(--green);">✓</span>`;
-        toast("Gambar item diupload!", "success");
-      } else { status.textContent = "Gagal"; toast("Upload gagal", "error"); }
-    };
-    xhr.onerror = () => { status.textContent = "Error"; };
-    xhr.send(formData);
-  } catch(e) { status.textContent = "Error"; }
+    const url = await uploadToCloudinary(file, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, "doominiks-store/items");
+    document.getElementById(`item-img-${i}`).value = url;
+    preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;">`;
+    label.childNodes[0].textContent = "✎ Ganti Gambar";
+    status.innerHTML = `<span style="color:var(--green);">✓</span>`;
+    toast("Gambar item diupload!", "success");
+  } catch(e) {
+    status.textContent = "Gagal";
+    toast(e.message || "Upload gagal", "error");
+  }
 }
 
 function handleBannerSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast("Maks 2MB!", "error"); return; }
+  if (file.size > CLOUDINARY_MAX_SIZE) { toast("Ukuran file maksimal 15MB", "error"); return; }
   const reader = new FileReader();
   reader.onload = e => {
     document.getElementById("banner-preview").src = e.target.result;
@@ -819,24 +774,16 @@ async function uploadBannerToStorage(file) {
   const pb = document.getElementById("banner-progress-bar");
   pw.style.display = "block"; pb.style.width = "0%";
   try {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    fd.append("folder", "doominiks-store/banners");
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
-    xhr.upload.onprogress = e => { if(e.lengthComputable) pb.style.width=`${(e.loaded/e.total*100).toFixed(0)}%`; };
-    xhr.onload = () => {
-      pw.style.display = "none";
-      if (xhr.status === 200) {
-        const url = JSON.parse(xhr.responseText).secure_url;
-        document.getElementById("f-banner-url").value = url;
-        toast("Banner diupload!", "success");
-      } else toast("Gagal upload banner", "error");
-    };
-    xhr.onerror = () => { pw.style.display = "none"; };
-    xhr.send(fd);
-  } catch(e) { pw.style.display = "none"; }
+    const url = await uploadWithProgress(file, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, "doominiks-store/banners",
+      pct => { pb.style.width = pct + "%"; }
+    );
+    pw.style.display = "none";
+    document.getElementById("f-banner-url").value = url;
+    toast("Banner diupload!", "success");
+  } catch(e) {
+    pw.style.display = "none";
+    toast(e.message || "Gagal upload banner", "error");
+  }
 }
 function removeImage(event) {
   event.stopPropagation();
