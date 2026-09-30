@@ -8,6 +8,7 @@
   <title>DOOMINIKS STORE &mdash; Top Up Game Ter ter lah pokoknya</title>
   <meta name="description" content="Top up game murah, cepat, dan terpercaya. Mobile Legends, Free Fire, PUBG, Genshin Impact & lebih banyak lagi." />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/home.css" />
   <script>
     // Apply tema sebelum render untuk hindari flash
     (function() {
@@ -81,7 +82,7 @@
     .review-card { min-width: 300px; max-width: 300px; flex-shrink: 0; pointer-events: all; }
   </style>
 </head>
-<body>
+<body class="home">
 
 <!-- POPUP IKLAN -->
 <div id="popup-ad-overlay" style="display:none;">
@@ -108,7 +109,7 @@
     <div class="sp-name" id="sp-name">Seseorang</div>
     <div class="sp-detail">baru saja membeli <span class="sp-category" id="sp-item"></span> di <span id="sp-category"></span></div>
   </div>
-  <div class="sp-icon">🎉</div>
+  <div class="sp-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
 </a>
 
 <!-- LOGIN MODAL -->
@@ -400,7 +401,7 @@
 <div class="modal-overlay" id="modal-cara-beli">
   <div class="modal" style="max-width:600px;">
     <div class="modal-header">
-      <span class="modal-title">🛒 Cara Pembelian</span>
+      <span class="modal-title">Cara Pembelian</span>
       <button class="modal-close" onclick="closeModal('modal-cara-beli')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:20px;">
@@ -435,7 +436,7 @@
 <div class="modal-overlay" id="modal-metode-bayar">
   <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <span class="modal-title">💳 Metode Pembayaran</span>
+      <span class="modal-title">Metode Pembayaran</span>
       <button class="modal-close" onclick="closeModal('modal-metode-bayar')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;">
@@ -477,7 +478,7 @@
 <div class="modal-overlay" id="modal-faq">
   <div class="modal" style="max-width:600px;">
     <div class="modal-header">
-      <span class="modal-title">❓ FAQ — Pertanyaan Umum</span>
+      <span class="modal-title">FAQ — Pertanyaan Umum</span>
       <button class="modal-close" onclick="closeModal('modal-faq')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:2px;" id="faq-list"></div>
@@ -488,7 +489,7 @@
 <div class="modal-overlay" id="modal-hubungi">
   <div class="modal" style="max-width:500px;">
     <div class="modal-header">
-      <span class="modal-title">📞 Hubungi Kami</span>
+      <span class="modal-title">Hubungi Kami</span>
       <button class="modal-close" onclick="closeModal('modal-hubungi')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
@@ -545,7 +546,7 @@
 <div class="modal-overlay" id="modal-syarat">
   <div class="modal" style="max-width:600px;">
     <div class="modal-header">
-      <span class="modal-title">📋 Syarat & Ketentuan</span>
+      <span class="modal-title">Syarat & Ketentuan</span>
       <button class="modal-close" onclick="closeModal('modal-syarat')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text-secondary);line-height:1.7;">
@@ -563,7 +564,7 @@
 <div class="modal-overlay" id="modal-privasi">
   <div class="modal" style="max-width:600px;">
     <div class="modal-header">
-      <span class="modal-title">🔒 Kebijakan Privasi</span>
+      <span class="modal-title">Kebijakan Privasi</span>
       <button class="modal-close" onclick="closeModal('modal-privasi')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text-secondary);line-height:1.7;">
@@ -585,7 +586,7 @@
 <div class="modal-overlay" id="modal-promo">
   <div class="modal" style="max-width:500px;">
     <div class="modal-header">
-      <span class="modal-title">🎁 Promo & Diskon</span>
+      <span class="modal-title">Promo & Diskon</span>
       <button class="modal-close" onclick="closeModal('modal-promo')">&times;</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
@@ -725,7 +726,7 @@ function buildCategorySlider(categories) {
     <div class="cat-pill" onclick="filterByCategory('${c.name}')">
       ${c.imageUrl
         ? `<img src="${c.imageUrl}" alt="${c.name}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;">`
-        : `<span style="font-size:20px;">🎮</span>`}
+        : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4"/><circle cx="15.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="12.5" r=".8" fill="currentColor"/><path d="M17.3 6H6.7A3.7 3.7 0 0 0 3 9.7v3.9c0 1.5 1.1 2.7 2.6 2.7 1 0 1.8-.5 2.3-1.3l.6-1h7l.6 1c.5.8 1.3 1.3 2.3 1.3 1.5 0 2.6-1.2 2.6-2.7V9.7A3.7 3.7 0 0 0 17.3 6Z"/></svg>`}
       <span>${c.name}</span>
     </div>
   `).join("");
