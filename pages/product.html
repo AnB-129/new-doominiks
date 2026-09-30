@@ -1220,37 +1220,32 @@ async function handleGoogleLogin() {
 async function handleProofUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast("Ukuran file maks 5MB.", "error"); return; }
-  // Instant preview
+  // Validasi size & type — terpusat di uploadWithProgress, ini cuma buat preview dulu
+  if (file.size > CLOUDINARY_MAX_SIZE) { toast("Ukuran file maksimal 15MB", "error"); return; }
+  if (!file.type.startsWith("image/")) { toast("File harus berupa gambar", "error"); return; }
+
+  // Preview instan sebelum upload selesai
   const reader = new FileReader();
   reader.onload = e => {
     document.getElementById("proof-img-preview").src = e.target.result;
     document.getElementById("proof-preview-wrap").style.display = "block";
     document.getElementById("proof-placeholder").style.display = "none";
-    document.getElementById("proof-status").textContent = "Mengupload...";
+    document.getElementById("proof-status").innerHTML = `<span style="color:var(--text-muted);">Mengupload... <span id="proof-progress">0%</span></span>`;
   };
   reader.readAsDataURL(file);
-  // Upload to Cloudinary
+
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET_P);
-    formData.append("folder", "doominiks/proofs");
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME_P}/image/upload`);
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const url = JSON.parse(xhr.responseText).secure_url;
-        document.getElementById("proof-url").value = url;
-        document.getElementById("proof-status").innerHTML = `<span style="color:var(--green);">✓ Bukti berhasil diupload</span>`;
-        toast("Bukti pembayaran diupload!", "success");
-      } else {
-        document.getElementById("proof-status").textContent = "Upload gagal, lanjut tanpa bukti.";
+    const url = await uploadWithProgress(file, CLOUDINARY_CLOUD_NAME_P, CLOUDINARY_UPLOAD_PRESET_P, "doominiks/proofs",
+      pct => {
+        const el = document.getElementById("proof-progress");
+        if (el) el.textContent = pct + "%";
       }
-    };
-    xhr.onerror = () => { document.getElementById("proof-status").textContent = "Upload gagal."; };
-    xhr.send(formData);
+    );
+    document.getElementById("proof-url").value = url;
+    document.getElementById("proof-status").innerHTML = `<span style="color:var(--green);">✓ Bukti berhasil diupload</span>`;
+    document.getElementById("proof-confirm-row").style.display = "flex";
   } catch(e) {
+    toast(e.message || "Upload gagal, coba lagi", "error");
     document.getElementById("proof-status").textContent = "Upload gagal.";
   }
 }
