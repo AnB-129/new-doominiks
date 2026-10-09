@@ -338,6 +338,81 @@ let appliedVoucher = null; // { code, type, value, discountAmount }
 const params = new URLSearchParams(window.location.search);
 const productId = params.get("id");
 
+// ============================================================
+// ROBLOX: referensi pasar (Rolimons) + tautan checker akun
+// Aktif otomatis untuk produk kategori Roblox. RAP/Value hanya tampil
+// untuk item yang diisi "Asset ID Roblox" di owner panel.
+// ============================================================
+const ROBLOX_WORKER = "https://quiet-moon-d034roblox-proxy.niksstoree.workers.dev";
+let _market = {}; // assetId -> { rap, value, valued, demand, trend, projected, ... }
+const _escM = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const _DEM = { Terrible: "Sangat rendah", Low: "Rendah", Normal: "Normal", High: "Tinggi", Amazing: "Sangat tinggi" };
+const _TRD = { Lowering: "Turun", Unstable: "Tidak stabil", Stable: "Stabil", Raising: "Naik", Fluctuating: "Fluktuatif" };
+const isRobloxProduct = (p) => /roblox/i.test((p && p.category) || "") || /roblox/i.test((p && p.name) || "");
+
+function _marketFor(item) {
+  const id = item && item.robloxAssetId ? String(item.robloxAssetId) : "";
+  return id && _market[id] ? _market[id] : null;
+}
+
+// Blok detail di panel "Yang dipilih"
+function marketBlock(item) {
+  const m = _marketFor(item);
+  if (!m) return "";
+  const nf = (n) => Number(n || 0).toLocaleString("id-ID");
+  const parts = [`RAP <b>R$ ${nf(m.rap)}</b>`, `Value <b>R$ ${nf(m.value)}</b>${m.valued ? "" : " (belum di-value, sama dengan RAP)"}`];
+  if (m.demand) parts.push(`Demand ${_escM(_DEM[m.demand] || m.demand)}`);
+  if (m.trend) parts.push(`Trend ${_escM(_TRD[m.trend] || m.trend)}`);
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary);line-height:1.7;">
+    <div style="font-weight:600;color:var(--text-primary);margin-bottom:2px;">Referensi pasar (Rolimons)</div>
+    <div>${parts.join(" &middot; ")}</div>
+    ${m.projected ? `<div style="color:var(--gold);">RAP item ini ditandai projected oleh Rolimons, jangan jadikan patokan harga.</div>` : ""}
+    <div style="color:var(--text-muted);">Hanya referensi. Harga yang berlaku adalah harga toko di atas.</div>
+  </div>`;
+}
+
+// Baris kecil "RAP ..." di tiap kartu item
+function applyMarketToCards() {
+  (window._currentItems || []).forEach((item, i) => {
+    const m = _marketFor(item);
+    const card = document.getElementById(`item-${i}`);
+    if (!m || !card || card.querySelector(".item-market")) return;
+    card.insertAdjacentHTML("beforeend", `<div class="item-market" style="font-size:10px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">RAP ${Number(m.rap || 0).toLocaleString("id-ID")}</div>`);
+  });
+}
+
+async function loadMarketData(p) {
+  const ids = [...new Set((p.items || []).map((it) => String(it.robloxAssetId || "").replace(/\D/g, "")).filter(Boolean))].slice(0, 50);
+  if (!ids.length) return;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const res = await fetch(`${ROBLOX_WORKER}/items?ids=${ids.join(",")}`, { signal: ctl.signal });
+    const data = await res.json();
+    if (!res.ok || !data || data.ok !== true || !data.items) return;
+    _market = data.items;
+    applyMarketToCards();
+    if (selectedItem && _marketFor(selectedItem)) renderBuySection();
+  } catch (_) { /* referensi pasar opsional: gagal = tidak ditampilkan */ }
+  finally { clearTimeout(timer); }
+}
+
+function enhanceRobloxProduct(p) {
+  if (!isRobloxProduct(p)) return;
+  const anchor = document.getElementById("topup-type-section") || document.getElementById("nominal-title");
+  if (anchor && !document.getElementById("rc-banner")) {
+    anchor.insertAdjacentHTML("beforebegin", `
+      <div id="rc-banner" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);">
+        <div style="flex:1 1 240px;min-width:0;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:2px;">Mau trade item limited? Cek akun Roblox kamu dulu</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Pastikan inventory publik, ada item tumbal, dan Premium/Plus aktif supaya trade tidak gagal.</div>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="roblox-checker.html" target="_blank" rel="noopener">Cek akun Roblox</a>
+      </div>`);
+  }
+  loadMarketData(p);
+}
+
 async function loadProduct() {
   if (!productId) { document.getElementById("product-content").innerHTML = `<div class="empty-state"><h4>Produk tidak ditemukan</h4><a href="catalog.html" class="btn btn-primary">Kembali ke Katalog</a></div>`; return; }
   try {
@@ -391,6 +466,7 @@ function renderProduct(p) {
   `;
   renderTopupTypes(p.topupTypes || []);
   renderItems(p.items || []);
+  enhanceRobloxProduct(p);
 }
 
 let selectedTopupType = null;
@@ -474,6 +550,7 @@ function renderItems(items) {
       </div>`;
   }).join("");
   if (window.refreshScrollReveal) window.refreshScrollReveal();
+  applyMarketToCards();
   renderBuySection();
 }
 
@@ -529,6 +606,7 @@ function renderBuySection() {
         <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedItem.name}</div>
         <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:var(--font-body);letter-spacing:-0.3px;">${formatIDR(selectedItem.price + (selectedPayment ? (selectedPayment.calculatedFee ?? selectedPayment.fee ?? 0) : 0))}</div>
         ${hasBadges ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${stockBadge}${countdownBadge}</div>` : ""}
+        ${marketBlock(selectedItem)}
       </div>
       ${imgUrl ? `<img src="${imgUrl}" alt="${selectedItem.name}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;flex-shrink:0;background:var(--bg-panel);padding:4px;">` : ""}
     </div>

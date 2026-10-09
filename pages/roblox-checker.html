@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <link rel="apple-touch-icon" href="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png">
+  <title>Cek Akun Roblox &mdash; DOOMINIKS STORE</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    /* Semua style halaman ini diberi prefix .rc- supaya tidak bentrok dengan style.css */
+    .rc-wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 88px; }
+    .rc-intro h1 { font-family: var(--font-display); font-size: 34px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+    .rc-intro p { color: var(--text-secondary); max-width: 62ch; line-height: 1.7; font-size: 15px; }
+
+    .rc-form { margin-top: 28px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-lg);
+      background: var(--bg-card); background: color-mix(in srgb, var(--bg-card) 78%, transparent);
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+    .rc-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .rc-row .form-input { flex: 1 1 260px; min-width: 0; }
+    .rc-form label.rc-lbl { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+    .rc-adv { margin-top: 14px; font-size: 13px; color: var(--text-secondary); }
+    .rc-adv summary { cursor: pointer; width: fit-content; }
+    .rc-adv summary:hover { color: var(--text-primary); }
+    .rc-adv-body { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .rc-adv-body input { width: 130px; flex: none; }
+    .rc-hint { color: var(--text-muted); font-size: 12px; line-height: 1.6; margin-top: 10px; max-width: 70ch; }
+
+    .rc-status { display: none; align-items: center; gap: 12px; margin-top: 24px; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-secondary); font-size: 14px; }
+    .rc-status.show { display: flex; }
+    .rc-status.err { border-color: rgba(232,72,85,.35); color: var(--text-primary); background: rgba(232,72,85,.07); }
+    .rc-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-bright); border-top-color: var(--gold); animation: rc-spin .8s linear infinite; flex: none; }
+    @keyframes rc-spin { to { transform: rotate(360deg); } }
+
+    #rc-result { margin-top: 28px; display: none; }
+    #rc-result.show { display: block; }
+
+    /* ---- Verdict ---- */
+    .rc-verdict { --tone: var(--gold); --tone-bg: rgba(212,160,23,.08);
+      position: relative; padding: 24px 24px 22px 28px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+      background: linear-gradient(135deg, var(--tone-bg), transparent 62%), var(--bg-card);
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+    .rc-verdict::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--tone); }
+    .rc-v-pass { --tone: var(--green); --tone-bg: rgba(60,179,113,.10); }
+    .rc-v-review { --tone: var(--gold); --tone-bg: rgba(212,160,23,.10); }
+    .rc-v-fail { --tone: var(--red); --tone-bg: rgba(232,72,85,.12); }
+    .rc-v-title { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: -0.4px; color: var(--tone); }
+    .rc-v-sub { margin-top: 6px; color: var(--text-secondary); font-size: 14px; line-height: 1.65; max-width: 66ch; }
+    .rc-profile { display: flex; align-items: center; gap: 14px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .rc-avatar { width: 56px; height: 56px; border-radius: 14px; background: var(--bg-panel); border: 1px solid var(--border); overflow: hidden; flex: none; display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: var(--font-display); }
+    .rc-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .rc-pname { font-weight: 700; font-size: 16px; }
+    .rc-pmeta { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+    .rc-pmeta a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+    .rc-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ---- Ledger pengecekan ---- */
+    .rc-h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin: 34px 0 6px; }
+    .rc-h2-sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 14px; max-width: 70ch; line-height: 1.6; }
+    .rc-ledger { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); }
+    .rc-check { display: grid; grid-template-columns: 30px 150px 1fr; gap: 12px; align-items: start; padding: 14px 18px; }
+    .rc-check + .rc-check { border-top: 1px solid var(--border); }
+    .rc-glyph { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none; margin-top: 1px; }
+    .rc-g-pass { background: rgba(60,179,113,.16); color: var(--green); }
+    .rc-g-warn { background: rgba(212,160,23,.16); color: var(--gold); }
+    .rc-g-fail { background: rgba(232,72,85,.16); color: var(--red); }
+    .rc-g-unknown { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border-bright); }
+    .rc-clabel { font-weight: 700; font-size: 14px; padding-top: 2px; }
+    .rc-cdetail { color: var(--text-secondary); font-size: 14px; line-height: 1.65; padding-top: 2px; }
+    .rc-manual { background: var(--bg-panel); }
+
+    /* ---- Ringkasan angka ---- */
+    .rc-fig { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .rc-fig th, .rc-fig td { padding: 13px 18px; text-align: right; font-size: 14px; }
+    .rc-fig th:first-child, .rc-fig td:first-child { text-align: left; color: var(--text-secondary); font-weight: 500; }
+    .rc-fig thead th { font-weight: 600; color: var(--text-secondary); font-size: 13px; border-bottom: 1px solid var(--border); }
+    .rc-fig tbody tr + tr td { border-top: 1px solid var(--border); }
+    .rc-fig td.rc-big { font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+    .rc-fig td.rc-good { color: var(--green); }
+    .rc-note { color: var(--text-muted); font-size: 12px; line-height: 1.7; margin-top: 10px; max-width: 78ch; }
+
+    /* ---- Inventory ---- */
+    .rc-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .rc-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--bg-card); }
+    .rc-seg button { padding: 8px 13px; font-size: 13px; color: var(--text-secondary); background: transparent; border: 0; cursor: pointer; font-family: inherit; }
+    .rc-seg button + button { border-left: 1px solid var(--border); }
+    .rc-seg button[aria-pressed="true"] { background: var(--gold-glow); color: var(--gold); font-weight: 700; }
+    .rc-tools .form-input, .rc-tools .form-select { width: auto; flex: 1 1 150px; min-width: 130px; }
+    .rc-tablewrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); }
+    .rc-inv { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .rc-inv th { text-align: right; font-size: 12px; font-weight: 600; color: var(--text-secondary); padding: 11px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .rc-inv th:first-child { text-align: left; }
+    .rc-inv td { padding: 11px 14px; text-align: right; font-size: 13px; border-top: 1px solid var(--border); vertical-align: middle; }
+    .rc-inv tbody tr:first-child td { border-top: 0; }
+    .rc-inv td:first-child { text-align: left; }
+    .rc-item { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+    .rc-thumb { width: 44px; height: 44px; border-radius: 10px; background: var(--bg-panel); border: 1px solid var(--border); flex: none; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 16px; }
+    .rc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .rc-iname { font-weight: 600; font-size: 14px; line-height: 1.35; text-align: left; }
+    .rc-isub { color: var(--text-muted); font-size: 12px; margin-top: 2px; text-align: left; }
+    .rc-flag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 99px; background: var(--bg-panel); border: 1px solid var(--border-bright); color: var(--text-secondary); margin-right: 4px; }
+    .rc-flag.warn { color: var(--gold); border-color: rgba(212,160,23,.4); }
+    .rc-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin: 1px 0 1px 4px; white-space: nowrap; }
+    .rc-t-ok { background: rgba(60,179,113,.14); color: var(--green); }
+    .rc-t-hold { background: rgba(232,72,85,.14); color: var(--red); }
+    .rc-t-unk { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border-bright); }
+    .rc-approx { color: var(--text-muted); font-size: 11px; display: block; }
+    .rc-empty { padding: 36px 18px; text-align: center; color: var(--text-secondary); font-size: 14px; }
+    .rc-more { text-align: center; padding: 14px; border-top: 1px solid var(--border); }
+
+    .rc-src { margin-top: 26px; color: var(--text-muted); font-size: 12px; line-height: 1.7; }
+
+    .rc-form :focus-visible, .rc-result :focus-visible, .rc-wrap button:focus-visible, .rc-wrap a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    @media (max-width: 720px) {
+      .rc-wrap { padding: 32px 16px 72px; }
+      .rc-intro h1 { font-size: 28px; }
+      .rc-check { grid-template-columns: 28px 1fr; }
+      .rc-check .rc-cdetail { grid-column: 2; margin-top: -6px; }
+      .rc-actions { margin-left: 0; width: 100%; }
+      .rc-hide-sm { display: none; }
+      .rc-v-title { font-size: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .rc-spin { animation-duration: 2.4s; } }
+  </style>
+</head>
+<body>
+<div class="page-loader" id="page-loader"><div class="loader-ring"></div></div>
+<div id="toast-container"></div>
+
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:20px;">
+    <button class="modal-close" onclick="closeModal('modal-login')" style="position:absolute;top:14px;right:14px;z-index:2;background:var(--bg-panel);border:1px solid var(--border);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-muted);">&times;</button>
+    <div style="padding:28px 28px 0;">
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;margin-bottom:24px;">
+        <span style="color:#22c55e;font-size:16px;flex-shrink:0;margin-top:1px;">🛡</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:2px;">Data kamu aman</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Login di sini cuma buat transaksi di DOOMINIKS STORE aja, nggak bakal ngaruh sama akun game kamu.</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:6px;">Masuk ke Akun</div>
+        <div style="font-size:13px;color:var(--text-secondary);">Kamu bisa langsung masuk pakai Google</div>
+      </div>
+      <button class="btn btn-full btn-lg" onclick="handleGoogleLogin()" style="background:#fff;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:12px;font-weight:600;font-size:15px;gap:12px;margin-bottom:10px;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Masuk pakai Google
+      </button>
+    </div>
+    <div style="padding:16px 28px 24px;text-align:center;">
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Kalau lanjut, kamu setuju sama<br><a href="#" style="color:var(--gold);text-decoration:underline;">Syarat &amp; Ketentuan</a> dan <a href="#" style="color:var(--gold);text-decoration:underline;">Kebijakan Privasi</a>.</div>
+    </div>
+  </div>
+</div>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo"><img src="https://res.cloudinary.com/dnpvgpqka/image/upload/v1781211904/2c8dba63-95cf-4df8-9bf2-5d6fb7d7178f_lbz4s2.png" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:8px;">DOOMINIKS <span>STORE</span></a>
+    <div class="nav-links">
+      <a href="../index.html">Beranda</a>
+      <a href="catalog.html">Katalog</a>
+      <a href="roblox-checker.html" class="active">Cek Roblox</a>
+      <a href="orders.html">Pesanan</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-primary btn-sm" id="btn-login" onclick="openModal('modal-login')" style="display:none;">Masuk</button>
+      <div class="nav-actions" id="user-menu" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;">
+          <span class="review-avatar" id="nav-avatar" style="width:24px;height:24px;font-size:11px;"></span>
+          <span id="nav-username" style="font-size:14px;"></span>
+          <a href="owner/dashboard.html" id="nav-admin-link" style="display:none;color:var(--gold);font-size:13px;">★</a>
+          <button onclick="signOut()" style="background:none;color:var(--text-muted);font-size:13px;">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="rc-wrap">
+  <section class="rc-intro">
+    <h1>Cek akun Roblox sebelum beli limited</h1>
+    <p>Masukkan username, User ID, atau link profil Roblox. Kami cek apakah inventory-nya publik, punya item yang bisa dipakai sebagai tumbal, serta total RAP dan Value dari Rolimons.</p>
+  </section>
+
+  <form class="rc-form" id="rc-form" autocomplete="off" novalidate>
+    <label class="rc-lbl" for="rc-q">Username, User ID, atau link profil</label>
+    <div class="rc-row">
+      <input class="form-input" id="rc-q" name="q" type="text" inputmode="text" maxlength="120" placeholder="mis. Builderman" spellcheck="false" autocapitalize="off" />
+      <button class="btn btn-primary btn-lg" id="rc-go" type="submit">Cek akun</button>
+    </div>
+    <details class="rc-adv">
+      <summary>Pengaturan item tumbal</summary>
+      <div class="rc-adv-body">
+        <label for="rc-tumbal">Batas RAP item tumbal</label>
+        <input class="form-input" id="rc-tumbal" type="number" min="0" step="100" value="3000" inputmode="numeric" />
+        <span>Robux</span>
+      </div>
+      <p class="rc-hint">Item tumbal = limited murah milik pembeli yang bisa dikirim sebagai pasangan saat trade. Hanya item yang terkonfirmasi bisa di-trade (tidak sedang on hold) yang dihitung.</p>
+    </details>
+  </form>
+
+  <div class="rc-status" id="rc-status" role="status" aria-live="polite"></div>
+
+  <div id="rc-result" tabindex="-1" aria-live="polite"></div>
+</main>
+
+<footer style="background:var(--bg-deep);border-top:1px solid var(--border);padding:24px 0;">
+  <div class="container" style="text-align:center;color:var(--text-muted);font-size:13px;">&copy; 2025 DOOMINIKS STORE</div>
+</footer>
+
+<script src="../js/firebase-config.js"></script>
+<script src="../js/app.js"></script>
+<script>
+// ============================================================
+// Cek Akun Roblox — sisi klien
+// Semua pengecekan dijalankan oleh Worker (lihat worker/roblox-checker-worker.js).
+// Halaman ini hanya mengirim input dan menampilkan hasil.
+// ============================================================
+
+// URL Worker. Sama dengan Worker proxy Roblox yang sudah dipakai product.html.
+const CHECKER_API = "https://quiet-moon-d034roblox-proxy.niksstoree.workers.dev";
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nf = (n) => Number(n || 0).toLocaleString("id-ID");
+const rb = (n) => "R$ " + nf(n);
+const safeImg = (u) => (typeof u === "string" && /^https:\/\/[a-z0-9.-]+\.rbxcdn\.com\//i.test(u)) ? u : null;
+const safeLink = (u, host) => { try { const x = new URL(u); return (x.protocol === "https:" && x.hostname === host) ? x.href : null; } catch (_) { return null; } };
+
+const DEMAND_ID = { Terrible: "Sangat rendah", Low: "Rendah", Normal: "Normal", High: "Tinggi", Amazing: "Sangat tinggi" };
+const TREND_ID = { Lowering: "Turun", Unstable: "Tidak stabil", Stable: "Stabil", Raising: "Naik", Fluctuating: "Fluktuatif" };
+const GLYPH = { pass: ["✓", "Lolos"], warn: ["!", "Perhatian"], fail: ["✕", "Gagal"], unknown: ["?", "Belum bisa dipastikan"] };
+
+let lastResult = null;
+let view = { filter: "all", sort: "rap", q: "", limit: 100 };
+let busy = false;
+let abortCtl = null;
+
+// ---------- util tampilan ----------
+function setStatus(kind, html) {
+  const el = $("rc-status");
+  if (!kind) { el.className = "rc-status"; el.innerHTML = ""; return; }
+  el.className = "rc-status show" + (kind === "err" ? " err" : "");
+  el.innerHTML = (kind === "loading" ? '<span class="rc-spin" aria-hidden="true"></span>' : "") + "<div>" + html + "</div>";
+}
+
+function fmtDate(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (isNaN(d)) return "-";
+  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(d);
+}
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "-";
+  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d);
+}
+function accountAge(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const months = Math.max(0, Math.floor((Date.now() - d.getTime()) / (30.4375 * 86400000)));
+  const y = Math.floor(months / 12), m = months % 12;
+  if (y > 0) return `${y} th${m ? " " + m + " bln" : ""}`;
+  return `${m} bln`;
+}
+function minutesAgo(iso) {
+  const t = new Date(iso).getTime();
+  if (isNaN(t)) return "";
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  return m < 1 ? "baru saja" : m < 60 ? `${m} menit lalu` : `${Math.round(m / 60)} jam lalu`;
+}
+
+// ---------- ambil data ----------
+async function runCheck(rawQ) {
+  const q = String(rawQ || "").trim();
+  if (busy) return;
+  if (!q) { setStatus("err", "Isi username, User ID, atau link profil Roblox dulu."); $("rc-q").focus(); return; }
+
+  let tm = parseInt($("rc-tumbal").value, 10);
+  if (!Number.isFinite(tm) || tm < 0) tm = 3000;
+
+  busy = true;
+  $("rc-go").disabled = true;
+  $("rc-result").className = "";
+  setStatus("loading", "Membaca inventory dan harga terbaru&hellip; <span style='color:var(--text-muted)'>(inventory besar bisa butuh 10&ndash;30 detik)</span>");
+
+  abortCtl = new AbortController();
+  const timer = setTimeout(() => abortCtl.abort(), 45000);
+  try {
+    const res = await fetch(`${CHECKER_API}/check?q=${encodeURIComponent(q)}&tumbalMax=${tm}`, { signal: abortCtl.signal, headers: { "Accept": "application/json" } });
+    let body = null;
+    try { body = await res.json(); } catch (_) {}
+    if (!res.ok || !body || body.ok !== true) {
+      const msg = body && body.message ? body.message : "Server checker memberi respon yang tidak dikenali. Coba lagi.";
+      setStatus("err", esc(msg));
+      return;
+    }
+    setStatus(null);
+    lastResult = body;
+    view = { filter: "all", sort: "rap", q: "", limit: 100 };
+    render(body);
+    try { history.replaceState(null, "", "?u=" + encodeURIComponent(body.user.name)); } catch (_) {}
+  } catch (e) {
+    const timedOut = e && e.name === "AbortError";
+    setStatus("err", timedOut
+      ? "Pengecekan terlalu lama. Coba lagi sebentar lagi."
+      : "Tidak bisa terhubung ke server checker. Periksa koneksi internet kamu lalu coba lagi.");
+  } finally {
+    clearTimeout(timer);
+    busy = false;
+    setTimeout(() => { $("rc-go").disabled = false; }, 2500); // jeda singkat agar tidak spam
+  }
+}
+
+// ---------- render ----------
+function render(d) {
+  const root = $("rc-result");
+  const u = d.user;
+  const lvl = d.verdict.level;
+  const failCheck = d.checks.find((c) => c.status === "fail");
+  const nManual = d.manual.length + d.checks.filter((c) => c.status === "unknown" || c.status === "warn").length;
+  const sub =
+    lvl === "fail" ? (failCheck ? failCheck.detail : "Ada syarat dasar yang belum terpenuhi.")
+    : lvl === "review" ? `Tidak ada masalah yang terdeteksi, tapi ${nManual} hal masih perlu diverifikasi manual sebelum trade.`
+    : `Semua pengecekan otomatis lolos. Tetap verifikasi ${d.manual.length} hal di bawah karena Roblox tidak membukanya secara publik.`;
+
+  const avatar = safeImg(u.avatarUrl);
+  const profile = safeLink(u.profileUrl, "www.roblox.com");
+  const roli = safeLink(u.rolimonsUrl, "www.rolimons.com");
+
+  const checksHtml = d.checks.map((c) => {
+    const g = GLYPH[c.status] || GLYPH.unknown;
+    return `<div class="rc-check"><span class="rc-glyph rc-g-${esc(c.status)}" role="img" aria-label="${g[1]}">${g[0]}</span><div class="rc-clabel">${esc(c.label)}</div><div class="rc-cdetail">${esc(c.detail)}</div></div>`;
+  }).join("");
+
+  const manualHtml = d.manual.map((c) =>
+    `<div class="rc-check"><span class="rc-glyph rc-g-unknown" role="img" aria-label="Verifikasi manual">?</span><div class="rc-clabel">${esc(c.label)}</div><div class="rc-cdetail">${esc(c.detail)}</div></div>`
+  ).join("");
+
+  const T = d.totals;
+  const figHtml = d.visibility === "public" ? `
+    <h2 class="rc-h2">Ringkasan angka</h2>
+    <div class="rc-ledger"><table class="rc-fig">
+      <thead><tr><th scope="col"></th><th scope="col">Semua item</th><th scope="col">Bisa di-trade sekarang</th></tr></thead>
+      <tbody>
+        <tr><td>Jumlah item</td><td class="rc-big">${nf(T.itemCount)}</td><td class="rc-big rc-good">${nf(T.tradableCount)}</td></tr>
+        <tr><td>Total RAP</td><td class="rc-big">${rb(T.totalRap)}</td><td class="rc-big rc-good">${rb(T.tradableRap)}</td></tr>
+        <tr><td>Total Value</td><td class="rc-big">${rb(T.totalValue)}</td><td class="rc-big rc-good">${rb(T.tradableValue)}</td></tr>
+      </tbody></table></div>
+    <p class="rc-note">
+      ${T.onHoldCount ? `${nf(T.onHoldCount)} item sedang on hold (belum bisa di-trade). ` : ""}${T.unknownCount ? `${nf(T.unknownCount)} item tidak terdaftar di Rolimons (kemungkinan UGC atau item baru), status tradable-nya belum pasti dan tidak dihitung di kolom kanan. ` : ""}
+      Value memakai angka Rolimons; item yang belum di-value dihitung sama dengan RAP (${nf(T.valuedCount)} dari ${nf(T.itemCount)} item sudah di-value).
+    </p>` : "";
+
+  const invHtml = d.visibility === "public" ? `
+    <h2 class="rc-h2">Isi inventory</h2>
+    <div class="rc-tools">
+      <div class="rc-seg" role="group" aria-label="Filter item">
+        <button type="button" data-f="all" aria-pressed="true">Semua</button>
+        <button type="button" data-f="tradable" aria-pressed="false">Bisa di-trade</button>
+        <button type="button" data-f="hold" aria-pressed="false">On hold</button>
+        <button type="button" data-f="unknown" aria-pressed="false">Belum pasti</button>
+      </div>
+      <input class="form-input" id="rc-search" type="search" placeholder="Cari nama item" aria-label="Cari nama item" />
+      <select class="form-select" id="rc-sort" aria-label="Urutkan">
+        <option value="rap">Urut: RAP tertinggi</option>
+        <option value="value">Urut: Value tertinggi</option>
+        <option value="name">Urut: Nama A–Z</option>
+        <option value="copies">Urut: Jumlah salinan</option>
+      </select>
+    </div>
+    <div class="rc-tablewrap"><div class="table-wrap"><table class="rc-inv">
+      <thead><tr><th scope="col">Item</th><th scope="col">Jml</th><th scope="col">RAP</th><th scope="col">Value</th><th scope="col" class="rc-hide-sm">Demand / Trend</th><th scope="col">Status trade</th></tr></thead>
+      <tbody id="rc-inv-body"></tbody>
+    </table></div><div id="rc-inv-more" class="rc-more" style="display:none"></div></div>` : "";
+
+  const meta = [`ID ${esc(u.id)}`];
+  if (u.created) meta.push(`dibuat ${esc(fmtDate(u.created))} (${esc(accountAge(u.created))})`);
+
+  root.innerHTML = `
+    <section class="rc-verdict rc-v-${esc(lvl)}" aria-labelledby="rc-vt">
+      <h2 class="rc-v-title" id="rc-vt">${esc(d.verdict.label)}</h2>
+      <p class="rc-v-sub">${esc(sub)}</p>
+      <div class="rc-profile">
+        <div class="rc-avatar">${avatar ? `<img src="${esc(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : esc((u.displayName || u.name || "?")[0].toUpperCase())}</div>
+        <div>
+          <div class="rc-pname">${esc(u.displayName)} <span style="color:var(--text-secondary);font-weight:500">@${esc(u.name)}</span></div>
+          <div class="rc-pmeta">${meta.join(" &middot; ")}${profile ? ` &middot; <a href="${esc(profile)}" target="_blank" rel="noopener noreferrer">Profil Roblox</a>` : ""}${roli ? ` &middot; <a href="${esc(roli)}" target="_blank" rel="noopener noreferrer">Rolimons</a>` : ""}</div>
+        </div>
+        <div class="rc-actions">
+          <button type="button" class="btn btn-secondary btn-sm" id="rc-copy">Salin ringkasan</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="rc-recheck">Cek ulang</button>
+        </div>
+      </div>
+    </section>
+
+    <h2 class="rc-h2">Hasil pengecekan otomatis</h2>
+    <div class="rc-ledger">${checksHtml}</div>
+
+    ${figHtml}
+
+    <h2 class="rc-h2">Belum bisa dicek otomatis</h2>
+    <p class="rc-h2-sub">Roblox tidak membuka tiga hal ini secara publik. Minta pembeli mengirim screenshot pengaturan akunnya sebelum kamu mengirim trade.</p>
+    <div class="rc-ledger rc-manual">${manualHtml}</div>
+    <div style="margin-top:12px"><button type="button" class="btn btn-secondary btn-sm" id="rc-copy-ask">Salin pesan untuk pembeli</button></div>
+
+    ${invHtml}
+
+    <p class="rc-src">
+      Dicek ${esc(fmtDateTime(d.checkedAt))}${d.cached ? " (hasil tersimpan, maksimal 1 menit lalu)" : ""}.
+      Harga dan Value dari Rolimons${d.data && d.data.rolimonsUpdatedAt ? `, diperbarui ${esc(minutesAgo(d.data.rolimonsUpdatedAt))}` : ""}.
+      Premium/Plus bersifat perkiraan terbaik dari sumber publik dan bukan jaminan.
+      ${d.coverage && !d.coverage.complete ? "Inventory belum terbaca penuh, angka di atas adalah angka minimum." : ""}
+    </p>
+  `;
+  root.className = "show";
+
+  $("rc-copy").addEventListener("click", () => copyText(summaryText(d), "Ringkasan disalin."));
+  $("rc-copy-ask").addEventListener("click", () => copyText(askText(), "Pesan disalin."));
+  $("rc-recheck").addEventListener("click", () => runCheck(u.name));
+
+  if (d.visibility === "public") {
+    root.querySelectorAll(".rc-seg button").forEach((b) => b.addEventListener("click", () => {
+      view.filter = b.dataset.f; view.limit = 100;
+      root.querySelectorAll(".rc-seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      renderInventory();
+    }));
+    $("rc-search").addEventListener("input", (e) => { view.q = e.target.value.trim().toLowerCase(); view.limit = 100; renderInventory(); });
+    $("rc-sort").addEventListener("change", (e) => { view.sort = e.target.value; renderInventory(); });
+    renderInventory();
+  }
+  root.focus({ preventScroll: true });
+  root.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+function renderInventory() {
+  const d = lastResult;
+  if (!d) return;
+  let rows = d.assets.filter((a) => {
+    if (view.q && !a.name.toLowerCase().includes(view.q)) return false;
+    if (view.filter === "tradable") return a.tradable > 0;
+    if (view.filter === "hold") return a.onHold > 0;
+    if (view.filter === "unknown") return a.unknownTradable > 0;
+    return true;
+  });
+  const key = { rap: (a) => -(a.rap * a.copies), value: (a) => -(a.value * a.copies), copies: (a) => -a.copies };
+  if (view.sort === "name") rows = [...rows].sort((a, b) => a.name.localeCompare(b.name));
+  else rows = [...rows].sort((a, b) => key[view.sort](a) - key[view.sort](b));
+
+  const body = $("rc-inv-body");
+  const more = $("rc-inv-more");
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="6"><div class="rc-empty">${d.assets.length ? "Tidak ada item yang cocok dengan filter ini." : "Akun ini tidak punya limited."}</div></td></tr>`;
+    more.style.display = "none";
+    return;
+  }
+  const shown = rows.slice(0, view.limit);
+  body.innerHTML = shown.map((a) => {
+    const th = safeImg(a.thumb);
+    const flags = [];
+    if (a.rare) flags.push('<span class="rc-flag">Rare</span>');
+    if (a.hyped) flags.push('<span class="rc-flag">Hyped</span>');
+    if (a.projected) flags.push('<span class="rc-flag warn" title="Rolimons menandai RAP item ini tidak wajar (projected). Jangan jadikan RAP sebagai patokan harga.">Projected</span>');
+    let serial = "";
+    if (a.serials && a.serials.length) {
+      const first = a.serials.slice(0, 3).map((s) => "#" + nf(s)).join(", ");
+      serial = `${first}${a.serials.length > 3 ? ` +${a.serials.length - 3}` : ""}${a.stock ? ` dari ${nf(a.stock)}` : ""}`;
+    }
+    const sub = [flags.join(""), esc(serial)].filter(Boolean).join(" ");
+    const dem = a.demand ? esc(DEMAND_ID[a.demand] || a.demand) : "–";
+    const trd = a.trend ? esc(TREND_ID[a.trend] || a.trend) : "–";
+    const tags = [];
+    if (a.tradable) tags.push(`<span class="rc-tag rc-t-ok">${a.tradable} bisa trade</span>`);
+    if (a.onHold) tags.push(`<span class="rc-tag rc-t-hold">${a.onHold} on hold</span>`);
+    if (a.unknownTradable) tags.push(`<span class="rc-tag rc-t-unk" title="Tidak terdaftar di Rolimons: kemungkinan UGC/item baru. Belum pasti bisa di-trade.">${a.unknownTradable} belum pasti</span>`);
+    return `<tr>
+      <td><div class="rc-item"><div class="rc-thumb">${th ? `<img src="${esc(th)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "◆"}</div>
+        <div><div class="rc-iname">${esc(a.name)}</div>${sub ? `<div class="rc-isub">${sub}</div>` : ""}</div></div></td>
+      <td>${nf(a.copies)}</td>
+      <td>${nf(a.rap)}${a.copies > 1 ? `<span class="rc-approx">total ${nf(a.rap * a.copies)}</span>` : ""}</td>
+      <td>${nf(a.value)}${a.inRolimons && !a.valued ? '<span class="rc-approx">= RAP</span>' : ""}${a.copies > 1 ? `<span class="rc-approx">total ${nf(a.value * a.copies)}</span>` : ""}</td>
+      <td class="rc-hide-sm">${dem} / ${trd}</td>
+      <td>${tags.join("")}</td>
+    </tr>`;
+  }).join("");
+
+  if (rows.length > shown.length) {
+    more.style.display = "block";
+    more.innerHTML = `<button type="button" class="btn btn-secondary btn-sm" id="rc-more-btn">Tampilkan lebih banyak (${nf(rows.length - shown.length)} lagi)</button>`;
+    $("rc-more-btn").addEventListener("click", () => { view.limit += 100; renderInventory(); });
+  } else {
+    more.style.display = "none";
+  }
+}
+
+// ---------- teks salinan ----------
+function summaryText(d) {
+  const u = d.user;
+  const label = { pass: "✓", warn: "!", fail: "✕", unknown: "?" };
+  const lines = [
+    `Cek akun Roblox: ${u.displayName} (@${u.name}, ID ${u.id})`,
+    `Hasil: ${d.verdict.label}`,
+    ...d.checks.map((c) => `${label[c.status] || "•"} ${c.label}: ${c.detail}`),
+  ];
+  if (d.visibility === "public") {
+    lines.push(`Total: ${nf(d.totals.itemCount)} item | RAP ${rb(d.totals.totalRap)} | Value ${rb(d.totals.totalValue)}`);
+    lines.push(`Bisa di-trade sekarang: ${nf(d.totals.tradableCount)} item | RAP ${rb(d.totals.tradableRap)}`);
+  }
+  lines.push(`Belum bisa dicek otomatis: ${d.manual.map((m) => m.label).join(", ")}`);
+  lines.push(`Dicek ${fmtDateTime(d.checkedAt)} via DOOMINIKS STORE (data harga: Rolimons)`);
+  return lines.join("\n");
+}
+function askText() {
+  return [
+    "Sebelum trade, tolong kirim screenshot ini ya:",
+    "1. Settings > Privacy > Trading & inventory: pastikan Inventory visibility dan Trading aktif.",
+    "2. Halaman Subscription/Premium: pastikan Roblox Premium atau Plus masih aktif.",
+    "3. Pastikan akun sudah lolos age check/verifikasi dari Roblox.",
+  ].join("\n");
+}
+async function copyText(text, okMsg) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.cssText = "position:fixed;opacity:0;"; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy"); ta.remove();
+    }
+    if (typeof toast === "function") toast(okMsg, "success");
+  } catch (_) {
+    if (typeof toast === "function") toast("Gagal menyalin. Salin manual dari layar.", "error");
+  }
+}
+
+// ---------- mode demo (?demo=1): tampilan tanpa Worker, data contoh ----------
+function demoData() {
+  const mk = (o) => Object.assign({ copies: 1, serials: [], stock: null, tradable: 1, onHold: 0, unknownTradable: 0, rap: 0, value: 0, valued: true, demand: null, trend: null, projected: false, hyped: false, rare: false, inRolimons: true, thumb: null }, o);
+  const assets = [
+    mk({ assetId: "21070012", name: "Dominus Empyreus", rap: 13577229, value: 110000000, demand: "Normal", trend: "Stable", rare: true, serials: [5], stock: 1000 }),
+    mk({ assetId: "1365767", name: "Valkyrie Helm", copies: 2, tradable: 1, onHold: 1, rap: 254521, value: 270000, demand: "Amazing", trend: "Stable" }),
+    mk({ assetId: "20418682", name: "Bandage", rap: 48530, value: 55000, demand: "Low", trend: "Lowering", projected: true }),
+    mk({ assetId: "1028606", name: "Red Baseball Cap", rap: 1474, value: 1474, valued: false }),
+    mk({ assetId: "777777", name: "UGC Contoh Item", tradable: 0, unknownTradable: 1, rap: 50, value: 50, valued: false, inRolimons: false }),
+  ];
+  return {
+    ok: true, version: "demo", checkedAt: new Date().toISOString(), cached: false,
+    user: { id: "1234", name: "ContohPembeli", displayName: "Contoh Pembeli", created: "2019-05-01T00:00:00.000Z", isBanned: false, verified: false, avatarUrl: null, profileUrl: "https://www.roblox.com/users/1234/profile", rolimonsUrl: "https://www.rolimons.com/player/1234" },
+    premium: { status: "unverified", asOf: null, sources: [] },
+    visibility: "public",
+    totals: { itemCount: 6, uniqueCount: 5, totalRap: 13577229 + 254521 * 2 + 48530 + 1474 + 50, totalValue: 110000000 + 270000 * 2 + 55000 + 1474 + 50, valuedCount: 4, tradableCount: 4, tradableRap: 13577229 + 254521 + 48530 + 1474, tradableValue: 110000000 + 270000 + 55000 + 1474, onHoldCount: 1, unknownCount: 1, limitedUniqueCount: 1 },
+    tumbal: { threshold: 3000, tradableCount: 4, withinCount: 1, cheapest: [] },
+    assets,
+    checks: [
+      { id: "account", label: "Status akun", status: "pass", detail: "Akun aktif (tidak di-ban)." },
+      { id: "inventory", label: "Inventory", status: "pass", detail: "Publik — limited bisa dibaca." },
+      { id: "premium", label: "Premium / Plus", status: "unknown", detail: "Belum bisa diverifikasi otomatis (Roblox tidak membuka data ini secara publik). Verifikasi manual." },
+      { id: "tumbal", label: "Item tumbal", status: "pass", detail: "1 item tradable ≤ 3.000 RAP. Termurah: Red Baseball Cap (1.474 RAP)." },
+    ],
+    manual: [
+      { id: "trade-setting", label: "Pengaturan trade", detail: "“Who can trade with me” harus aktif. Roblox tidak membuka ini secara publik." },
+      { id: "age-check", label: "Age check / verifikasi", detail: "Akun harus lolos persyaratan usia & verifikasi Roblox untuk trade. Tidak bisa dicek dari luar." },
+      { id: "region", label: "Wilayah", detail: "Trade belum tersedia untuk pengguna di Korea Selatan." },
+    ],
+    verdict: { level: "review", label: "Perlu verifikasi manual", reasons: [] },
+    coverage: { pagesRead: 1, complete: true, truncated: false, status: "ok" },
+    data: { rolimonsUpdatedAt: new Date(Date.now() - 180000).toISOString(), rolimonsItemCount: 2514, rolimonsStale: false },
+  };
+}
+
+// ---------- init ----------
+document.addEventListener("DOMContentLoaded", () => {
+  $("rc-form").addEventListener("submit", (e) => { e.preventDefault(); runCheck($("rc-q").value); });
+  const p = new URLSearchParams(location.search);
+  if (p.get("demo") === "1") { lastResult = demoData(); render(lastResult); setStatus("loading", "Mode demo: data contoh, bukan hasil pengecekan sungguhan."); $("rc-status").querySelector(".rc-spin").remove(); return; }
+  const u = p.get("u");
+  if (u) { $("rc-q").value = u; runCheck(u); }
+});
+
+async function handleGoogleLogin() { try { await signInWithGoogle(); closeModal("modal-login"); } catch (e) {} }
+function onAuthReady() { hideLoader(); }
+</script>
+</body>
+</html>
