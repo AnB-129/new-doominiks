@@ -399,6 +399,7 @@ function addItemRow(item) {
     <input class="form-input" id="item-price-${i}" type="number" placeholder="Harga (Rp)" value="${item ? item.price : ''}" min="0" style="flex:1 1 40%;" />
     <input class="form-input" id="item-orig-${i}" type="number" placeholder="Harga Asli (opsional)" value="${item ? (item.originalPrice||'') : ''}" min="0" style="flex:1 1 40%;" />
     <input class="form-input item-typeid" id="item-typeid-${i}" placeholder="ID Tipe (opsional, mis. robux_5hari)" value="${item ? (item.typeId||'') : ''}" style="flex:1 1 100%;font-size:12px;" />
+    <input class="form-input" id="item-asset-${i}" type="text" inputmode="numeric" maxlength="15" title="Angka di link katalog Roblox: roblox.com/catalog/1365767/..." placeholder="Asset ID Roblox (opsional) — tampilkan RAP &amp; Value live di halaman produk" value="${item && item.robloxAssetId ? String(item.robloxAssetId).replace(/[^0-9]/g, '') : ''}" style="flex:1 1 100%;font-size:12px;" />
     <input class="form-input" id="item-stock-${i}" type="number" min="0" placeholder="Stok (kosongkan = tidak terbatas)" value="${item && item.stock !== undefined && item.stock !== null ? item.stock : ''}" style="flex:1 1 40%;font-size:12px;" />
     <input class="form-input" id="item-expired-${i}" type="datetime-local" title="Countdown Expired (opsional)" value="${item && item.expiredAt ? (() => { try { const d = item.expiredAt.toDate ? item.expiredAt.toDate() : new Date(item.expiredAt); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16); } catch(e){ return ''; } })() : ''}" style="flex:1 1 55%;font-size:12px;" />
     <label style="display:flex;align-items:center;gap:6px;flex:1 1 35%;font-size:12px;color:var(--text-secondary);cursor:pointer;">
@@ -437,6 +438,7 @@ function getItems() {
     const isNew = document.getElementById(`item-isnew-${i}`)?.checked || false;
     const badgeText = document.getElementById(`item-badgetext-${i}`)?.value?.trim() || null;
     const imageUrl = document.getElementById(`item-img-${i}`)?.value?.trim() || null;
+    const robloxAssetId = (document.getElementById(`item-asset-${i}`)?.value || "").replace(/\D/g, "").slice(0, 15);
     if (!name || !price) return null;
     const obj = { name, price, ...(orig ? { originalPrice: orig } : {}) };
     if (typeId) obj.typeId = typeId;
@@ -445,6 +447,7 @@ function getItems() {
     if (isNew) obj.isNew = true;
     if (isNew && badgeText) obj.badgeText = badgeText;
     if (imageUrl) obj.imageUrl = imageUrl;
+    if (robloxAssetId) obj.robloxAssetId = robloxAssetId;
     return obj;
   }).filter(Boolean);
 }
